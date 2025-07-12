@@ -159,31 +159,21 @@
 <script setup>
 import { ref, computed, onBeforeUnmount } from "vue";
 
-// ======================
-// OPENAI API CONFIGURATION
-// ======================
-// Replace with your actual OpenAI API key
+
 const OPENAI_API_KEY =
   "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"; // 👈 Add your key here
 const OPENAI_API_URL = "https://api.openai.com/v1/chat/completions";
 
-// ======================
-// GAME STATE
-// ======================
 const players = ref([
-  { id: "p1", name: "Wayne", gender: "male", itemsRemoved: 0 },
-  { id: "p2", name: "Precious", gender: "female", itemsRemoved: 0 },
-  { id: "p3", name: "Arthur", gender: "male", itemsRemoved: 0 },
-  { id: "p4", name: "Marsha", gender: "female", itemsRemoved: 0 },
-  { id: "p5", name: "Fidel", gender: "male", itemsRemoved: 0 },
-  { id: "p6", name: "Hope", gender: "female", itemsRemoved: 0 },
+  { id: 1, name: "Player 1", gender: "male" },
+  { id: 2, name: "Player 2", gender: "female" },
 ]);
 
 const currentPlayerIndex = ref(0);
 const currentCard = ref(null);
 const cardFlipped = ref(false);
 const gameHistory = ref([]);
-const hesitationTime = ref(30);
+const hesitationTime = ref(15);
 const hesitationTimer = ref(null);
 const hesitationPercent = ref(100);
 const gameLevel = ref(1);
@@ -198,17 +188,13 @@ const clothingItems = ref([
   { name: "Accessories", removed: false },
 ]);
 
-// ======================
-// COMPUTED PROPERTIES
-// ======================
+
 const currentPlayer = computed(() => players.value[currentPlayerIndex.value]);
 const remainingClothing = computed(
   () => clothingItems.value.filter((item) => !item.removed).length
 );
 
-// ======================
-// OPENAI AI FUNCTIONS
-// ======================
+
 const generateTruth = async () => {
   const prompt = `You are a creative assistant for a truth or dare game. Generate one intimate but tasteful truth question for a couple. It should be playful and slightly explicit. The question must be a maximum of 15 words. Just provide the question, nothing else.`;
 
@@ -236,7 +222,7 @@ const generateTruth = async () => {
 };
 
 const generateDare = async (fromGender, toGender) => {
-  const prompt = `You are a creative assistant for a truth or dare game.The players are not partners or a couple remember that, assume the players have never done anything together. Do not/ never remind or ask players about their partners cause they may be playing with other players that arent their partners Generate a sensual dare for a ${fromGender} to perform on a ${toGender}.Turn up the heat each time. do not/ never repeat dares It must be tasteful, fun, and a maximum of 15 words. Just provide the dare, nothing else.`;
+  const prompt = `You are a creative assistant for a truth or dare game.The players are not partners or a couple they are friends and some strangers remember that, always assume the players have never done anything together. Do not/ never remind or ask players about their partners cause they may be playing with other players that arent their partners. Generate a sensual dare for a ${fromGender} to perform on a ${toGender}.Turn up the heat each time. do not/ never repeat dares It must be tasteful, fun, and a maximum of 15 words. Just provide the dare, nothing else.`;
 
   try {
     const response = await fetch(OPENAI_API_URL, {
@@ -263,20 +249,18 @@ const generateDare = async (fromGender, toGender) => {
 
 // Fallback content if AI fails
 const fallbackTruths = [
-  "What's your favorite memory of us being intimate?",
+  "What's your favorite memory of being intimate?",
   "Where's the most unusual place you've felt turned on?",
-  "What's one thing you'd like to try but haven't asked for?",
+  "What's one thing you'd like to try but haven't?",
 ];
 
 const fallbackDares = [
-  "Give your partner a 30-second neck massage.",
-  "Whisper something sexy in your partner's ear.",
-  "Let your partner remove one accessory you are wearing.",
+  "Give anyone of the opposite gender in the group a thigh massage for 15 seconds.",
+  "Put your hand on the crotch of someone of the opposite gender for 15 seconds.",
+  "Let someone else of the opposite gender choose a body part to kiss.",
 ];
 
-// ======================
-// GAME LOGIC
-// ======================
+
 const getValidTargets = () => {
   return players.value.filter((p) => p.id !== currentPlayer.value.id);
 };
@@ -332,12 +316,12 @@ const flipCard = () => {
 
 const startHesitationTimer = () => {
   clearInterval(hesitationTimer.value);
-  hesitationTime.value = 30;
+  hesitationTime.value = 15;
   hesitationPercent.value = 100;
 
   hesitationTimer.value = setInterval(() => {
     hesitationTime.value--;
-    hesitationPercent.value = (hesitationTime.value / 30) * 100;
+    hesitationPercent.value = (hesitationTime.value / 15) * 100;
 
     if (hesitationTime.value <= 0) {
       clearInterval(hesitationTimer.value);
@@ -410,7 +394,7 @@ const nextTurn = () => {
   currentCard.value = null;
   cardFlipped.value = false;
   hesitationPercent.value = 100;
-  hesitationTime.value = 30;
+  hesitationTime.value = 15;
   clearInterval(hesitationTimer.value);
   currentPlayerIndex.value =
     (currentPlayerIndex.value + 1) % players.value.length;

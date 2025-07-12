@@ -26,10 +26,10 @@
           <div class="bg-white/10 p-4 rounded-xl">
             <h3 class="font-bold text-lg mb-2">Game Rules</h3>
             <ul class="list-disc pl-5 space-y-1">
-              <li><strong>Roll both dice</strong> for a 60-second command</li>
+              <li><strong>Roll both dice</strong> for a 30-second command</li>
               <li><strong>"Your Choice"</strong> = Partner picks the action</li>
               <li>
-                <strong>Matching numbers</strong> = 2 minutes + remove clothing
+                <strong>Matching numbers</strong> = 1 minute + remove clothing
               </li>
               <li>
                 <strong>Snake eyes (⚀⚀)</strong> = Immediately switch roles
@@ -240,18 +240,14 @@ const actions = [
 const showRules = ref(true);
 const isRolling = ref(false);
 const isTimerRunning = ref(false);
-const secondsLeft = ref(60);
+const secondsLeft = ref(30);
 const timerPercent = ref(100);
 const timer = ref(null);
 const specialEffect = ref("");
 
 const players = ref([
-  { id: "p1", name: "Wayne", gender: "male", itemsRemoved: 0 },
-  { id: "p2", name: "Precious", gender: "female", itemsRemoved: 0 },
-  { id: "p3", name: "Arthur", gender: "male", itemsRemoved: 0 },
-  { id: "p4", name: "Marsha", gender: "female", itemsRemoved: 0 },
-  { id: "p5", name: "Fidel", gender: "male", itemsRemoved: 0 },
-  { id: "p6", name: "Hope", gender: "female", itemsRemoved: 0 },
+  { id: 1, name: "Player 1", gender: "male" },
+  { id: 2, name: "Player 2", gender: "female" },
 ]);
 
 const currentPlayerIndex = ref(0);
@@ -382,14 +378,14 @@ const rollDice = async () => {
 const startTimer = () => {
   clearInterval(timer.value);
   isTimerRunning.value = true;
-  secondsLeft.value = specialEffect.value.includes("2 minutes") ? 120 : 60;
+  secondsLeft.value = specialEffect.value.includes("1 minute") ? 60 : 30;
   timerPercent.value = 100;
 
   timer.value = setInterval(() => {
     secondsLeft.value--;
     timerPercent.value =
       (secondsLeft.value /
-        (specialEffect.value.includes("2 minutes") ? 120 : 60)) *
+        (specialEffect.value.includes("1 minute") ? 60 : 30)) *
       100;
 
     if (secondsLeft.value <= 0) {
