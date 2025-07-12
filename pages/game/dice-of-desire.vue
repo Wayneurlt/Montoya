@@ -200,13 +200,17 @@
 // ======================
 // GAME CONFIGURATION
 // ======================
+// Add your OpenAI API key here
+const OPENAI_API_KEY =
+  "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"; // Replace with your actual API key
+
 const bodyParts = [
   "Lips",
   "Neck",
   "Earlobe",
   "Inner Thigh",
   "Breasts",
-  "navel",
+  "Below Navel",
   "Ass",
   "Nipples",
   "Boobs",
@@ -251,9 +255,6 @@ const currentRoll = ref({ body: "", action: "" });
 const currentResult = ref("");
 const history = ref([]);
 
-// ======================
-// COMPUTED PROPERTIES
-// ======================
 const currentPlayer = computed(() => players.value[currentPlayerIndex.value]);
 
 const targetPlayer = computed(() => {
@@ -261,50 +262,117 @@ const targetPlayer = computed(() => {
   return players.value.find((p) => p.gender !== currentPlayer.value.gender);
 });
 
-// ======================
-// GAME METHODS
-// ======================
 const startGame = () => {
   showRules.value = false;
 };
 
-const rollDice = () => {
+const validateCombination = async (action, bodyPart) => {
+  if (action === "Your Choice" || bodyPart === "Your Choice") return true;
+
+  try {
+    const response = await fetch("https://api.openai.com/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${OPENAI_API_KEY}`,
+      },
+      body: JSON.stringify({
+        model: "gpt-4o-mini",
+        messages: [
+          {
+            role: "system",
+            content:
+              "You are an intimacy advisor for a couples game. Determine if this action/body part combination makes sense for intimate play between consenting adults. Respond only with 'true' or 'false'.",
+          },
+          {
+            role: "user",
+            content: `Does "${action} ${bodyPart}" make sense as an intimate action between partners?`,
+          },
+        ],
+        temperature: 0.7,
+        max_tokens: 1,
+      }),
+    });
+
+    const data = await response.json();
+    const isValid =
+      data.choices?.[0]?.message?.content?.toLowerCase() === "true";
+    return isValid;
+  } catch (error) {
+    console.error("Error validating combination:", error);
+    // If API fails, allow the combination by default
+    return true;
+  }
+};
+
+const rollDice = async () => {
   if (isRolling.value) return;
 
   isRolling.value = true;
   currentResult.value = "";
   specialEffect.value = "";
 
-  setTimeout(() => {
+  let validCombination = false;
+  let attempts = 0;
+  const maxAttempts = 10; // Prevent infinite loops
+
+  while (!validCombination && attempts < maxAttempts) {
+    attempts++;
+
     const bodyIndex = Math.floor(Math.random() * bodyParts.length);
     const actionIndex = Math.floor(Math.random() * actions.length);
 
+    const bodyPart = bodyParts[bodyIndex];
+    const action = actions[actionIndex];
+
+    // Skip validation for "Your Choice" options
+    if (bodyPart === "Your Choice" || action === "Your Choice") {
+      validCombination = true;
+      currentRoll.value = { body: bodyPart, action: action };
+      break;
+    }
+
+    // Validate the combination
+    validCombination = await validateCombination(action, bodyPart);
+
+    if (validCombination) {
+      currentRoll.value = { body: bodyPart, action: action };
+    }
+  }
+
+  // If we couldn't find a valid combination after max attempts, use the last one
+  if (!validCombination) {
+    const bodyIndex = Math.floor(Math.random() * bodyParts.length);
+    const actionIndex = Math.floor(Math.random() * actions.length);
     currentRoll.value = {
       body: bodyParts[bodyIndex],
       action: actions[actionIndex],
     };
+  }
 
-    // Check for special effects
-    if (bodyIndex === 0 && actionIndex === 0) {
-      specialEffect.value = "Snake Eyes! Switch roles immediately";
-      switchRoles();
-    } else if (bodyIndex === actionIndex) {
-      specialEffect.value = "Matching! 2 minutes + remove clothing";
-    }
+  // Check for special effects
+  const bodyIndex = bodyParts.indexOf(currentRoll.value.body);
+  const actionIndex = actions.indexOf(currentRoll.value.action);
 
-    currentResult.value = `${currentRoll.value.action} ${currentRoll.value.body}`;
-    startTimer();
+  if (bodyIndex === 0 && actionIndex === 0) {
+    specialEffect.value = "Snake Eyes! Switch roles immediately";
+    switchRoles();
+  } else if (bodyIndex === actionIndex) {
+    specialEffect.value = "Matching! 2 minutes + remove clothing";
+  }
 
-    // Log to history
-    history.value.unshift({
-      roller: currentPlayer.value.name,
-      target: targetPlayer.value.name,
-      result: currentResult.value,
-      special: specialEffect.value,
-    });
+  currentResult.value = `${currentRoll.value.action} ${currentRoll.value.body}`;
+  startTimer();
 
-    isRolling.value = false;
-  }, 1000);
+  // Log to history
+  history.value.unshift({
+    roller: currentPlayer.value.name,
+    target: targetPlayer.value.name,
+    result: currentResult.value,
+    special: specialEffect.value,
+  });
+
+  isRolling.value = false;
 };
 
 const startTimer = () => {

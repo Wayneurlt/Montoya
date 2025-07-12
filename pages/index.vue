@@ -1,39 +1,48 @@
 <template>
-  <div
-    class="min-h-screen bg-gradient-to-br from-purple-900 to-indigo-800 text-white"
-  >
-    <div
-      class="relative overflow-hidden h-screen flex items-center justify-center"
-    >
-      <div class="absolute inset-0 opacity-20">
-        <div
-          v-for="i in 15"
-          :key="i"
-          class="absolute rounded-full bg-white/10"
-          :style="{
-            width: `${Math.random() * 50 + 50}px`,
-            height: `${Math.random() * 50 + 50}px`,
-            left: `${Math.random() * 100}%`,
-            top: `${Math.random() * 100}%`,
-          }"
+  <div class="min-h-screen bg-black text-white flex items-center justify-center px-4">
+    <div class="max-w-5xl w-full text-center">
+      <!-- Game Options -->
+      <div class="flex justify-center items-end flex-wrap gap-6 md:gap-10 mb-8">
+        <!-- Dice -->
+        <img
+          src="/assets/images/dice.png"
+          alt="Dice"
+          class="h-20 sm:h-24 md:h-36 lg:h-52 hover:scale-110 transition-transform duration-200"
+        />
+        <!-- Card -->
+        <img
+          src="/assets/images/cards.png"
+          alt="Card"
+          class="h-20 sm:h-24 md:h-36 lg:h-52 hover:scale-110 transition-transform duration-200"
+        />
+        <!-- Emoji -->
+        <img
+          src="/assets/images/chaos.png"
+          alt="Emoji"
+          class="h-20 sm:h-24 md:h-36 lg:h-52 hover:scale-110 transition-transform duration-200"
         />
       </div>
-      <div class="container mx-auto text-center relative z-10 px-4">
-        <h1 class="text-6xl md:text-8xl font-bold mb-6 animate-fade-in">
-          Party Games
-        </h1>
-        <p
-          class="text-xl md:text-2xl text-purple-200 mb-12 animate-fade-in delay-100"
-        >
-          Spin the wheel of chaos!
-        </p>
-        <button
-          @click="navigateToSetup"
-          class="px-8 py-4 bg-pink-600 hover:bg-pink-700 rounded-full text-white font-bold text-lg shadow-lg transition-colors"
-        >
-          Start Party
-        </button>
-      </div>
+
+      <!-- Pick one -->
+      <p class="text-white font-semibold mb-4 text-sm sm:text-base">Pick one.</p>
+
+      <!-- Headline -->
+      <h1 class="text-xl sm:text-3xl md:text-4xl lg:text-5xl font-extrabold mb-2">
+        Play it. Regret it. Do it again.
+      </h1>
+
+      <!-- Subheading -->
+      <p class="text-gray-300 text-xs sm:text-sm md:text-base mb-6 max-w-lg mx-auto">
+        The game you were warned you about. But your situationship will love it.
+      </p>
+
+      <!-- CTA Button -->
+      <button
+        @click="navigateToSetup"
+        class="bg-red-600 hover:bg-red-700 text-white font-medium px-6 py-2 rounded-lg transition-colors text-sm sm:text-base"
+      >
+        Choose for me
+      </button>
     </div>
   </div>
 </template>
@@ -43,7 +52,3 @@ const navigateToSetup = () => {
   navigateTo("/setup");
 };
 </script>
-
-<style>
-/* Same animation styles as before */
-</style>

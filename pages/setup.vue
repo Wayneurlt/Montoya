@@ -1,12 +1,18 @@
 <template>
-  <div class="min-h-screen bg-gradient-to-br from-purple-900 to-indigo-800 text-white p-4 md:p-8">
-    <div class="max-w-2xl mx-auto bg-white/10 backdrop-blur-md rounded-xl p-6 md:p-8 shadow-2xl">
-      <h1 class="text-3xl md:text-4xl font-bold text-center mb-6 md:mb-8">Who's Playing?</h1>
+  <div
+    class="min-h-screen bg-gradient-to-br from-purple-900 to-indigo-800 text-white p-4 md:p-8"
+  >
+    <div
+      class="max-w-2xl mx-auto bg-white/10 backdrop-blur-md rounded-xl p-6 md:p-8 shadow-2xl"
+    >
+      <h1 class="text-3xl md:text-4xl font-bold text-center mb-6 md:mb-8">
+        Who's Playing?
+      </h1>
 
       <!-- Player Inputs -->
-      <div 
-        v-for="(player, index) in players" 
-        :key="index" 
+      <div
+        v-for="(player, index) in players"
+        :key="index"
         class="mb-4 p-4 bg-white/5 rounded-lg border border-white/10"
       >
         <div class="flex flex-col md:flex-row gap-3 md:items-center mb-3">
@@ -17,13 +23,13 @@
           />
           <button
             @click="removePlayer(index)"
-            class="bg-red-500 hover:bg-red-600 rounded-lg md:rounded-full p-2 md:w-10 md:h-10 flex items-center justify-center"
+            class="bg-red-500 hover:bg-red-600 text-white text-sm font-medium rounded-lg md:rounded-xl px-3 py-2 md:w-20 flex items-center justify-center"
             :disabled="players.length <= 2"
           >
             Remove
           </button>
         </div>
-        
+
         <div class="flex flex-wrap gap-4">
           <label class="flex items-center gap-2">
             <input
@@ -56,7 +62,7 @@
       <!-- Game Selection -->
       <div class="mb-6">
         <h2 class="text-xl md:text-2xl font-semibold mb-3">Choose a Game:</h2>
-        <select 
+        <select
           v-model="selectedGame"
           class="w-full bg-white/20 rounded-lg p-3 focus:ring-2 focus:ring-pink-500"
         >
@@ -79,13 +85,13 @@
 
 <script setup>
 const players = ref([
-  { name: '', gender: 'male' },
-  { name: '', gender: 'female' }
+  { name: "", gender: "male" },
+  { name: "", gender: "female" },
 ]);
 
-const selectedGame = ref('truth-or-dare');
+const selectedGame = ref("truth-or-dare");
 
-const addPlayer = () => players.value.push({ name: '', gender: 'male' });
+const addPlayer = () => players.value.push({ name: "", gender: "male" });
 const removePlayer = (index) => {
   if (players.value.length > 2) {
     players.value.splice(index, 1);
@@ -93,30 +99,31 @@ const removePlayer = (index) => {
 };
 
 const canStart = computed(() => {
-  const hasValidPlayers = players.value.length >= 2 && 
-    players.value.every(p => p.name.trim() !== '');
-  
+  const hasValidPlayers =
+    players.value.length >= 2 &&
+    players.value.every((p) => p.name.trim() !== "");
+
   // For truth-or-dare, require at least 1 male and 1 female
-  if (selectedGame.value === 'truth-or-dare') {
-    const genders = new Set(players.value.map(p => p.gender));
-    return hasValidPlayers && genders.has('male') && genders.has('female');
+  if (selectedGame.value === "truth-or-dare") {
+    const genders = new Set(players.value.map((p) => p.gender));
+    return hasValidPlayers && genders.has("male") && genders.has("female");
   }
-  
+
   return hasValidPlayers;
 });
 
 const startGame = () => {
   const gameData = {
-    players: players.value.map(p => ({
+    players: players.value.map((p) => ({
       id: Math.random().toString(36).substring(7),
       name: p.name.trim(),
       gender: p.gender,
-      itemsRemoved: 0 // For strip game
+      itemsRemoved: 0, // For strip game
     })),
-    game: selectedGame.value
+    game: selectedGame.value,
   };
-  
-  localStorage.setItem('gameSession', JSON.stringify(gameData));
+
+  localStorage.setItem("gameSession", JSON.stringify(gameData));
   navigateTo(`/game/${selectedGame.value}`);
 };
 </script>
