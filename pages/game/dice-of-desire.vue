@@ -246,8 +246,12 @@ const timer = ref(null);
 const specialEffect = ref("");
 
 const players = ref([
-  { id: 1, name: "Player 1", gender: "male" },
-  { id: 2, name: "Player 2", gender: "female" },
+  { id: "p1", name: "Wayne", gender: "male", itemsRemoved: 0 },
+  { id: "p2", name: "Precious", gender: "female", itemsRemoved: 0 },
+  { id: "p3", name: "Arthur", gender: "male", itemsRemoved: 0 },
+  { id: "p4", name: "Marsha", gender: "female", itemsRemoved: 0 },
+  { id: "p5", name: "Fidel", gender: "male", itemsRemoved: 0 },
+  { id: "p6", name: "Hope", gender: "female", itemsRemoved: 0 },
 ]);
 
 const currentPlayerIndex = ref(0);
