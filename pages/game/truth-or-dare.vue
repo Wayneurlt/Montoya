@@ -232,7 +232,7 @@ const generateTruth = async () => {
 };
 
 const generateDare = async (fromGender, toGender) => {
-  const prompt = `You are a creative assistant for a truth or dare game. Generate a sensual dare for a ${fromGender} to perform on a ${toGender}.Turn up the heat each time. do not/ never repeat dares It must be tasteful, fun, and a maximum of 15 words. Just provide the dare, nothing else.`;
+  const prompt = `You are a creative assistant for a truth or dare game.The players are not partners or a couple remember that, assume the players have never done anything together. Generate a sensual dare for a ${fromGender} to perform on a ${toGender}.Turn up the heat each time. do not/ never repeat dares It must be tasteful, fun, and a maximum of 15 words. Just provide the dare, nothing else.`;
 
   try {
     const response = await fetch(OPENAI_API_URL, {
