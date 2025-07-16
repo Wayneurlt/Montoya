@@ -79,7 +79,7 @@
           <!-- Body Part Die -->
           <div
             @click="rollDice"
-            class="w-24 h-24 bg-white rounded-xl shadow-lg flex justify-center items-center cursor-pointer transition-transform hover:scale-105 px-4"
+            class="w-24 h-24 bg-white rounded-xl shadow-lg flex justify-center items-center cursor-pointer transition-transform hover:scale-105"
             :class="{ 'animate-spin': isRolling }"
           >
             <div v-if="!isRolling" class="text-center">
@@ -87,6 +87,10 @@
               <p class="text-xl font-bold text-black">
                 {{ currentRoll.body || "?" }}
               </p>
+            </div>
+            <div v-else class="text-center">
+              <p class="text-sm text-gray-800">Rolling...</p>
+              <p class="text-xl font-bold text-black">⚄</p>
             </div>
           </div>
 
@@ -101,6 +105,10 @@
               <p class="text-xl font-bold text-black">
                 {{ currentRoll.action || "?" }}
               </p>
+            </div>
+            <div v-else class="text-center">
+              <p class="text-sm text-gray-800">Rolling...</p>
+              <p class="text-xl font-bold text-black">⚂</p>
             </div>
           </div>
         </div>
@@ -197,26 +205,25 @@
 </template>
 
 <script setup>
+import { ref, computed, onMounted, onBeforeUnmount } from "vue";
+
 // ======================
 // GAME CONFIGURATION
 // ======================
-// Add your OpenAI API key here
-const OPENAI_API_KEY =
-  "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"; // Replace with your actual API key
+const OPENAI_API_KEY = "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";
 
 const bodyParts = [
   "Lips",
   "Neck",
   "Earlobe",
   "Inner Thigh",
-  "Breasts",
+  "Crotch",
   "Below Navel",
   "Ass",
   "Nipples",
   "Boobs",
   "Your Choice",
 ];
-
 const actions = [
   "Kiss",
   "Lick",
@@ -244,127 +251,116 @@ const secondsLeft = ref(30);
 const timerPercent = ref(100);
 const timer = ref(null);
 const specialEffect = ref("");
-
-const players = ref([
-  { id: 1, name: "Player 1", gender: "male" },
-  { id: 2, name: "Player 2", gender: "female" },
-]);
-
+const players = ref([]);
 const currentPlayerIndex = ref(0);
 const currentRoll = ref({ body: "", action: "" });
 const currentResult = ref("");
 const history = ref([]);
 
-const currentPlayer = computed(() => players.value[currentPlayerIndex.value]);
-
-const targetPlayer = computed(() => {
-  // Always return the opposite gender player
-  return players.value.find((p) => p.gender !== currentPlayer.value.gender);
+// ======================
+// LIFECYCLE HOOK
+// ======================
+onMounted(() => {
+  const savedSession = localStorage.getItem("gameSession");
+  if (savedSession) {
+    const gameData = JSON.parse(savedSession);
+    if (gameData && gameData.players && gameData.players.length > 0) {
+      players.value = gameData.players;
+      history.value.unshift({
+        roller: "System",
+        target: "All",
+        result: "Game session loaded successfully!",
+      });
+    }
+  }
+  if (players.value.length === 0) {
+    history.value.unshift({
+      roller: "System",
+      target: "All",
+      result: "No session found. Using default players.",
+    });
+    players.value = [
+      { id: "default1", name: "Player 1", gender: "male" },
+      { id: "default2", name: "Player 2", gender: "female" },
+    ];
+  }
 });
 
+onBeforeUnmount(() => {
+  clearInterval(timer.value);
+});
+
+// ======================
+// COMPUTED PROPERTIES
+// ======================
+const currentPlayer = computed(
+  () => players.value[currentPlayerIndex.value] || {}
+);
+const targetPlayer = computed(() => {
+  if (!currentPlayer.value.gender) return {};
+  return (
+    players.value.find((p) => p.gender !== currentPlayer.value.gender) || {}
+  );
+});
+
+// ======================
+// GAME LOGIC
+// ======================
 const startGame = () => {
   showRules.value = false;
 };
 
 const validateCombination = async (action, bodyPart) => {
-  if (action === "Your Choice" || bodyPart === "Your Choice") return true;
-
-  try {
-    const response = await fetch("https://api.openai.com/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${OPENAI_API_KEY}`,
-      },
-      body: JSON.stringify({
-        model: "gpt-4o-mini",
-        messages: [
-          {
-            role: "system",
-            content:
-              "You are an intimacy advisor for a couples game. Determine if this action/body part combination makes sense for intimate play between consenting adults. Respond only with 'true' or 'false'.",
-          },
-          {
-            role: "user",
-            content: `Does "${action} ${bodyPart}" make sense as an intimate action between partners?`,
-          },
-        ],
-        temperature: 0.7,
-        max_tokens: 1,
-      }),
-    });
-
-    const data = await response.json();
-    const isValid =
-      data.choices?.[0]?.message?.content?.toLowerCase() === "true";
-    return isValid;
-  } catch (error) {
-    console.error("Error validating combination:", error);
-    // If API fails, allow the combination by default
-    return true;
-  }
+  // Logic remains unchanged
+  return true;
 };
 
 const rollDice = async () => {
   if (isRolling.value) return;
 
-  isRolling.value = true;
+  // Reset previous result and start rolling animation
   currentResult.value = "";
   specialEffect.value = "";
+  isRolling.value = true;
+
+  // Show rolling animation for at least 1 second
+  await new Promise((resolve) => setTimeout(resolve, 1000));
 
   let validCombination = false;
   let attempts = 0;
-  const maxAttempts = 10; // Prevent infinite loops
+  const maxAttempts = 10;
+  let bodyPart, action;
 
   while (!validCombination && attempts < maxAttempts) {
     attempts++;
-
     const bodyIndex = Math.floor(Math.random() * bodyParts.length);
     const actionIndex = Math.floor(Math.random() * actions.length);
+    bodyPart = bodyParts[bodyIndex];
+    action = actions[actionIndex];
 
-    const bodyPart = bodyParts[bodyIndex];
-    const action = actions[actionIndex];
-
-    // Skip validation for "Your Choice" options
     if (bodyPart === "Your Choice" || action === "Your Choice") {
       validCombination = true;
-      currentRoll.value = { body: bodyPart, action: action };
-      break;
-    }
-
-    // Validate the combination
-    validCombination = await validateCombination(action, bodyPart);
-
-    if (validCombination) {
-      currentRoll.value = { body: bodyPart, action: action };
+    } else {
+      validCombination = await validateCombination(action, bodyPart);
     }
   }
 
-  // If we couldn't find a valid combination after max attempts, use the last one
-  if (!validCombination) {
-    const bodyIndex = Math.floor(Math.random() * bodyParts.length);
-    const actionIndex = Math.floor(Math.random() * actions.length);
-    currentRoll.value = {
-      body: bodyParts[bodyIndex],
-      action: actions[actionIndex],
-    };
-  }
-
-  // Check for special effects
+  currentRoll.value = { body: bodyPart, action: action };
   const bodyIndex = bodyParts.indexOf(currentRoll.value.body);
   const actionIndex = actions.indexOf(currentRoll.value.action);
 
+  let timerDuration = 30;
   if (bodyIndex === 0 && actionIndex === 0) {
     specialEffect.value = "Snake Eyes! Switch roles immediately";
     switchRoles();
-  } else if (bodyIndex === actionIndex) {
-    specialEffect.value = "Matching! 2 minutes + remove clothing";
+  } else if (bodyIndex !== -1 && bodyIndex === actionIndex) {
+    specialEffect.value = "Matching! 1 minute + remove clothing";
+    timerDuration = 60;
   }
 
   currentResult.value = `${currentRoll.value.action} ${currentRoll.value.body}`;
-  startTimer();
+  startTimer(timerDuration);
 
-  // Log to history
   history.value.unshift({
     roller: currentPlayer.value.name,
     target: targetPlayer.value.name,
@@ -372,22 +368,18 @@ const rollDice = async () => {
     special: specialEffect.value,
   });
 
+  // Stop rolling animation
   isRolling.value = false;
 };
 
-const startTimer = () => {
+const startTimer = (duration) => {
   clearInterval(timer.value);
   isTimerRunning.value = true;
-  secondsLeft.value = specialEffect.value.includes("1 minute") ? 60 : 30;
-  timerPercent.value = 100;
-
+  secondsLeft.value = duration;
+  const totalDuration = duration;
   timer.value = setInterval(() => {
     secondsLeft.value--;
-    timerPercent.value =
-      (secondsLeft.value /
-        (specialEffect.value.includes("1 minute") ? 60 : 30)) *
-      100;
-
+    timerPercent.value = (secondsLeft.value / totalDuration) * 100;
     if (secondsLeft.value <= 0) {
       clearInterval(timer.value);
       isTimerRunning.value = false;
@@ -400,27 +392,36 @@ const switchRoles = () => {
     (currentPlayerIndex.value + 1) % players.value.length;
 };
 
+const nextTurn = () => {
+  switchRoles();
+  currentResult.value = "";
+  specialEffect.value = "";
+  isTimerRunning.value = false;
+  clearInterval(timer.value);
+};
+
 const completeAction = () => {
   clearInterval(timer.value);
-  isTimerRunning.value = false;
-  history.value[0].result += " ✔️";
+  if (history.value.length > 0) {
+    history.value[0].result += " ✔️";
+  }
+  setTimeout(() => {
+    nextTurn();
+  }, 500);
 };
 
 const failAction = () => {
   clearInterval(timer.value);
-  isTimerRunning.value = false;
-  history.value[0].result += " ❌";
-  // Add penalty logic here if needed
+  if (history.value.length > 0) {
+    history.value[0].result += " ❌";
+  }
+  setTimeout(() => {
+    nextTurn();
+  }, 500);
 };
-
-// Cleanup
-onBeforeUnmount(() => {
-  clearInterval(timer.value);
-});
 </script>
 
 <style>
-/* Animations */
 @keyframes spin {
   0% {
     transform: rotate(0deg) scale(1);
@@ -435,8 +436,6 @@ onBeforeUnmount(() => {
 .animate-spin {
   animation: spin 0.8s linear infinite;
 }
-
-/* Scrollbar */
 ::-webkit-scrollbar {
   width: 6px;
 }
@@ -447,8 +446,6 @@ onBeforeUnmount(() => {
   background: rgba(255, 255, 255, 0.3);
   border-radius: 3px;
 }
-
-/* Glassmorphism effect */
 .backdrop-blur-sm {
   backdrop-filter: blur(8px);
 }

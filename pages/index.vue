@@ -24,22 +24,22 @@
       </div>
 
       <!-- Pick one -->
-      <p class="text-white font-semibold mb-4 text-sm sm:text-base">Pick one.</p>
+      <p class="text-white mb-4 text-lg sm:text-lg">Pick one.</p>
 
       <!-- Headline -->
-      <h1 class="text-xl sm:text-3xl md:text-4xl lg:text-5xl font-extrabold mb-2">
+      <h1 class="text-xl sm:text-3xl md:text-4xl lg:text-5xl font-bold mb-6">
         Play it. Regret it. Do it again.
       </h1>
 
       <!-- Subheading -->
-      <p class="text-gray-300 text-xs sm:text-sm md:text-base mb-6 max-w-lg mx-auto">
+      <p class="text-gray-300 text-xs sm:text-lg md:text-base mb-6 max-w-lg mx-auto">
         The game you were warned you about. But your situationship will love it.
       </p>
 
       <!-- CTA Button -->
       <button
         @click="navigateToSetup"
-        class="bg-red-600 hover:bg-red-700 text-white font-medium px-6 py-2 rounded-lg transition-colors text-sm sm:text-base"
+        class="bg-red-600 hover:bg-red-700 text-white  px-6 py-2 rounded-lg transition-colors text-sm sm:text-base"
       >
         Let's Start
       </button>

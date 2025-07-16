@@ -157,16 +157,14 @@
 </template>
 
 <script setup>
-import { ref, computed, onBeforeUnmount } from "vue";
+import { ref, computed, onMounted, onBeforeUnmount } from "vue";
 
-const OPENAI_API_KEY = "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"; // 👈 Replace with your actual API key
+// --- STATE MANAGEMENT ---
+const OPENAI_API_KEY = "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"; // Keep your API key secure
 const OPENAI_API_URL = "https://api.openai.com/v1/chat/completions";
 
-const players = ref([
-  { id: 1, name: "Player 1", gender: "male" },
-  { id: 2, name: "Player 2", gender: "female" },
-]);
-
+// Initialize players as an empty array. It will be populated from localStorage.
+const players = ref([]);
 const currentPlayerIndex = ref(0);
 const currentCard = ref(null);
 const cardFlipped = ref(false);
@@ -186,77 +184,131 @@ const clothingItems = ref([
   { name: "Accessories", removed: false },
 ]);
 
+// --- COMPUTED PROPERTIES ---
 const currentPlayer = computed(() => players.value[currentPlayerIndex.value]);
 const remainingClothing = computed(
   () => clothingItems.value.filter((item) => !item.removed).length
 );
 
-const generateTruth = async () => {
-  const prompt = `Generate a sexy truth or dare question for a hot party game where players may be friends or strangers. Make it explicit and intimate. Maximum 15 words. Just provide the question, nothing else.`;
+// --- LIFECYCLE HOOKS ---
+onMounted(() => {
+  const savedSession = localStorage.getItem("gameSession");
 
+  if (savedSession) {
+    const gameData = JSON.parse(savedSession);
+    if (gameData && gameData.players) {
+      players.value = gameData.players;
+      gameHistory.value.unshift("Game session loaded. Let the fun begin!");
+    }
+  } else {
+    gameHistory.value.unshift("No session found. Using default players.");
+    players.value = [
+      { id: "default1", name: "Player 1", gender: "male", itemsRemoved: 0 },
+      { id: "default2", name: "Player 2", gender: "female", itemsRemoved: 0 },
+    ];
+  }
+});
+
+onBeforeUnmount(() => {
+  clearInterval(hesitationTimer.value);
+});
+
+// --- AI AND GAME LOGIC ---
+const fallbackTruths = [
+  "Describe the most intense orgasm you've ever had in vivid detail",
+  "What's the most taboo sexual fantasy you've never admitted to anyone?",
+  "Have you ever masturbated thinking about someone in this room? Be honest.",
+  "What's the most public place you've ever had sex or been sexual?",
+  "What's the most embarrassing place you've ever gotten turned on?",
+];
+
+const fallbackDares = [
+  "Remove one piece of clothing and let someone touch that area for 10 seconds",
+  "Kiss the person to your right passionately with tongue for 5 seconds",
+  "Give a lap dance to someone of your choice for 15 seconds",
+  "Let someone spank you hard enough to leave a mark",
+  "Whisper your dirtiest fantasy into someone's ear loud enough for others to hear",
+];
+
+const generateTruth = async () => {
   try {
     const response = await fetch(OPENAI_API_URL, {
       method: "POST",
       headers: {
-        Authorization: `Bearer ${OPENAI_API_KEY}`,
         "Content-Type": "application/json",
+        Authorization: `Bearer ${OPENAI_API_KEY}`,
       },
       body: JSON.stringify({
         model: "gpt-3.5-turbo",
-        messages: [{ role: "user", content: prompt }],
-        temperature: 1.0,
-        max_tokens: 50,
+        messages: [
+          {
+            role: "system",
+            content:
+              "You are a truth or dare game assistant specializing in extremely intimate, nasty, and sexually explicit questions. Generate only highly provocative and boundary-pushing truths that explore deep sexual fantasies, experiences, and desires. Make them as explicit and detailed as possible while remaining consensual. Keep the response to 20 words or less.",
+          },
+          {
+            role: "user",
+            content: `Generate an extremely intimate and sexually explicit truth question for ${currentPlayer.value.name} (${currentPlayer.value.gender}). The question should be nasty, push boundaries, and explore deep sexual fantasies or experiences. Make it highly provocative.`,
+          },
+        ],
+        temperature: 1,
+        max_tokens: 100,
       }),
     });
-    if (!response.ok) throw new Error(`API Error: ${response.statusText}`);
+
     const data = await response.json();
     return data.choices[0].message.content.trim();
   } catch (error) {
-    console.error("AI Error (Truth):", error);
+    console.error("Error generating truth:", error);
     return fallbackTruths[Math.floor(Math.random() * fallbackTruths.length)];
   }
 };
 
-const generateDare = async (fromGender, toGender) => {
-  const prompt = `Generate a hot dare for a ${fromGender} to perform with a ${toGender} in a sexy party game. Players may be friends or strangers. Include kissing, touching, or sexual acts. Make it explicit. Maximum 15 words. Just provide the dare, nothing else.`;
-
+const generateDare = async () => {
   try {
+    const validTargets = getValidTargets();
+    const target = validTargets[Math.floor(Math.random() * validTargets.length)];
+    
     const response = await fetch(OPENAI_API_URL, {
       method: "POST",
       headers: {
-        Authorization: `Bearer ${OPENAI_API_KEY}`,
         "Content-Type": "application/json",
+        Authorization: `Bearer ${OPENAI_API_KEY}`,
       },
       body: JSON.stringify({
         model: "gpt-3.5-turbo",
-        messages: [{ role: "user", content: prompt }],
-        temperature: 1.0,
-        max_tokens: 50,
+        messages: [
+          {
+            role: "system",
+            content:
+              "You are a truth or dare game assistant specializing in extremely intimate, nasty, and sexually explicit dares. Generate only highly provocative and boundary-pushing dares that involve physical intimacy, sexual acts, or revealing clothing. Make them as explicit and detailed as possible while remaining consensual. Keep the response to 20 words or less.",
+          },
+          {
+            role: "user",
+            content: `Generate an extremely intimate and sexually explicit dare for ${currentPlayer.value.name} (${currentPlayer.value.gender}) to perform with ${target.name} (${target.gender}). The dare should be nasty, push boundaries, and involve physical intimacy or sexual acts. Make it highly provocative.`,
+          },
+        ],
+        temperature: 1,
+        max_tokens: 100,
       }),
     });
-    if (!response.ok) throw new Error(`API Error: ${response.statusText}`);
+
     const data = await response.json();
-    return data.choices[0].message.content.trim();
+    return {
+      text: data.choices[0].message.content.trim(),
+      target: target
+    };
   } catch (error) {
-    console.error("AI Error (Dare):", error);
-    return fallbackDares[Math.floor(Math.random() * fallbackDares.length)];
+    console.error("Error generating dare:", error);
+    return {
+      text: fallbackDares[Math.floor(Math.random() * fallbackDares.length)],
+      target: getValidTargets()[0]
+    };
   }
 };
 
-// Fallback content if AI fails
-const fallbackTruths = [
-  "What's the most public place you've ever gotten turned on?",
-  "Have you ever fantasized about someone in this room?",
-  "What's your favorite erogenous zone to be touched?",
-];
-
-const fallbackDares = [
-  "Kiss the person to your right passionately for 15 seconds",
-  "Let someone grope your ass for 10 seconds",
-  "Give a lap dance to someone of your choice",
-];
-
 const getValidTargets = () => {
+  if (!currentPlayer.value) return [];
   return players.value.filter((p) => p.id !== currentPlayer.value.id);
 };
 
@@ -269,29 +321,26 @@ const drawCard = async () => {
   try {
     const validTargets = getValidTargets();
     const isDare = validTargets.length > 0 && Math.random() > 0.5;
-
     let cardData = {};
 
     if (isDare) {
-      const target =
-        validTargets[Math.floor(Math.random() * validTargets.length)];
-      const dareText = await generateDare(
-        currentPlayer.value.gender,
-        target.gender
-      );
-      cardData = { type: "DARE", text: dareText, target: target };
+      const dareResult = await generateDare();
+      cardData = {
+        type: "DARE",
+        text: dareResult.text,
+        target: dareResult.target
+      };
     } else {
       const truthText = await generateTruth();
       cardData = { type: "TRUTH", text: truthText, target: null };
     }
-
     currentCard.value = cardData;
   } catch (error) {
     console.error("Error drawing card:", error);
     currentCard.value = {
-      type: "TRUTH",
-      text: "What's the sexiest dream you've ever had?",
-      target: null,
+      type: Math.random() > 0.5 ? "TRUTH" : "DARE",
+      text: "Something went wrong - try again!",
+      target: null
     };
   } finally {
     isDrawing.value = false;
@@ -301,11 +350,8 @@ const drawCard = async () => {
 const flipCard = () => {
   if (currentCard.value && !isDrawing.value) {
     cardFlipped.value = !cardFlipped.value;
-    if (cardFlipped.value) {
-      startHesitationTimer();
-    } else {
-      clearInterval(hesitationTimer.value);
-    }
+    if (cardFlipped.value) startHesitationTimer();
+    else clearInterval(hesitationTimer.value);
   }
 };
 
@@ -317,11 +363,10 @@ const startHesitationTimer = () => {
   hesitationTimer.value = setInterval(() => {
     hesitationTime.value--;
     hesitationPercent.value = (hesitationTime.value / 15) * 100;
-
     if (hesitationTime.value <= 0) {
       clearInterval(hesitationTimer.value);
       gameHistory.value.unshift(
-        `${currentPlayer.value.name} hesitated too long! Penalty applied.`
+        `${currentPlayer.value.name} hesitated too long!`
       );
       applyPenalty();
       nextTurn();
@@ -339,49 +384,15 @@ const completeChallenge = () => {
 };
 
 const applyPenalty = () => {
-  if (gameLevel.value === 1) {
-    const remainingItems = clothingItems.value.filter((item) => !item.removed);
-    if (remainingItems.length > 0) {
-      const itemToDrop = remainingItems[0];
-      const itemIndex = clothingItems.value.findIndex(
-        (i) => i.name === itemToDrop.name
-      );
-      clothingItems.value[itemIndex].removed = true;
+  const removableItems = clothingItems.value.filter((item) => !item.removed);
+  if (removableItems.length > 0) {
+    const randomIndex = Math.floor(Math.random() * clothingItems.value.length);
+    if (!clothingItems.value[randomIndex].removed) {
+      clothingItems.value[randomIndex].removed = true;
       gameHistory.value.unshift(
-        `PENALTY: ${currentPlayer.value.name} removed ${itemToDrop.name}.`
-      );
-
-      if (remainingClothing.value <= 2) {
-        gameLevel.value = 2;
-        gameHistory.value.unshift(
-          "LEVEL UP! Now hesitation adds restrictions."
-        );
-      }
-    }
-  } else if (gameLevel.value === 2) {
-    const newRestrictions = [
-      "No using hands for next turn",
-      "Must keep eyes closed for next turn",
-      "Speak in a sexy whisper for next turn",
-      "Stay within touching distance of someone for next turn",
-    ];
-    const restriction =
-      newRestrictions[Math.floor(Math.random() * newRestrictions.length)];
-    restrictions.value.push(restriction);
-    gameHistory.value.unshift(
-      `PENALTY: ${currentPlayer.value.name} got a restriction: ${restriction}`
-    );
-
-    if (restrictions.value.length >= 2) {
-      gameLevel.value = 3;
-      gameHistory.value.unshift(
-        "FINAL LEVEL! Dare refusal means game over!"
+        `${currentPlayer.value.name} had to remove ${clothingItems.value[randomIndex].name} as penalty!`
       );
     }
-  } else {
-    gameHistory.value.unshift(
-      `PENALTY: ${currentPlayer.value.name} must accept a forfeit! Game Over?`
-    );
   }
 };
 
@@ -391,8 +402,10 @@ const nextTurn = () => {
   hesitationPercent.value = 100;
   hesitationTime.value = 15;
   clearInterval(hesitationTimer.value);
-  currentPlayerIndex.value =
-    (currentPlayerIndex.value + 1) % players.value.length;
+  if (players.value.length > 0) {
+    currentPlayerIndex.value =
+      (currentPlayerIndex.value + 1) % players.value.length;
+  }
 };
 
 const toggleClothing = (index) => {
@@ -403,12 +416,7 @@ const toggleClothing = (index) => {
     );
   }
 };
-
-onBeforeUnmount(() => {
-  clearInterval(hesitationTimer.value);
-});
 </script>
-
 
 <style>
 /* Custom 3D Card Styles */

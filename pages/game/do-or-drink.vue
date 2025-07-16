@@ -107,7 +107,7 @@
         </div>
         <div class="text-right">
           <h3 class="font-semibold">Drinks Taken:</h3>
-          <p class="text-xl">{{ currentPlayer?.drinks || 0 }} 🍺</p>
+          <p class="text-xl">{{ currentPlayer?.drinks || 0 }} �</p>
         </div>
       </div>
 
@@ -256,10 +256,10 @@
 </template>
 
 <script setup>
-import { ref, computed, onBeforeUnmount } from "vue";
+import { ref, computed, onMounted, onBeforeUnmount } from "vue";
 
 const OPENAI_API_KEY =
-  "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"; 
+  "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";
 const OPENAI_API_URL = "https://api.openai.com/v1/chat/completions";
 
 // Game Settings
@@ -270,10 +270,7 @@ const enableHouseRules = ref(false);
 const houseRules = ref("");
 
 // Players
-const players = ref([
-  { id: 1, name: "Player 1", gender: "male", drinks: 0 },
-  { id: 2, name: "Player 2", gender: "female", drinks: 0 },
-]);
+const players = ref([]);
 
 // Game State
 const currentPlayerIndex = ref(0);
@@ -285,7 +282,37 @@ const hesitationTimer = ref(null);
 const hesitationPercent = ref(100);
 const isDrawing = ref(false);
 
-const currentPlayer = computed(() => players.value[currentPlayerIndex.value]);
+// LIFECYCLE HOOK
+onMounted(() => {
+  const savedSession = localStorage.getItem("gameSession");
+  if (savedSession) {
+    const gameData = JSON.parse(savedSession);
+    if (gameData && gameData.players && gameData.players.length > 0) {
+      players.value = gameData.players.map((p) => ({
+        ...p,
+        drinks: 0,
+      }));
+      gameHistory.value.unshift("Game session loaded. Let's play!");
+    }
+  }
+
+  if (players.value.length === 0) {
+    gameHistory.value.unshift("No session found. Using default players.");
+    players.value = [
+      { id: "default1", name: "Player 1", gender: "male", drinks: 0 },
+      { id: "default2", name: "Player 2", gender: "female", drinks: 0 },
+    ];
+  }
+});
+
+onBeforeUnmount(() => {
+  clearInterval(hesitationTimer.value);
+});
+
+// COMPUTED PROPERTIES
+const currentPlayer = computed(
+  () => players.value[currentPlayerIndex.value] || {}
+);
 
 const cardColor = computed(() => {
   if (!currentCard.value) return "bg-gradient-to-br from-gray-600 to-gray-700";
@@ -315,127 +342,121 @@ const intensityClass = computed(() => {
   }
 });
 
+// GAME LOGIC
 const getValidTargets = () => {
+  if (!currentPlayer.value) return [];
   return players.value.filter((p) => p.id !== currentPlayer.value.id);
 };
 
 const generateChallenge = async () => {
-  const intensity = Math.floor(Math.random() * 3) + 1; // 1-3
-  const isGroupChallenge = Math.random() > 0.7;
-  const hasTarget = !isGroupChallenge && Math.random() > 0.5;
-  const target = hasTarget
-    ? getValidTargets()[Math.floor(Math.random() * getValidTargets().length)]
-    : null;
-
-  // Determine drink amount based on intensity
+  const intensity = Math.floor(Math.random() * 3) + 1; // Random level 1-3
   let drinkAmount;
+
   switch (intensity) {
     case 1:
-      drinkAmount =
-        baseDrinkAmount.value === "shot"
-          ? "1 shot"
-          : baseDrinkAmount.value === "glass"
-          ? "half glass"
-          : `${baseDrinkAmount.value} sip${
-              baseDrinkAmount.value > 1 ? "s" : ""
-            }`;
+      drinkAmount = "1 sip";
       break;
     case 2:
-      drinkAmount =
-        baseDrinkAmount.value === "shot"
-          ? "2 shots"
-          : baseDrinkAmount.value === "glass"
-          ? "full glass"
-          : `${baseDrinkAmount.value * 2} sips`;
+      drinkAmount = Math.random() > 0.5 ? "2 sips" : "1 shot";
       break;
     case 3:
-      drinkAmount =
-        baseDrinkAmount.value === "shot"
-          ? "3 shots"
-          : baseDrinkAmount.value === "glass"
-          ? "2 full glasses"
-          : `${baseDrinkAmount.value * 3} sips`;
+      drinkAmount = Math.random() > 0.5 ? "3 sips" : "full glass";
       break;
+    default:
+      drinkAmount = "1 sip";
   }
 
-  try {
-    let prompt;
-    if (isGroupChallenge) {
-      prompt = `Generate a level ${intensity} (1=easy, 3=hard) group challenge for a drinking game where players must either complete the challenge or drink. Make it fun, social, and slightly embarrassing. For level ${intensity}, the penalty should be ${drinkAmount}. Examples: "Do a silly dance" or "Sing a song". Make it 1 sentence, max 15 words. Just the challenge, no quotes.`;
-    } else if (hasTarget && intensity === 3) {
-      // More intimate dares for high intensity with target
-      prompt = `Generate a sexy level 3 challenge for a ${currentPlayer.value.gender} to perform with a ${target.gender} in a drinking game. It should involve physical contact, kissing, or something intimate. The penalty for refusing is ${drinkAmount}. Make it 1 sentence, max 15 words. Just the challenge, no quotes.`;
-    } else if (hasTarget) {
-      prompt = `Generate a level ${intensity} challenge for a ${currentPlayer.value.gender} to do with a ${target.gender} in a drinking game. The penalty for refusing is ${drinkAmount}. Make it social and fun. 1 sentence, max 15 words. Just the challenge, no quotes.`;
-    } else {
-      prompt = `Generate a level ${intensity} personal challenge for a drinking game where the player must either do the challenge or drink ${drinkAmount}. Make it fun and slightly embarrassing. 1 sentence, max 15 words. Just the challenge, no quotes.`;
-    }
+  const targets = getValidTargets();
+  const hasTarget = targets.length > 0 && Math.random() > 0.3;
+  const target = hasTarget
+    ? targets[Math.floor(Math.random() * targets.length)]
+    : null;
 
+  try {
     const response = await fetch(OPENAI_API_URL, {
       method: "POST",
       headers: {
-        Authorization: `Bearer ${OPENAI_API_KEY}`,
         "Content-Type": "application/json",
+        Authorization: `Bearer ${OPENAI_API_KEY}`,
       },
       body: JSON.stringify({
         model: "gpt-3.5-turbo",
-        messages: [{ role: "user", content: prompt }],
-        temperature: intensity === 3 ? 0.9 : 0.7,
-        max_tokens: 50,
+        messages: [
+          {
+            role: "system",
+            content: `Generate an intimate, sexual dare for a drinking game with 3 intensity levels. dont ask a lot of whisper dares 
+                      Level 1: Moderate intimate challenges. 
+                      Level 2: More explicit and involved. 
+                      Level 3: Extremely intimate and intense. 
+                      Format response as just the dare text, no explanations.`,
+          },
+          {
+            role: "user",
+            content: `Generate a level ${intensity} intimate dare${
+              target ? ` involving ${target.name}` : ""
+            }.`,
+          },
+        ],
+        temperature: 0.8,
+        max_tokens: 100,
       }),
     });
 
-    if (!response.ok) throw new Error(`API Error: ${response.statusText}`);
     const data = await response.json();
-    const challengeText = data.choices[0].message.content.trim();
+    let challengeText = data.choices[0]?.message?.content?.trim() || "";
+
+    // Fallback challenges if API fails
+    if (!challengeText) {
+      const fallbacks = [
+        [
+          "Give someone a sensual neck massage for 30 seconds",
+          "Remove one clothing item of your choice",
+          "Let someone trace their fingers along your inner thigh for 15 seconds",
+        ],
+        [
+          "French kiss the person to your left for 10 seconds",
+          "Let someone undo one button or zipper on your clothing",
+          "Whisper your dirtiest fantasy in someone's ear",
+        ],
+        [
+          "Let someone give you a passionate hickey anywhere they choose",
+          "Perform a sensual lap dance for someone of your choice",
+          "Exchange top wear with the person to your right (go to bathroom if needed)",
+        ],
+      ];
+      challengeText =
+        fallbacks[intensity - 1][
+          Math.floor(Math.random() * fallbacks[intensity - 1].length)
+        ];
+    }
 
     return {
       text: challengeText,
       intensity,
       drinkAmount,
-      target: hasTarget ? target : null,
-      isGroup: isGroupChallenge,
+      target,
     };
   } catch (error) {
     console.error("AI Error:", error);
-    // Fallback challenges
-    const fallbacks = [
-      {
-        text: "Do your best impression of a celebrity",
-        intensity: 1,
-        drinkAmount: "1 sip",
-        target: null,
-      },
-      {
-        text: "Let someone give you a lap dance for 15 seconds",
-        intensity: 2,
-        drinkAmount: "2 sips",
-        target: getValidTargets()[0],
-      },
-      {
-        text: "Kiss the person to your right passionately for 10 seconds",
-        intensity: 3,
-        drinkAmount: "3 sips",
-        target: getValidTargets()[0],
-      },
-    ];
-    return fallbacks[intensity - 1];
+    return {
+      text: "Give someone a sensual kiss on the neck or take a drink",
+      intensity: 1,
+      drinkAmount: "1 sip",
+      target: null,
+    };
   }
 };
 
 const drawCard = async () => {
   if (isDrawing.value || currentCard.value) return;
-
   isDrawing.value = true;
   cardFlipped.value = false;
-
   try {
-    const challenge = await generateChallenge();
-    currentCard.value = challenge;
+    currentCard.value = await generateChallenge();
   } catch (error) {
-    console.error("Error generating challenge:", error);
+    console.error("Error drawing card:", error);
     currentCard.value = {
-      text: "Do 10 pushups or take a drink",
+      text: "Give someone a passionate kiss or take a drink",
       intensity: 1,
       drinkAmount: "1 sip",
       target: null,
@@ -460,15 +481,13 @@ const startHesitationTimer = () => {
   clearInterval(hesitationTimer.value);
   hesitationTime.value = 15;
   hesitationPercent.value = 100;
-
   hesitationTimer.value = setInterval(() => {
     hesitationTime.value--;
     hesitationPercent.value = (hesitationTime.value / 15) * 100;
-
     if (hesitationTime.value <= 0) {
       clearInterval(hesitationTimer.value);
       gameHistory.value.unshift(
-        `${currentPlayer.value.name} hesitated too long! Penalty applied.`
+        `${currentPlayer.value.name} hesitated! Forced to drink.`
       );
       applyPenalty();
       nextTurn();
@@ -482,93 +501,49 @@ const completeChallenge = () => {
   gameHistory.value.unshift(
     `${currentPlayer.value.name} completed: ${currentCard.value.text}`
   );
-
-  // In team mode, maybe give drinks to other team?
   nextTurn();
 };
 
 const takeDrink = () => {
   if (!currentCard.value) return;
   clearInterval(hesitationTimer.value);
-
-  // Parse drink amount
-  let drinkCount = 0;
-  if (currentCard.value.drinkAmount.includes("shot")) {
-    drinkCount = parseInt(currentCard.value.drinkAmount) || 1;
-  } else if (currentCard.value.drinkAmount.includes("sip")) {
-    drinkCount = parseInt(currentCard.value.drinkAmount) || 1;
-  } else if (currentCard.value.drinkAmount.includes("glass")) {
-    drinkCount = 2; // Count a glass as 2 drinks
+  const drinkAmount = currentCard.value.drinkAmount;
+  let drinkCount = 1;
+  if (drinkAmount.includes("shot")) {
+    drinkCount = (parseInt(drinkAmount) || 1) * 2;
+  } else if (drinkAmount.includes("sip")) {
+    drinkCount = parseInt(drinkAmount) || 1;
+  } else if (drinkAmount.includes("glass")) {
+    drinkCount = 5;
   }
-
   players.value[currentPlayerIndex.value].drinks += drinkCount;
-
   gameHistory.value.unshift(
-    `${currentPlayer.value.name} drank instead: ${currentCard.value.drinkAmount}`
+    `${currentPlayer.value.name} drank instead: ${drinkAmount}`
   );
-
-  if (
-    gameMode.value === "elimination" &&
-    players.value[currentPlayerIndex.value].drinks >= 10
-  ) {
-    gameHistory.value.unshift(
-      `🚨 ${currentPlayer.value.name} is eliminated after 10 drinks!`
-    );
-    players.value.splice(currentPlayerIndex.value, 1);
-    if (players.value.length === 1) {
-      gameHistory.value.unshift(`🏆 ${players.value[0].name} wins the game!`);
-    }
-  }
-
+  handleElimination();
   nextTurn();
 };
 
 const applyPenalty = () => {
-  // For hesitation penalty, make them drink double
-  let penaltyAmount;
-  switch (currentCard.value.intensity) {
-    case 1:
-      penaltyAmount =
-        baseDrinkAmount.value === "shot"
-          ? "2 shots"
-          : baseDrinkAmount.value === "glass"
-          ? "full glass"
-          : `${baseDrinkAmount.value * 2} sips`;
-      break;
-    case 2:
-      penaltyAmount =
-        baseDrinkAmount.value === "shot"
-          ? "3 shots"
-          : baseDrinkAmount.value === "glass"
-          ? "2 full glasses"
-          : `${baseDrinkAmount.value * 3} sips`;
-      break;
-    case 3:
-      penaltyAmount =
-        baseDrinkAmount.value === "shot"
-          ? "4 shots"
-          : baseDrinkAmount.value === "glass"
-          ? "3 full glasses"
-          : `${baseDrinkAmount.value * 4} sips`;
-      break;
+  // Double drink penalty for hesitation
+  const drinkAmount = currentCard.value.drinkAmount;
+  let drinkCount = 2; // Default double
+  if (drinkAmount.includes("shot")) {
+    drinkCount = (parseInt(drinkAmount) || 1) * 2 * 2;
+  } else if (drinkAmount.includes("sip")) {
+    drinkCount = (parseInt(drinkAmount) || 1) * 2;
+  } else if (drinkAmount.includes("glass")) {
+    drinkCount = 10;
   }
+  players.value[currentPlayerIndex.value].drinks += drinkCount;
+  gameHistory.value.unshift(
+    `${currentPlayer.value.name} takes a penalty of ${drinkCount} sips/drinks.`
+  );
+  handleElimination();
+};
 
-  // Parse penalty amount
-  let penaltyCount = 0;
-  if (penaltyAmount.includes("shot")) {
-    penaltyCount = parseInt(penaltyAmount) || 2;
-  } else if (penaltyAmount.includes("sip")) {
-    penaltyCount = parseInt(penaltyAmount) || 2;
-  } else if (penaltyAmount.includes("glass")) {
-    penaltyCount = 3; // Count a glass as 2 drinks
-  }
-
-  players.value[currentPlayerIndex.value].drinks += penaltyCount;
-
-  if (
-    gameMode.value === "elimination" &&
-    players.value[currentPlayerIndex.value].drinks >= 10
-  ) {
+const handleElimination = () => {
+  if (gameMode.value === "elimination" && currentPlayer.value?.drinks >= 10) {
     gameHistory.value.unshift(
       `🚨 ${currentPlayer.value.name} is eliminated after 10 drinks!`
     );
@@ -586,15 +561,18 @@ const nextTurn = () => {
   hesitationTime.value = 15;
   clearInterval(hesitationTimer.value);
 
-  if (players.value.length === 0) return;
+  if (players.value.length === 0) {
+    gameHistory.value.unshift("Game over! No players left.");
+    return;
+  }
 
-  currentPlayerIndex.value =
-    (currentPlayerIndex.value + 1) % players.value.length;
+  if (currentPlayerIndex.value >= players.value.length) {
+    currentPlayerIndex.value = 0;
+  } else {
+    currentPlayerIndex.value =
+      (currentPlayerIndex.value + 1) % players.value.length;
+  }
 };
-
-onBeforeUnmount(() => {
-  clearInterval(hesitationTimer.value);
-});
 </script>
 
 <style>
@@ -629,22 +607,5 @@ div {
 ::-webkit-scrollbar-thumb {
   background: rgba(255, 255, 255, 0.3);
   border-radius: 3px;
-}
-
-/* Custom animations */
-@keyframes pulse {
-  0% {
-    transform: scale(1);
-  }
-  50% {
-    transform: scale(1.05);
-  }
-  100% {
-    transform: scale(1);
-  }
-}
-
-.pulse:hover {
-  animation: pulse 1.5s infinite;
 }
 </style>
