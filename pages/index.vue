@@ -41,7 +41,7 @@
         @click="navigateToSetup"
         class="bg-red-600 hover:bg-red-700 text-white font-medium px-6 py-2 rounded-lg transition-colors text-sm sm:text-base"
       >
-        Choose for me
+        Let's Start
       </button>
     </div>
   </div>

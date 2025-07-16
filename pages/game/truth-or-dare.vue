@@ -3,8 +3,8 @@
     class="min-h-screen bg-gradient-to-br from-purple-900 to-indigo-800 text-white p-4"
   >
     <header class="text-center mb-8">
-      <h1 class="text-4xl font-bold mb-2">🔥 Strip Truth or Dare</h1>
-      <p class="text-purple-200">Where intimacy meets adventure</p>
+      <h1 class="text-4xl font-bold mb-2">🔥 Hot Truth or Dare</h1>
+      <p class="text-purple-200">Where boundaries get pushed</p>
     </header>
 
     <div
@@ -22,8 +22,8 @@
           </p>
         </div>
         <div class="text-right">
-          <h3 class="font-semibold">Level:</h3>
-          <p class="text-xl">Intimacy Level {{ gameLevel }}</p>
+          <h3 class="font-semibold">Heat Level:</h3>
+          <p class="text-xl">Level {{ gameLevel }}</p>
         </div>
       </div>
 
@@ -159,9 +159,7 @@
 <script setup>
 import { ref, computed, onBeforeUnmount } from "vue";
 
-
-const OPENAI_API_KEY =
-  "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"; // 👈 Add your key here
+const OPENAI_API_KEY = "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"; // 👈 Replace with your actual API key
 const OPENAI_API_URL = "https://api.openai.com/v1/chat/completions";
 
 const players = ref([
@@ -188,15 +186,13 @@ const clothingItems = ref([
   { name: "Accessories", removed: false },
 ]);
 
-
 const currentPlayer = computed(() => players.value[currentPlayerIndex.value]);
 const remainingClothing = computed(
   () => clothingItems.value.filter((item) => !item.removed).length
 );
 
-
 const generateTruth = async () => {
-  const prompt = `You are a creative assistant for a truth or dare game. Generate one intimate but tasteful truth question for a couple. It should be playful and slightly explicit. The question must be a maximum of 15 words. Just provide the question, nothing else.`;
+  const prompt = `Generate a sexy truth or dare question for a hot party game where players may be friends or strangers. Make it explicit and intimate. Maximum 15 words. Just provide the question, nothing else.`;
 
   try {
     const response = await fetch(OPENAI_API_URL, {
@@ -208,7 +204,7 @@ const generateTruth = async () => {
       body: JSON.stringify({
         model: "gpt-3.5-turbo",
         messages: [{ role: "user", content: prompt }],
-        temperature: 0.8,
+        temperature: 1.0,
         max_tokens: 50,
       }),
     });
@@ -222,7 +218,7 @@ const generateTruth = async () => {
 };
 
 const generateDare = async (fromGender, toGender) => {
-  const prompt = `You are a creative assistant for a truth or dare game.The players are not partners or a couple they are friends and some strangers remember that, always assume the players have never done anything together. Do not/ never remind or ask players about their partners cause they may be playing with other players that arent their partners. Generate a sensual dare for a ${fromGender} to perform on a ${toGender}.Turn up the heat each time. do not/ never repeat dares It must be tasteful, fun, and a maximum of 15 words. Just provide the dare, nothing else.`;
+  const prompt = `Generate a hot dare for a ${fromGender} to perform with a ${toGender} in a sexy party game. Players may be friends or strangers. Include kissing, touching, or sexual acts. Make it explicit. Maximum 15 words. Just provide the dare, nothing else.`;
 
   try {
     const response = await fetch(OPENAI_API_URL, {
@@ -234,7 +230,7 @@ const generateDare = async (fromGender, toGender) => {
       body: JSON.stringify({
         model: "gpt-3.5-turbo",
         messages: [{ role: "user", content: prompt }],
-        temperature: 0.8,
+        temperature: 1.0,
         max_tokens: 50,
       }),
     });
@@ -249,17 +245,16 @@ const generateDare = async (fromGender, toGender) => {
 
 // Fallback content if AI fails
 const fallbackTruths = [
-  "What's your favorite memory of being intimate?",
-  "Where's the most unusual place you've felt turned on?",
-  "What's one thing you'd like to try but haven't?",
+  "What's the most public place you've ever gotten turned on?",
+  "Have you ever fantasized about someone in this room?",
+  "What's your favorite erogenous zone to be touched?",
 ];
 
 const fallbackDares = [
-  "Give anyone of the opposite gender in the group a thigh massage for 15 seconds.",
-  "Put your hand on the crotch of someone of the opposite gender for 15 seconds.",
-  "Let someone else of the opposite gender choose a body part to kiss.",
+  "Kiss the person to your right passionately for 15 seconds",
+  "Let someone grope your ass for 10 seconds",
+  "Give a lap dance to someone of your choice",
 ];
-
 
 const getValidTargets = () => {
   return players.value.filter((p) => p.id !== currentPlayer.value.id);
@@ -295,7 +290,7 @@ const drawCard = async () => {
     console.error("Error drawing card:", error);
     currentCard.value = {
       type: "TRUTH",
-      text: "Something went wrong. Tell a secret.",
+      text: "What's the sexiest dream you've ever had?",
       target: null,
     };
   } finally {
@@ -365,10 +360,10 @@ const applyPenalty = () => {
     }
   } else if (gameLevel.value === 2) {
     const newRestrictions = [
-      "No using hands",
-      "Must keep eyes closed",
-      "Speak in whispers only",
-      "Stay within 1 foot of partner",
+      "No using hands for next turn",
+      "Must keep eyes closed for next turn",
+      "Speak in a sexy whisper for next turn",
+      "Stay within touching distance of someone for next turn",
     ];
     const restriction =
       newRestrictions[Math.floor(Math.random() * newRestrictions.length)];
@@ -380,7 +375,7 @@ const applyPenalty = () => {
     if (restrictions.value.length >= 2) {
       gameLevel.value = 3;
       gameHistory.value.unshift(
-        "FINAL LEVEL! Dare refusal is an instant forfeit!"
+        "FINAL LEVEL! Dare refusal means game over!"
       );
     }
   } else {
@@ -413,6 +408,7 @@ onBeforeUnmount(() => {
   clearInterval(hesitationTimer.value);
 });
 </script>
+
 
 <style>
 /* Custom 3D Card Styles */

@@ -64,11 +64,11 @@
         <h2 class="text-xl md:text-2xl font-semibold mb-3">Choose a Game:</h2>
         <select
           v-model="selectedGame"
-          class="w-full bg-white/20 rounded-lg p-3 focus:ring-2 focus:ring-pink-500"
+          class="w-full bg-white/20 rounded-lg p-3 focus:ring-2 focus:ring-pink-500 text-black"
         >
           <option value="truth-or-dare">Strip Truth or Dare</option>
           <option value="dice-of-desire">Dice of Desire</option>
-          <option value="chaos">Chaos Mode</option>
+          <option value="do-or-drink">Do or Drink</option>
         </select>
       </div>
 
