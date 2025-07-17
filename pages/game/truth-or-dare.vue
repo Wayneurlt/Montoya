@@ -217,7 +217,7 @@ onBeforeUnmount(() => {
 const fallbackTruths = [
   "Describe the most intense orgasm you've ever had in vivid detail",
   "What's the most taboo sexual fantasy you've never admitted to anyone?",
-  "Have you ever masturbated thinking about someone in this room? Be honest.",
+  "Have you ever masturbated thinking about someone inappropriate? Be honest.",
   "What's the most public place you've ever had sex or been sexual?",
   "What's the most embarrassing place you've ever gotten turned on?",
 ];
@@ -244,11 +244,11 @@ const generateTruth = async () => {
           {
             role: "system",
             content:
-              "You are a truth or dare game assistant specializing in extremely intimate, nasty, and sexually explicit questions. Generate only highly provocative and boundary-pushing truths that explore deep sexual fantasies, experiences, and desires. Make them as explicit and detailed as possible while remaining consensual. Keep the response to 20 words or less.",
+              "You are a truth or dare game assistant specializing in extremely intimate, nasty, and sexually explicit questions. Generate only highly provocative and boundary-pushing truths or dares that explore deep sexual fantasies, experiences, and desires. Make them as explicit and detailed as possible while remaining consensual start with casual truths or dares to ice break then raise the heat gradually. Keep the response to 20 words or less.",
           },
           {
             role: "user",
-            content: `Generate an extremely intimate and sexually explicit truth question for ${currentPlayer.value.name} (${currentPlayer.value.gender}). The question should be nasty, push boundaries, and explore deep sexual fantasies or experiences. Make it highly provocative.`,
+            content: `Generate an extremely intimate and sexually explicit truth question for ${currentPlayer.value.name} (${currentPlayer.value.gender}). The question should be nasty, push boundaries, and explore deep sexual fantasies or experiences, start with casual truths or dares to ice break then raise the heat gradually. Make it highly provocative.`,
           },
         ],
         temperature: 1,
