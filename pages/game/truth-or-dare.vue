@@ -160,7 +160,8 @@
 import { ref, computed, onMounted, onBeforeUnmount } from "vue";
 
 // --- STATE MANAGEMENT ---
-const OPENAI_API_KEY = "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"; // Keep your API key secure
+const OPENAI_API_KEY =
+  "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";
 const OPENAI_API_URL = "https://api.openai.com/v1/chat/completions";
 
 // Initialize players as an empty array. It will be populated from localStorage.
@@ -215,20 +216,31 @@ onBeforeUnmount(() => {
 
 // --- AI AND GAME LOGIC ---
 const fallbackTruths = [
-  "Describe the most intense orgasm you've ever had in vivid detail",
-  "What's the most taboo sexual fantasy you've never admitted to anyone?",
-  "Have you ever masturbated thinking about someone inappropriate? Be honest.",
-  "What's the most public place you've ever had sex or been sexual?",
-  "What's the most embarrassing place you've ever gotten turned on?",
+  "What's the most embarrassing thing you've ever done to impress someone?",
+  "Have you ever had a crush on a friend's partner?",
+  "What's your guilty pleasure when no one's watching?",
+  "Describe your most romantic fantasy in detail",
+  "What's the most adventurous place you've been intimate?",
 ];
 
 const fallbackDares = [
-  "Remove one piece of clothing and let someone touch that area for 10 seconds",
-  "Kiss the person to your right passionately with tongue for 5 seconds",
-  "Give a lap dance to someone of your choice for 15 seconds",
-  "Let someone spank you hard enough to leave a mark",
-  "Whisper your dirtiest fantasy into someone's ear loud enough for others to hear",
+  "Give someone a 10 second shoulder massage",
+  "Whisper something flirty to the person on your left",
+  "Let someone style your hair however they want",
+  "Exchange one piece of clothing with another player",
+  "Give a lap dance to someone of your choice",
 ];
+
+const getHeatLevelPrompt = () => {
+  const levels = [
+    "Keep it light and fun - ask playful questions about preferences and mild experiences",
+    "Increase intimacy slightly - ask about romantic experiences and mild dares with minimal contact",
+    "Medium heat - ask about sexual preferences and include dares with moderate physical contact",
+    "High heat - detailed questions about sexual experiences and dares involving significant contact",
+    "Maximum heat - extremely intimate questions and dares pushing all boundaries",
+  ];
+  return levels[Math.min(gameLevel.value - 1, levels.length - 1)];
+};
 
 const generateTruth = async () => {
   try {
@@ -243,16 +255,17 @@ const generateTruth = async () => {
         messages: [
           {
             role: "system",
-            content:
-             "You're a truth or dare game assistant focused on creating an escalating experience. Generate truths and dares that start as light icebreakers, then gradually become more intimate, sexually explicit, and boundary-pushing. Ensure all suggestions are consensual, highly provocative, and explore deep sexual fantasies, experiences, and desires in detail. rewrite this in 15 words or less",
+            content: `You are a truth or dare game assistant. Generate truths that gradually escalate in intimacy based on the game level (currently level ${
+              gameLevel.value
+            }). Start with icebreakers and gradually increase to more personal and intimate questions do not repeat the truths or dares, be creative. Current heat level: ${getHeatLevelPrompt()}. Keep responses under 15 words.`,
           },
           {
             role: "user",
-            content: `Generate  an escalating experience truths and dares that start as light icebreakers, then gradually become more intimate, sexually explicit, and boundary-pushing. Ensure all suggestions are consensual, highly provocative, and explore deep sexual fantasies, experiences, and desires in detail for ${currentPlayer.value.name} (${currentPlayer.value.gender}`,
+            content: `Generate a truth question for ${currentPlayer.value.name} (${currentPlayer.value.gender}) at game level ${gameLevel.value}.`,
           },
         ],
-        temperature: 2,
-        max_tokens: 200,
+        temperature: 1.0,
+        max_tokens: 50,
       }),
     });
 
@@ -267,8 +280,9 @@ const generateTruth = async () => {
 const generateDare = async () => {
   try {
     const validTargets = getValidTargets();
-    const target = validTargets[Math.floor(Math.random() * validTargets.length)];
-    
+    const target =
+      validTargets[Math.floor(Math.random() * validTargets.length)];
+
     const response = await fetch(OPENAI_API_URL, {
       method: "POST",
       headers: {
@@ -280,15 +294,16 @@ const generateDare = async () => {
         messages: [
           {
             role: "system",
-            content:
-              "You are a truth or dare game assistant specializing in extremely intimate, nasty, and sexually explicit dares. Generate only highly provocative and boundary-pushing dares that involve physical intimacy, sexual acts, or revealing clothing. Make them as explicit and detailed as possible while remaining consensual. Keep the response to 20 words or less.",
+            content: `Generate dares that escalate based on game level (currently ${
+              gameLevel.value
+            }). Start with mild truths or dares and progress to more intimate dares, be creative and do not repeat the same truthsor dares. Current heat level: ${getHeatLevelPrompt()}. Keep dares consensual and under 15 words.`,
           },
           {
             role: "user",
-            content: `Generate an extremely intimate and sexually explicit dare for ${currentPlayer.value.name} (${currentPlayer.value.gender}) to perform with ${target.name} (${target.gender}). The dare should be nasty, push boundaries, and involve physical intimacy or sexual acts. Make it highly provocative.`,
+            content: `Generate a dare for ${currentPlayer.value.name} (${currentPlayer.value.gender}) to perform with ${target.name} (${target.gender}) at game level ${gameLevel.value}.`,
           },
         ],
-        temperature: 1,
+        temperature: 1.0,
         max_tokens: 100,
       }),
     });
@@ -296,13 +311,13 @@ const generateDare = async () => {
     const data = await response.json();
     return {
       text: data.choices[0].message.content.trim(),
-      target: target
+      target: target,
     };
   } catch (error) {
     console.error("Error generating dare:", error);
     return {
       text: fallbackDares[Math.floor(Math.random() * fallbackDares.length)],
-      target: getValidTargets()[0]
+      target: getValidTargets()[0],
     };
   }
 };
@@ -328,7 +343,7 @@ const drawCard = async () => {
       cardData = {
         type: "DARE",
         text: dareResult.text,
-        target: dareResult.target
+        target: dareResult.target,
       };
     } else {
       const truthText = await generateTruth();
@@ -340,7 +355,7 @@ const drawCard = async () => {
     currentCard.value = {
       type: Math.random() > 0.5 ? "TRUTH" : "DARE",
       text: "Something went wrong - try again!",
-      target: null
+      target: null,
     };
   } finally {
     isDrawing.value = false;
@@ -380,6 +395,18 @@ const completeChallenge = () => {
   gameHistory.value.unshift(
     `${currentPlayer.value.name} completed: ${currentCard.value.text}`
   );
+
+  // Increase game level every 3 completed challenges
+  if (
+    gameHistory.value.filter((log) => log.includes("completed")).length % 3 ===
+    0
+  ) {
+    gameLevel.value = Math.min(gameLevel.value + 1, 5);
+    gameHistory.value.unshift(
+      `The heat level has increased to ${gameLevel.value}!`
+    );
+  }
+
   nextTurn();
 };
 
