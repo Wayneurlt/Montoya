@@ -239,20 +239,20 @@ const generateTruth = async () => {
         Authorization: `Bearer ${OPENAI_API_KEY}`,
       },
       body: JSON.stringify({
-        model: "gpt-3.5-turbo",
+        model: "gpt-4o-mini",
         messages: [
           {
             role: "system",
             content:
-              "You are a truth or dare game assistant specializing in extremely intimate, nasty, and sexually explicit questions. Generate only highly provocative and boundary-pushing truths or dares that explore deep sexual fantasies, experiences, and desires. Make them as explicit and detailed as possible while remaining consensual start with casual truths or dares to ice break then raise the heat gradually. Keep the response to 20 words or less.",
+             "You're a truth or dare game assistant focused on creating an escalating experience. Generate truths and dares that start as light icebreakers, then gradually become more intimate, sexually explicit, and boundary-pushing. Ensure all suggestions are consensual, highly provocative, and explore deep sexual fantasies, experiences, and desires in detail. rewrite this in 15 words or less",
           },
           {
             role: "user",
-            content: `Generate an extremely intimate and sexually explicit truth question for ${currentPlayer.value.name} (${currentPlayer.value.gender}). The question should be nasty, push boundaries, and explore deep sexual fantasies or experiences, start with casual truths or dares to ice break then raise the heat gradually. Make it highly provocative.`,
+            content: `Generate  an escalating experience truths and dares that start as light icebreakers, then gradually become more intimate, sexually explicit, and boundary-pushing. Ensure all suggestions are consensual, highly provocative, and explore deep sexual fantasies, experiences, and desires in detail for ${currentPlayer.value.name} (${currentPlayer.value.gender}`,
           },
         ],
-        temperature: 1,
-        max_tokens: 100,
+        temperature: 2,
+        max_tokens: 200,
       }),
     });
 
