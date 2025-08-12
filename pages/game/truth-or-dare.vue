@@ -1,154 +1,250 @@
 <template>
   <div
-    class="min-h-screen bg-gradient-to-br from-purple-900 to-indigo-800 text-white p-4"
+    class="min-h-screen bg-gradient-to-br from-purple-900 via-indigo-800 to-fuchsia-900 text-white p-4 relative overflow-hidden"
   >
-    <header class="text-center mb-8">
-      <h1 class="text-4xl font-bold mb-2">🔥 Hot Truth or Dare</h1>
-      <p class="text-purple-200">Where boundaries get pushed</p>
-    </header>
+    <!-- Animated background elements -->
+    <ClientOnly>
+      <div class="absolute inset-0 opacity-10 pointer-events-none">
+        <div
+          v-for="i in 20"
+          :key="i"
+          class="absolute rounded-full bg-pink-500 animate-float"
+          :style="`left: ${Math.random() * 100}%; top: ${Math.random() * 100}%;
+                     width: ${Math.random() * 10 + 2}px; height: ${
+            Math.random() * 10 + 2
+          }px;
+                     animation-delay: ${Math.random() * 5}s;`"
+        ></div>
+      </div>
+    </ClientOnly>
 
     <div
-      class="max-w-2xl mx-auto bg-white/10 backdrop-blur-lg rounded-2xl p-6 shadow-2xl border border-white/20"
+      class="max-w-2xl mx-auto bg-white/10 backdrop-blur-md rounded-xl p-6 md:p-8 shadow-2xl relative z-10"
     >
-      <div
-        class="flex justify-between items-center mb-6 p-4 bg-white/5 rounded-xl"
-      >
-        <div>
-          <h3 class="font-semibold">Current Turn:</h3>
-          <p class="text-xl">
-            {{ currentPlayer?.name }} ({{
-              currentPlayer?.gender === "male" ? "♂" : "♀"
-            }})
-          </p>
-        </div>
-        <div class="text-right">
-          <h3 class="font-semibold">Heat Level:</h3>
-          <p class="text-xl">Level {{ gameLevel }}</p>
+      <!-- Game Header -->
+      <div class="text-center mb-6">
+        <h1
+          class="text-4xl md:text-5xl font-bold mb-2 bg-clip-text text-transparent bg-gradient-to-r from-pink-500 to-cyan-400"
+        >
+          Strip Truth or Dare
+        </h1>
+        <div class="flex justify-center items-center gap-2">
+          <span
+            class="text-sm px-3 py-1 rounded-full"
+            :class="
+              gameMode === 'free-for-all'
+                ? 'bg-pink-500/20 text-pink-300'
+                : 'bg-cyan-500/20 text-cyan-300'
+            "
+          >
+            {{
+              gameMode === "free-for-all" ? "Free-for-All" : "Relationship Mode"
+            }}
+          </span>
+          <span
+            class="text-sm px-3 py-1 rounded-full bg-purple-500/20 text-purple-300"
+          >
+            Level {{ gameLevel }}
+          </span>
         </div>
       </div>
 
+      <!-- Player Status Bar -->
+      <div
+        class="flex justify-between items-center mb-6 p-4 bg-gradient-to-r from-white/5 to-white/10 rounded-xl border border-white/10"
+      >
+        <div>
+          <h3 class="text-sm font-medium text-white/70">Current Turn:</h3>
+          <p class="text-xl font-bold flex items-center gap-2">
+            <span>{{ currentPlayer?.name }}</span>
+            <span class="text-2xl">{{
+              currentPlayer?.gender === "male" ? "♂" : "♀"
+            }}</span>
+          </p>
+        </div>
+        <div class="text-right">
+          <h3 class="text-sm font-medium text-white/70">Clothing Left:</h3>
+          <p class="text-xl font-bold flex items-center justify-end gap-1">
+            <span>{{ remainingClothing }}</span>
+            <Icon icon="mdi:tshirt-crew" class="w-5 h-5" />
+          </p>
+        </div>
+      </div>
+
+      <!-- Clothing Status -->
       <div class="mb-8">
-        <h3 class="font-semibold mb-3">Clothing Status:</h3>
+        <h3 class="text-lg font-semibold mb-3 flex items-center gap-2">
+          <Icon icon="mdi:wardrobe" class="w-5 h-5" />
+          <span>Clothing Status</span>
+        </h3>
         <div class="flex flex-wrap gap-2">
           <div
             v-for="(item, index) in clothingItems"
             :key="index"
-            class="px-4 py-2 rounded-full transition-all"
+            class="px-4 py-2 rounded-full transition-all flex items-center gap-2"
             :class="
               item.removed
-                ? 'bg-gray-700 text-gray-400 line-through'
-                : 'bg-pink-600 hover:bg-pink-700 cursor-pointer'
+                ? 'bg-gray-700/50 text-gray-400 line-through'
+                : 'bg-gradient-to-r from-pink-600 to-purple-600 hover:from-pink-700 hover:to-purple-700 cursor-pointer'
             "
             @click="toggleClothing(index)"
           >
-            {{ item.name }}
+            <Icon :icon="item.icon" class="w-4 h-4" />
+            <span>{{ item.name }}</span>
           </div>
         </div>
       </div>
 
+      <!-- Game Card -->
       <div
-        class="relative w-full h-64 mb-8 cursor-pointer perspective-1000"
+        class="relative w-full h-72 mb-8 cursor-pointer perspective-1000"
         @click="flipCard"
       >
         <div
           class="relative w-full h-full transition-transform duration-700 transform-style-preserve-3d"
           :class="{ 'rotate-y-180': cardFlipped }"
         >
+          <!-- Front of Card -->
           <div
             class="absolute w-full h-full backface-hidden bg-gradient-to-br from-pink-600 to-purple-600 rounded-2xl flex flex-col justify-center items-center p-6 shadow-lg border-2 border-white/20"
           >
             <div class="text-center">
-              <p class="text-2xl font-bold mb-2">Truth or Dare?</p>
-              <p v-if="!currentCard">Click 'Draw Card' to begin</p>
-              <p v-else>Click to reveal</p>
+              <p class="text-3xl font-bold mb-4">Truth or Dare?</p>
+              <p v-if="!currentCard" class="text-lg opacity-80">
+                Draw a card to begin the game
+              </p>
+              <p v-else class="text-lg opacity-80">
+                Click to reveal your challenge
+              </p>
+              <div class="mt-6 text-5xl">
+                <Icon
+                  v-if="currentCard?.type === 'TRUTH'"
+                  icon="mdi:chat-question"
+                />
+                <Icon
+                  v-else-if="currentCard?.type === 'DARE'"
+                  icon="mdi:fire"
+                />
+                <Icon v-else icon="mdi:cards" />
+              </div>
             </div>
           </div>
 
+          <!-- Back of Card -->
           <div
             class="absolute w-full h-full backface-hidden bg-white text-gray-900 rounded-2xl flex flex-col justify-center items-center p-6 shadow-lg rotate-y-180 border-2 border-white/20"
           >
-            <div v-if="currentCard" class="text-center">
+            <div v-if="currentCard" class="text-center w-full">
               <span
-                class="font-bold text-lg px-3 py-1 rounded-full mb-2"
+                class="font-bold text-lg px-4 py-1 rounded-full mb-4 inline-flex items-center gap-2"
                 :class="
                   currentCard.type === 'TRUTH'
                     ? 'bg-blue-100 text-blue-800'
                     : 'bg-pink-100 text-pink-800'
                 "
               >
+                <Icon
+                  :icon="
+                    currentCard.type === 'TRUTH'
+                      ? 'mdi:chat-question'
+                      : 'mdi:fire'
+                  "
+                  class="w-5 h-5"
+                />
                 {{ currentCard.type }}
               </span>
-              <p class="text-xl font-medium mt-2">{{ currentCard.text }}</p>
-              <p v-if="currentCard.target" class="text-sm mt-2 text-gray-600">
-                To: {{ currentCard.target.name }} ({{
-                  currentCard.target.gender === "male" ? "♂" : "♀"
-                }})
+              <p class="text-xl font-medium mb-4 px-4">
+                {{ currentCard.text }}
               </p>
+
+              <div
+                v-if="currentCard.target"
+                class="bg-gray-100 rounded-lg p-3 w-full max-w-xs mx-auto"
+              >
+                <p
+                  class="text-sm font-medium text-gray-700 flex items-center justify-center gap-2"
+                >
+                  <Icon icon="mdi:account-arrow-right" class="w-5 h-5" />
+                  <span>
+                    To: {{ currentCard.target.name }}
+                    <span class="text-lg">{{
+                      currentCard.target.gender === "male" ? "♂" : "♀"
+                    }}</span>
+                  </span>
+                </p>
+              </div>
             </div>
           </div>
         </div>
       </div>
 
+      <!-- Action Buttons -->
       <div class="grid grid-cols-2 gap-4 mb-6">
         <button
           @click="drawCard"
-          class="bg-blue-600 hover:bg-blue-700 py-3 rounded-xl font-bold transition-all flex items-center justify-center gap-2 disabled:bg-gray-500 disabled:cursor-not-allowed"
+          class="bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700 py-3 rounded-xl font-bold transition-all flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
           :disabled="isDrawing || currentCard"
         >
-          <svg
+          <Icon
             v-if="isDrawing"
-            class="animate-spin h-5 w-5"
-            xmlns="http://www.w3.org/2000/svg"
-            fill="none"
-            viewBox="0 0 24 24"
-          >
-            <circle
-              class="opacity-25"
-              cx="12"
-              cy="12"
-              r="10"
-              stroke="currentColor"
-              stroke-width="4"
-            ></circle>
-            <path
-              class="opacity-75"
-              fill="currentColor"
-              d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-            ></path>
-          </svg>
+            icon="svg-spinners:3-dots-fade"
+            class="w-5 h-5"
+          />
+          <Icon v-else icon="mdi:cards" class="w-5 h-5" />
           {{ isDrawing ? "Generating..." : "Draw Card" }}
         </button>
         <button
           @click="completeChallenge"
-          class="bg-green-600 hover:bg-green-700 py-3 rounded-xl font-bold transition-all disabled:bg-gray-500 disabled:cursor-not-allowed"
+          class="bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 py-3 rounded-xl font-bold transition-all flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
           :disabled="!currentCard || !cardFlipped"
         >
+          <Icon icon="mdi:check-bold" class="w-5 h-5" />
           Completed
         </button>
       </div>
 
-      <div class="mb-6">
-        <div class="flex justify-between mb-1">
-          <span>Hesitation Timer:</span>
-          <span>{{ hesitationTime }}s remaining</span>
+      <!-- Hesitation Timer -->
+      <div class="mb-6 bg-white/5 rounded-xl p-4">
+        <div class="flex justify-between items-center mb-2">
+          <div class="flex items-center gap-2">
+            <Icon icon="mdi:timer-sand" class="w-5 h-5 text-pink-300" />
+            <span class="font-medium">Hesitation Timer:</span>
+          </div>
+          <span
+            class="font-bold"
+            :class="hesitationTime <= 5 ? 'text-red-400' : 'text-cyan-400'"
+          >
+            {{ hesitationTime }}s
+          </span>
         </div>
         <div class="w-full h-2 bg-white/20 rounded-full overflow-hidden">
           <div
-            class="h-full bg-pink-500 transition-all duration-1000 ease-linear"
+            class="h-full bg-gradient-to-r from-pink-500 to-purple-500 transition-all duration-1000 ease-linear"
             :style="{ width: hesitationPercent + '%' }"
           ></div>
         </div>
       </div>
 
+      <!-- Game Log -->
       <div class="bg-white/5 rounded-xl p-4 max-h-40 overflow-y-auto">
-        <h3 class="font-semibold mb-2">Game Log</h3>
-        <ul class="space-y-1 text-sm">
+        <h3 class="font-semibold mb-3 flex items-center gap-2">
+          <Icon icon="mdi:history" class="w-5 h-5" />
+          <span>Game Log</span>
+        </h3>
+        <ul class="space-y-2 text-sm">
           <li
             v-for="(log, index) in gameHistory"
             :key="index"
-            class="py-1 border-b border-white/10"
+            class="py-1.5 px-2 rounded-lg"
+            :class="index % 2 === 0 ? 'bg-white/5' : ''"
           >
-            {{ log }}
+            <div class="flex items-start gap-2">
+              <Icon
+                icon="mdi:information"
+                class="w-4 h-4 mt-0.5 flex-shrink-0 text-pink-300"
+              />
+              <span>{{ log }}</span>
+            </div>
           </li>
         </ul>
       </div>
@@ -158,291 +254,313 @@
 
 <script setup>
 import { ref, computed, onMounted, onBeforeUnmount } from "vue";
+import { Icon } from "@iconify/vue";
+import { GoogleGenerativeAI } from "@google/generative-ai";
+// Sessionless: no server session polling
 
-// --- STATE MANAGEMENT ---
-const OPENAI_API_KEY =
-  "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";
-const OPENAI_API_URL = "https://api.openai.com/v1/chat/completions";
 
-// Initialize players as an empty array. It will be populated from localStorage.
+// Game Configuration
+const MAX_HESITATION_TIME = 15;
+const CLOTHING_ITEMS = [
+  { name: "Top", icon: "mdi:tshirt-crew", removed: false },
+  { name: "Bottom", icon: "mdi:human-male-pants", removed: false },
+  { name: "Underwear", icon: "mdi:underwear", removed: false },
+  { name: "Socks", icon: "mdi:sock", removed: false },
+  { name: "Accessories", icon: "mdi:glasses", removed: false },
+];
+
+// State
+const gameMode = ref("free-for-all");
 const players = ref([]);
 const currentPlayerIndex = ref(0);
 const currentCard = ref(null);
 const cardFlipped = ref(false);
 const gameHistory = ref([]);
-const hesitationTime = ref(15);
+const hesitationTime = ref(MAX_HESITATION_TIME);
 const hesitationTimer = ref(null);
 const hesitationPercent = ref(100);
 const gameLevel = ref(1);
-const restrictions = ref([]);
 const isDrawing = ref(false);
+const clothingItems = ref(JSON.parse(JSON.stringify(CLOTHING_ITEMS)));
 
-const clothingItems = ref([
-  { name: "Shirt", removed: false },
-  { name: "Pants", removed: false },
-  { name: "Underwear", removed: false },
-  { name: "Socks", removed: false },
-  { name: "Accessories", removed: false },
-]);
-
-// --- COMPUTED PROPERTIES ---
+// Computed Properties
 const currentPlayer = computed(() => players.value[currentPlayerIndex.value]);
 const remainingClothing = computed(
   () => clothingItems.value.filter((item) => !item.removed).length
 );
 
-// --- LIFECYCLE HOOKS ---
-onMounted(() => {
-  const savedSession = localStorage.getItem("gameSession");
+// --- FIX STARTS HERE ---
 
-  if (savedSession) {
-    const gameData = JSON.parse(savedSession);
-    if (gameData && gameData.players) {
-      players.value = gameData.players;
-      gameHistory.value.unshift("Game session loaded. Let the fun begin!");
-    }
-  } else {
-    gameHistory.value.unshift("No session found. Using default players.");
-    players.value = [
-      { id: "default1", name: "Player 1", gender: "male", itemsRemoved: 0 },
-      { id: "default2", name: "Player 2", gender: "female", itemsRemoved: 0 },
+// 1. Use Nuxt's runtime config to get the API key
+const config = useRuntimeConfig();
+const API_KEY = config.public.geminiApiKey;
+
+// 2. Declare the Gemini AI client instance, but don't initialize it yet.
+let genAI = null;
+
+// Gemini API Integration
+async function generateContentWithGemini(
+  type,
+  level,
+  mode,
+  playerName,
+  targetName
+) {
+  // 3. Check if the client or API key is missing
+  if (!genAI || !API_KEY) {
+    console.warn(
+      "Gemini AI client not initialized or API key is missing. Using fallback content."
+    );
+    return null;
+  }
+
+  const model = genAI.getGenerativeModel({ model: "gemini-pro" });
+  const prompt = `Generate a single, direct, and spicy ${type.toLowerCase()} for a 'Strip Truth or Dare' game.
+    Game Mode: ${mode}
+    Spiciness Level: ${level}/5
+    Current Player: ${playerName}
+    ${targetName ? `Target Player: ${targetName}` : ""}
+    Do not include any preamble like "Here is a dare:". Just provide the dare or truth itself.`;
+
+  try {
+    const result = await model.generateContent(prompt);
+    const response = await result.response;
+    return response.text().trim();
+  } catch (error) {
+    console.error("Error generating content with Gemini:", error);
+    return null; // Fallback to predefined content on error
+  }
+}
+
+// --- FIX ENDS HERE ---
+
+// Fallback Content
+const fallbackContent = {
+  truths: [
+    "What's your wildest fantasy involving someone here?",
+    "Describe your most embarrassing intimate moment.",
+    "Have you ever faked an orgasm? When and why?",
+    "What's the most unusual place you've been intimate?",
+    "What's something you've never told your partner about your desires?",
+  ],
+  dares: {
+    "free-for-all": [
+      "Remove an item and let someone touch that area.",
+      "Give a 30-second lap dance to the person on your right.",
+      "Whisper your dirtiest thought to someone of the group's choice.",
+      "Let two people blindfold you and feed you something sensual.",
+      "Demonstrate your best seduction move on someone here.",
+    ],
+    relationship: [
+      "Remove an item and let your partner touch that area.",
+      "Give your partner a passionate kiss lasting 15 seconds.",
+      "Whisper your dirtiest fantasy in your partner's ear.",
+      "Let your partner blindfold you and feed you something sensual.",
+      "Demonstrate how you'd seduce your partner in a public place.",
+    ],
+  },
+};
+
+const getRandomFallback = (type) => {
+  if (type === "TRUTH") {
+    return fallbackContent.truths[
+      Math.floor(Math.random() * fallbackContent.truths.length)
     ];
   }
-});
-
-onBeforeUnmount(() => {
-  clearInterval(hesitationTimer.value);
-});
-
-// --- AI AND GAME LOGIC ---
-const fallbackTruths = [
-  "What's the most embarrassing thing you've ever done to impress someone?",
-  "Have you ever had a crush on a friend's partner?",
-  "What's your guilty pleasure when no one's watching?",
-  "Describe your most romantic fantasy in detail",
-  "What's the most adventurous place you've been intimate?",
-];
-
-const fallbackDares = [
-  "Give someone a 10 second shoulder massage",
-  "Whisper something flirty to the person on your left",
-  "Let someone style your hair however they want",
-  "Exchange one piece of clothing with another player",
-  "Give a lap dance to someone of your choice",
-];
-
-const getHeatLevelPrompt = () => {
-  const levels = [
-    "Keep it light and fun - ask playful questions about preferences and mild experiences",
-    "Increase intimacy slightly - ask about romantic experiences and mild dares with minimal contact",
-    "Medium heat - ask about sexual preferences and include dares with moderate physical contact",
-    "High heat - detailed questions about sexual experiences and dares involving significant contact",
-    "Maximum heat - extremely intimate questions and dares pushing all boundaries",
-  ];
-  return levels[Math.min(gameLevel.value - 1, levels.length - 1)];
+  const modeDares =
+    fallbackContent.dares[gameMode.value] ||
+    fallbackContent.dares["free-for-all"];
+  return modeDares[Math.floor(Math.random() * modeDares.length)];
 };
 
-const generateTruth = async () => {
-  try {
-    const response = await fetch(OPENAI_API_URL, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${OPENAI_API_KEY}`,
-      },
-      body: JSON.stringify({
-        model: "gpt-4o-mini",
-        messages: [
-          {
-            role: "system",
-            content: `You are a truth or dare game assistant. Generate truths that gradually escalate in intimacy based on the game level (currently level ${
-              gameLevel.value
-            }). Start with icebreakers and gradually increase to more personal and intimate questions do not repeat the truths or dares, be creative. Current heat level: ${getHeatLevelPrompt()}. Keep responses under 15 words.`,
-          },
-          {
-            role: "user",
-            content: `Generate a truth question for ${currentPlayer.value.name} (${currentPlayer.value.gender}) at game level ${gameLevel.value}.`,
-          },
-        ],
-        temperature: 1.0,
-        max_tokens: 50,
-      }),
-    });
-
-    const data = await response.json();
-    return data.choices[0].message.content.trim();
-  } catch (error) {
-    console.error("Error generating truth:", error);
-    return fallbackTruths[Math.floor(Math.random() * fallbackTruths.length)];
+// Game Logic
+const getRandomTarget = () => {
+  if (!currentPlayer.value) return null;
+  if (gameMode.value === "relationship") {
+    return (
+      players.value.find((p) => p.id === currentPlayer.value.partnerId) || null
+    );
   }
+  const validTargets = players.value.filter(
+    (p) => p.id !== currentPlayer.value.id
+  );
+  if (validTargets.length === 0) return null;
+  return validTargets[Math.floor(Math.random() * validTargets.length)];
 };
 
-const generateDare = async () => {
-  try {
-    const validTargets = getValidTargets();
-    const target =
-      validTargets[Math.floor(Math.random() * validTargets.length)];
-
-    const response = await fetch(OPENAI_API_URL, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${OPENAI_API_KEY}`,
-      },
-      body: JSON.stringify({
-        model: "gpt-3.5-turbo",
-        messages: [
-          {
-            role: "system",
-            content: `Generate dares that escalate based on game level (currently ${
-              gameLevel.value
-            }). Start with mild truths or dares and progress to more intimate dares, be creative and do not repeat the same truthsor dares. Current heat level: ${getHeatLevelPrompt()}. Keep dares consensual and under 15 words.`,
-          },
-          {
-            role: "user",
-            content: `Generate a dare for ${currentPlayer.value.name} (${currentPlayer.value.gender}) to perform with ${target.name} (${target.gender}) at game level ${gameLevel.value}.`,
-          },
-        ],
-        temperature: 1.0,
-        max_tokens: 100,
-      }),
-    });
-
-    const data = await response.json();
-    return {
-      text: data.choices[0].message.content.trim(),
-      target: target,
-    };
-  } catch (error) {
-    console.error("Error generating dare:", error);
-    return {
-      text: fallbackDares[Math.floor(Math.random() * fallbackDares.length)],
-      target: getValidTargets()[0],
-    };
-  }
-};
-
-const getValidTargets = () => {
-  if (!currentPlayer.value) return [];
-  return players.value.filter((p) => p.id !== currentPlayer.value.id);
-};
+const { nextCard, wildcard } = useCardsApi();
 
 const drawCard = async () => {
   if (isDrawing.value || currentCard.value) return;
-
   isDrawing.value = true;
   cardFlipped.value = false;
 
-  try {
-    const validTargets = getValidTargets();
-    const isDare = validTargets.length > 0 && Math.random() > 0.5;
-    let cardData = {};
-
-    if (isDare) {
-      const dareResult = await generateDare();
-      cardData = {
-        type: "DARE",
-        text: dareResult.text,
-        target: dareResult.target,
-      };
-    } else {
-      const truthText = await generateTruth();
-      cardData = { type: "TRUTH", text: truthText, target: null };
-    }
-    currentCard.value = cardData;
-  } catch (error) {
-    console.error("Error drawing card:", error);
-    currentCard.value = {
-      type: Math.random() > 0.5 ? "TRUTH" : "DARE",
-      text: "Something went wrong - try again!",
-      target: null,
-    };
-  } finally {
-    isDrawing.value = false;
+  const type = Math.random() > 0.5 ? "TRUTH" : "DARE";
+  let target = null;
+  if (type === "DARE" && players.value.length > 1) {
+    target = getRandomTarget();
   }
+
+  // DB selection with session-aware cycling
+  let dbCard = null;
+  try {
+    dbCard = await nextCard({
+      gameType: 'TRUTH_OR_DARE',
+      cardType: type,
+      intensity: Math.min(gameLevel.value, 5),
+    });
+  } catch {}
+
+  let content = null;
+  if (dbCard?.text) {
+    content = dbCard.text;
+  } else {
+    // fallback to Gemini then to static fallback
+    content = await generateContentWithGemini(
+      type,
+      gameLevel.value,
+      gameMode.value,
+      currentPlayer.value.name,
+      target?.name
+    );
+    if (!content) {
+      // 5% chance wildcard, else fallback
+      const useWildcard = Math.random() < 0.05;
+      if (useWildcard) {
+        try {
+          const wc = await wildcard('TRUTH_OR_DARE');
+          content = wc?.text || getRandomFallback(type);
+        } catch {
+          content = getRandomFallback(type);
+        }
+      } else {
+        content = getRandomFallback(type);
+      }
+    }
+  }
+
+  currentCard.value = {
+    type,
+    text: content,
+    target,
+  };
+
+  isDrawing.value = false;
 };
 
 const flipCard = () => {
   if (currentCard.value && !isDrawing.value) {
     cardFlipped.value = !cardFlipped.value;
-    if (cardFlipped.value) startHesitationTimer();
-    else clearInterval(hesitationTimer.value);
+    if (cardFlipped.value) {
+      startHesitationTimer();
+    } else {
+      resetHesitationTimer();
+    }
   }
 };
 
 const startHesitationTimer = () => {
-  clearInterval(hesitationTimer.value);
-  hesitationTime.value = 15;
-  hesitationPercent.value = 100;
-
+  resetHesitationTimer();
   hesitationTimer.value = setInterval(() => {
     hesitationTime.value--;
-    hesitationPercent.value = (hesitationTime.value / 15) * 100;
+    hesitationPercent.value =
+      (hesitationTime.value / MAX_HESITATION_TIME) * 100;
+
     if (hesitationTime.value <= 0) {
       clearInterval(hesitationTimer.value);
       gameHistory.value.unshift(
         `${currentPlayer.value.name} hesitated too long!`
       );
       applyPenalty();
+      // Server penalty + advance
+      // no server penalty/advance in sessionless mode
       nextTurn();
     }
   }, 1000);
 };
 
-const completeChallenge = () => {
-  if (!currentCard.value) return;
+const resetHesitationTimer = () => {
   clearInterval(hesitationTimer.value);
-  gameHistory.value.unshift(
-    `${currentPlayer.value.name} completed: ${currentCard.value.text}`
-  );
-
-  // Increase game level every 3 completed challenges
-  if (
-    gameHistory.value.filter((log) => log.includes("completed")).length % 3 ===
-    0
-  ) {
-    gameLevel.value = Math.min(gameLevel.value + 1, 5);
-    gameHistory.value.unshift(
-      `The heat level has increased to ${gameLevel.value}!`
-    );
-  }
-
-  nextTurn();
+  hesitationTime.value = MAX_HESITATION_TIME;
+  hesitationPercent.value = 100;
 };
 
 const applyPenalty = () => {
   const removableItems = clothingItems.value.filter((item) => !item.removed);
   if (removableItems.length > 0) {
-    const randomIndex = Math.floor(Math.random() * clothingItems.value.length);
-    if (!clothingItems.value[randomIndex].removed) {
-      clothingItems.value[randomIndex].removed = true;
+    const itemToRemove = removableItems[0]; // Remove in a predictable order
+    const itemInState = clothingItems.value.find(
+      (i) => i.name === itemToRemove.name
+    );
+    if (itemInState) {
+      itemInState.removed = true;
       gameHistory.value.unshift(
-        `${currentPlayer.value.name} had to remove ${clothingItems.value[randomIndex].name} as penalty!`
+        `${currentPlayer.value.name} removed their ${itemInState.name} as a penalty!`
       );
+      updateGameLevel();
     }
   }
+};
+
+const completeChallenge = () => {
+  if (!currentCard.value) return;
+  resetHesitationTimer();
+  gameHistory.value.unshift(
+    `${currentPlayer.value.name} completed: ${currentCard.value.text}`
+  );
+  // Advance server turn
+  nextTurn();
 };
 
 const nextTurn = () => {
   currentCard.value = null;
   cardFlipped.value = false;
-  hesitationPercent.value = 100;
-  hesitationTime.value = 15;
-  clearInterval(hesitationTimer.value);
-  if (players.value.length > 0) {
-    currentPlayerIndex.value =
-      (currentPlayerIndex.value + 1) % players.value.length;
-  }
+  currentPlayerIndex.value =
+    (currentPlayerIndex.value + 1) % players.value.length;
 };
 
 const toggleClothing = (index) => {
   if (!clothingItems.value[index].removed) {
     clothingItems.value[index].removed = true;
     gameHistory.value.unshift(
-      `${currentPlayer.value.name} chose to remove ${clothingItems.value[index].name}.`
+      `${currentPlayer.value.name} voluntarily removed their ${clothingItems.value[index].name}.`
     );
+    updateGameLevel();
   }
 };
+
+const updateGameLevel = () => {
+  const removedCount = clothingItems.value.filter((i) => i.removed).length;
+  gameLevel.value = Math.min(Math.floor(removedCount / 2) + 1, 5);
+};
+
+// Lifecycle Hooks
+onMounted(() => {
+  // This code now runs ONLY in the browser
+  if (typeof window !== "undefined") {
+    // 4. Initialize the Gemini AI client here
+    if (API_KEY) {
+      genAI = new GoogleGenerativeAI(API_KEY);
+    }
+
+    const savedSession = localStorage.getItem("gameSession");
+    if (savedSession) {
+      const session = JSON.parse(savedSession);
+      gameMode.value = session.mode || "free-for-all";
+      players.value = session.players || [];
+    } else {
+      // Setup mock players if no session is found
+      players.value = [
+        { id: 1, name: "Alex", gender: "male" },
+        { id: 2, name: "Mia", gender: "female" },
+      ];
+    }
+  }
+});
+
+onBeforeUnmount(() => {
+  clearInterval(hesitationTimer.value);
+});
 </script>
 
 <style>
@@ -458,6 +576,20 @@ const toggleClothing = (index) => {
 }
 .rotate-y-180 {
   transform: rotateY(180deg);
+}
+
+/* Animations */
+@keyframes float {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
+}
+.animate-float {
+  animation: float 6s ease-in-out infinite;
 }
 
 /* Smooth transitions */

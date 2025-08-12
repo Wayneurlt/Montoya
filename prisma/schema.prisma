@@ -1,27 +1,165 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
+// schema.prisma
 
 generator client {
   provider = "prisma-client-js"
 }
 
 datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL")
+  provider = "sqlite"
+  url      = "file:./dev.db"
 }
 
 model User {
-  id    Int     @id @default(autoincrement())
-  email String  @unique
-  name  String?
-  posts Post[]
+  id            Int       @id @default(autoincrement())
+  email         String    @unique
+  username      String    @unique
+  displayName   String?
+  avatarUrl     String?
+  gender        String?   // 'male', 'female', 'other', etc.
+  dateOfBirth   DateTime?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  gameSessions  GameSessionUser[]
+  createdGames  GameSession[]
+  createdCards  GameCard[] // Added back-relation for clarity
 }
 
-model Post {
-  id        Int     @id @default(autoincrement())
-  title     String
-  content   String?
-  published Boolean @default(false)
-  author    User    @relation(fields: [authorId], references: [id])
-  authorId  Int
+model GameSession {
+  id              Int               @id @default(autoincrement())
+  code            String            @unique
+  name            String?
+  gameType        GameType          @default(TRUTH_OR_DARE)
+  gameMode        GameMode          @default(FREE_FOR_ALL)
+  status          GameStatus        @default(LOBBY)
+  maxPlayers      Int               @default(8)
+  currentTurn     Int               @default(0)
+  settings        Json?             // Store custom game settings
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
+  createdBy       User              @relation(fields: [createdById], references: [id])
+  createdById     Int
+  players         GameSessionUser[]
+  gameHistory     GameHistory[]
+  currentCardId   Int?              @unique
+  currentCard     GameCard?         @relation("CurrentGameCard", fields: [currentCardId], references: [id])
+  usedCards       SessionCardUsage[]
+  currentTeam     GameTeam?         @default(A)
+}
+
+model GameSessionUser {
+  id              Int           @id @default(autoincrement())
+  user            User          @relation(fields: [userId], references: [id])
+  userId          Int
+  gameSession     GameSession   @relation(fields: [gameSessionId], references: [id])
+  gameSessionId   Int
+  playerName      String
+  gender          String        // Store at time of joining for game rules
+  partnerId       Int?          // For relationship mode
+  itemsRemoved    Int           @default(0) // For strip games
+  drinksTaken     Int           @default(0) // For drinking games
+  isReady         Boolean       @default(false)
+  isEliminated    Boolean       @default(false)
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+  historyAsPlayer GameHistory[] @relation("PlayerHistory")      // Added back-relation for clarity
+  historyAsTarget GameHistory[] @relation("TargetPlayerHistory") // Added back-relation for clarity
+  team            GameTeam?
+
+  @@unique([userId, gameSessionId])
+}
+
+model GameHistory {
+  id              Int           @id @default(autoincrement())
+  gameSession     GameSession   @relation(fields: [gameSessionId], references: [id])
+  gameSessionId   Int
+  eventType       GameEventType
+  playerId        Int?
+  // FIX 1: Disambiguated relations to GameSessionUser
+  player          GameSessionUser? @relation("PlayerHistory", fields: [playerId], references: [id])
+  targetPlayerId  Int?
+  targetPlayer    GameSessionUser? @relation("TargetPlayerHistory", fields: [targetPlayerId], references: [id])
+  cardId          Int?
+  // FIX 2: Completed the named relation to GameCard
+  card            GameCard?     @relation("CardGameHistory", fields: [cardId], references: [id])
+  details         Json?
+  createdAt       DateTime      @default(now())
+
+  @@index([gameSessionId])
+}
+
+model SessionCardUsage {
+  id            Int         @id @default(autoincrement())
+  gameSession   GameSession @relation(fields: [gameSessionId], references: [id])
+  gameSessionId Int
+  card          GameCard    @relation(fields: [cardId], references: [id])
+  cardId        Int
+  usedAt        DateTime    @default(now())
+
+  @@unique([gameSessionId, cardId])
+  @@index([gameSessionId])
+  @@index([cardId])
+}
+
+model GameCard {
+  id              Int           @id @default(autoincrement())
+  type            CardType
+  gameType        GameType
+  text            String
+  intensity       Int           @default(1) // TOD 1-5, Do-or-Drink 1-3
+  drinkAmount     String?       // For Do or Drink
+  targetGender    String?       // Specific gender targeting
+  timesUsed       Int           @default(0)
+  lastUsed        DateTime?
+  isCustom        Boolean       @default(false)
+  createdBy       User?         @relation(fields: [createdById], references: [id])
+  createdById     Int?
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+  gameHistory     GameHistory[] @relation("CardGameHistory")
+  currentSession  GameSession?  @relation("CurrentGameCard")
+  sessionUsages   SessionCardUsage[]
+}
+
+enum GameType {
+  TRUTH_OR_DARE
+  DICE_OF_DESIRE
+  DO_OR_DRINK
+}
+
+enum GameMode {
+  FREE_FOR_ALL
+  RELATIONSHIP
+  TEAMS
+  ELIMINATION
+}
+
+enum GameTeam {
+  A
+  B
+}
+
+enum GameStatus {
+  LOBBY
+  IN_PROGRESS
+  PAUSED
+  COMPLETED
+}
+
+enum CardType {
+  TRUTH
+  DARE
+  DO
+}
+
+enum GameEventType {
+  JOIN_GAME
+  LEAVE_GAME
+  START_GAME
+  DRAW_CARD
+  COMPLETE_CHALLENGE
+  FAIL_CHALLENGE
+  TAKE_DRINK
+  REMOVE_CLOTHING
+  ELIMINATE_PLAYER
+  GAME_OVER
 }

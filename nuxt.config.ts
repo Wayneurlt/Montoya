@@ -19,11 +19,11 @@ export default defineNuxtConfig({
   icon: {
     clientBundle: {
       scan: true,
-
       sizeLimitKb: 256,
     },
   },
   runtimeConfig: {
+    // These are your existing server-side keys
     oauth: {
       google: {
         clientId: "",
@@ -36,6 +36,13 @@ export default defineNuxtConfig({
       },
     },
     environment: process.env.ENVIROMENT,
+
+    // --- NEW CONFIGURATION ADDED HERE ---
+    // Keys inside 'public' are available on the client-side
+    public: {
+      geminiApiKey: process.env.GEMINI_API_KEY,
+    },
+    // --- END OF NEW CONFIGURATION ---
   },
   app: {
     head: {
