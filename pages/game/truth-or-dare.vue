@@ -28,7 +28,7 @@
         >
           Strip Truth or Dare
         </h1>
-        <div class="flex justify-center items-center gap-2">
+        <div class="flex justify-center items-center gap-2 flex-wrap">
           <span
             class="text-sm px-3 py-1 rounded-full"
             :class="
@@ -46,6 +46,18 @@
           >
             Level {{ gameLevel }}
           </span>
+          <!-- Spicy Mode Toggle -->
+          <button
+            @click="isSpicyMode = !isSpicyMode"
+            class="text-sm px-3 py-1 rounded-full transition-all"
+            :class="
+              isSpicyMode
+                ? 'bg-red-500/20 text-red-300 border border-red-400/50'
+                : 'bg-gray-500/20 text-gray-300 border border-gray-400/50'
+            "
+          >
+            {{ isSpicyMode ? '🌶️ Spicy' : '😇 Normal' }}
+          </button>
         </div>
       </div>
 
@@ -255,9 +267,10 @@
 <script setup>
 import { ref, computed, onMounted, onBeforeUnmount } from "vue";
 import { Icon } from "@iconify/vue";
-import { GoogleGenerativeAI } from "@google/generative-ai";
-// Sessionless: no server session polling
-
+import { truthQuestions } from "~/data/questions/truth";
+import { spicyTruthQuestions } from "~/data/questions/spicytruth";
+import { dareQuestions } from "~/data/questions/dare";
+import { spicyDareQuestions } from "~/data/questions/spicydare";
 
 // Game Configuration
 const MAX_HESITATION_TIME = 15;
@@ -282,6 +295,11 @@ const hesitationPercent = ref(100);
 const gameLevel = ref(1);
 const isDrawing = ref(false);
 const clothingItems = ref(JSON.parse(JSON.stringify(CLOTHING_ITEMS)));
+const isSpicyMode = ref(false);
+
+// Used question tracking to avoid repeats
+const usedTruths = ref(new Set());
+const usedDares = ref(new Set());
 
 // Computed Properties
 const currentPlayer = computed(() => players.value[currentPlayerIndex.value]);
@@ -289,88 +307,34 @@ const remainingClothing = computed(
   () => clothingItems.value.filter((item) => !item.removed).length
 );
 
-// --- FIX STARTS HERE ---
-
-// 1. Use Nuxt's runtime config to get the API key
-const config = useRuntimeConfig();
-const API_KEY = config.public.geminiApiKey;
-
-// 2. Declare the Gemini AI client instance, but don't initialize it yet.
-let genAI = null;
-
-// Gemini API Integration
-async function generateContentWithGemini(
-  type,
-  level,
-  mode,
-  playerName,
-  targetName
-) {
-  // 3. Check if the client or API key is missing
-  if (!genAI || !API_KEY) {
-    console.warn(
-      "Gemini AI client not initialized or API key is missing. Using fallback content."
-    );
-    return null;
-  }
-
-  const model = genAI.getGenerativeModel({ model: "gemini-pro" });
-  const prompt = `Generate a single, direct, and spicy ${type.toLowerCase()} for a 'Strip Truth or Dare' game.
-    Game Mode: ${mode}
-    Spiciness Level: ${level}/5
-    Current Player: ${playerName}
-    ${targetName ? `Target Player: ${targetName}` : ""}
-    Do not include any preamble like "Here is a dare:". Just provide the dare or truth itself.`;
-
-  try {
-    const result = await model.generateContent(prompt);
-    const response = await result.response;
-    return response.text().trim();
-  } catch (error) {
-    console.error("Error generating content with Gemini:", error);
-    return null; // Fallback to predefined content on error
-  }
-}
-
-// --- FIX ENDS HERE ---
-
-// Fallback Content
-const fallbackContent = {
-  truths: [
-    "What's your wildest fantasy involving someone here?",
-    "Describe your most embarrassing intimate moment.",
-    "Have you ever faked an orgasm? When and why?",
-    "What's the most unusual place you've been intimate?",
-    "What's something you've never told your partner about your desires?",
-  ],
-  dares: {
-    "free-for-all": [
-      "Remove an item and let someone touch that area.",
-      "Give a 30-second lap dance to the person on your right.",
-      "Whisper your dirtiest thought to someone of the group's choice.",
-      "Let two people blindfold you and feed you something sensual.",
-      "Demonstrate your best seduction move on someone here.",
-    ],
-    relationship: [
-      "Remove an item and let your partner touch that area.",
-      "Give your partner a passionate kiss lasting 15 seconds.",
-      "Whisper your dirtiest fantasy in your partner's ear.",
-      "Let your partner blindfold you and feed you something sensual.",
-      "Demonstrate how you'd seduce your partner in a public place.",
-    ],
-  },
-};
-
-const getRandomFallback = (type) => {
+// Question Selection Logic
+const getRandomQuestion = (type) => {
+  let questionPool;
+  let usedSet;
+  
   if (type === "TRUTH") {
-    return fallbackContent.truths[
-      Math.floor(Math.random() * fallbackContent.truths.length)
-    ];
+    questionPool = isSpicyMode.value ? spicyTruthQuestions : truthQuestions;
+    usedSet = usedTruths.value;
+  } else {
+    questionPool = isSpicyMode.value ? spicyDareQuestions : dareQuestions;
+    usedSet = usedDares.value;
   }
-  const modeDares =
-    fallbackContent.dares[gameMode.value] ||
-    fallbackContent.dares["free-for-all"];
-  return modeDares[Math.floor(Math.random() * modeDares.length)];
+  
+  // Get unused questions
+  const unusedQuestions = questionPool.filter((_, index) => !usedSet.has(index));
+  
+  // If all questions have been used, reset the used set
+  if (unusedQuestions.length === 0) {
+    usedSet.clear();
+    return questionPool[Math.floor(Math.random() * questionPool.length)];
+  }
+  
+  // Pick a random unused question
+  const randomUnused = unusedQuestions[Math.floor(Math.random() * unusedQuestions.length)];
+  const questionIndex = questionPool.indexOf(randomUnused);
+  usedSet.add(questionIndex);
+  
+  return randomUnused;
 };
 
 // Game Logic
@@ -388,8 +352,6 @@ const getRandomTarget = () => {
   return validTargets[Math.floor(Math.random() * validTargets.length)];
 };
 
-const { nextCard, wildcard } = useCardsApi();
-
 const drawCard = async () => {
   if (isDrawing.value || currentCard.value) return;
   isDrawing.value = true;
@@ -401,43 +363,7 @@ const drawCard = async () => {
     target = getRandomTarget();
   }
 
-  // DB selection with session-aware cycling
-  let dbCard = null;
-  try {
-    dbCard = await nextCard({
-      gameType: 'TRUTH_OR_DARE',
-      cardType: type,
-      intensity: Math.min(gameLevel.value, 5),
-    });
-  } catch {}
-
-  let content = null;
-  if (dbCard?.text) {
-    content = dbCard.text;
-  } else {
-    // fallback to Gemini then to static fallback
-    content = await generateContentWithGemini(
-      type,
-      gameLevel.value,
-      gameMode.value,
-      currentPlayer.value.name,
-      target?.name
-    );
-    if (!content) {
-      // 5% chance wildcard, else fallback
-      const useWildcard = Math.random() < 0.05;
-      if (useWildcard) {
-        try {
-          const wc = await wildcard('TRUTH_OR_DARE');
-          content = wc?.text || getRandomFallback(type);
-        } catch {
-          content = getRandomFallback(type);
-        }
-      } else {
-        content = getRandomFallback(type);
-      }
-    }
-  }
+  const content = getRandomQuestion(type);
 
   currentCard.value = {
     type,
@@ -536,13 +462,7 @@ const updateGameLevel = () => {
 
 // Lifecycle Hooks
 onMounted(() => {
-  // This code now runs ONLY in the browser
   if (typeof window !== "undefined") {
-    // 4. Initialize the Gemini AI client here
-    if (API_KEY) {
-      genAI = new GoogleGenerativeAI(API_KEY);
-    }
-
     const savedSession = localStorage.getItem("gameSession");
     if (savedSession) {
       const session = JSON.parse(savedSession);

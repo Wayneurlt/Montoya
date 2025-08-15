@@ -43,6 +43,7 @@ model GameSession {
   currentCardId   Int?              @unique
   currentCard     GameCard?         @relation("CurrentGameCard", fields: [currentCardId], references: [id])
   usedCards       SessionCardUsage[]
+  usedGroupQuestions SessionGroupQuestionUsage[]
   currentTeam     GameTeam?         @default(A)
 }
 
@@ -124,6 +125,9 @@ enum GameType {
   TRUTH_OR_DARE
   DICE_OF_DESIRE
   DO_OR_DRINK
+  NEVER_HAVE_I_EVER
+  MOST_LIKELY_TO
+  WOULD_YOU_RATHER
 }
 
 enum GameMode {
@@ -149,6 +153,30 @@ enum CardType {
   TRUTH
   DARE
   DO
+}
+
+model GroupGameQuestion {
+  id        Int      @id @default(autoincrement())
+  gameType  GameType
+  text      String
+  intensity Int      @default(1)
+  timesUsed Int      @default(0)
+  lastUsed  DateTime?
+  isActive  Boolean  @default(true)
+  sessionUsages SessionGroupQuestionUsage[]
+}
+
+model SessionGroupQuestionUsage {
+  id            Int         @id @default(autoincrement())
+  gameSession   GameSession @relation(fields: [gameSessionId], references: [id])
+  gameSessionId Int
+  question      GroupGameQuestion @relation(fields: [questionId], references: [id])
+  questionId    Int
+  usedAt        DateTime    @default(now())
+
+  @@unique([gameSessionId, questionId])
+  @@index([gameSessionId])
+  @@index([questionId])
 }
 
 enum GameEventType {

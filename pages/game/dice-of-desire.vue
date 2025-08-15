@@ -460,7 +460,7 @@ const getEffectIcon = (effectText) => {
   return "mdi:star";
 };
 
-const { nextCard, wildcard } = useCardsApi();
+// No DB card fetching here
 
 // Game Logic
 const startGame = () => {

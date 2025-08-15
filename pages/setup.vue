@@ -279,6 +279,24 @@ const availableGames = ref([
     description: "No boring choices allowed",
     icon: "mdi:glass-cocktail",
   },
+    {
+      value: "never-have-i-ever",
+      name: "Never Have I Ever",
+      description: "Confess or drink",
+      icon: "mdi:hand-back-right",
+    },
+    {
+      value: "most-likely-to",
+      name: "Most Likely To",
+      description: "Vote and roast",
+      icon: "mdi:account-group-outline",
+    },
+    {
+      value: "would-you-rather",
+      name: "Would You Rather",
+      description: "Two terrible choices",
+      icon: "mdi:help-circle",
+    },
 ]);
 
 const selectedGame = ref("truth-or-dare");
@@ -311,6 +329,14 @@ const removePlayer = (index) => {
 };
 
 const canStart = computed(() => {
+  // Group games require no player names
+  const groupGames = new Set([
+    'never-have-i-ever',
+    'most-likely-to',
+    'would-you-rather',
+  ]);
+  if (groupGames.has(selectedGame.value)) return true;
+
   // All players must have names
   const hasValidPlayers = players.value.every((p) => p.name.trim() !== "");
   if (!hasValidPlayers) return false;

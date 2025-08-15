@@ -327,6 +327,7 @@
 <script setup>
 import { ref, computed, onMounted, onBeforeUnmount } from "vue";
 import { Icon } from "@iconify/vue";
+import { doOrDrinkQuestions } from "~/data/questions/doordrink";
 // Sessionless: no server session polling
 
 // Game Configuration
@@ -423,15 +424,37 @@ const intensityTextClass = computed(() => {
   return INTENSITY_LEVELS[currentCard.value.intensity - 1]?.textColor || "";
 });
 
+// Used question tracking to avoid repeats
+const usedQuestions = ref(new Set());
+
+// Question Selection Logic
+const getRandomChallenge = () => {
+  // Get unused questions
+  const unusedQuestions = doOrDrinkQuestions.filter((_, index) => !usedQuestions.value.has(index));
+  
+  // If all questions have been used, reset the used set
+  if (unusedQuestions.length === 0) {
+    usedQuestions.value.clear();
+    return doOrDrinkQuestions[Math.floor(Math.random() * doOrDrinkQuestions.length)];
+  }
+  
+  // Pick a random unused question
+  const randomUnused = unusedQuestions[Math.floor(Math.random() * unusedQuestions.length)];
+  const questionIndex = doOrDrinkQuestions.indexOf(randomUnused);
+  usedQuestions.value.add(questionIndex);
+  
+  return randomUnused;
+};
+
 // Game Logic
 const getValidTargets = () => {
   if (!currentPlayer.value) return [];
   return players.value.filter((p) => p.id !== currentPlayer.value.id);
 };
 
-const { nextCard, wildcard } = useCardsApi();
+// No DB card fetching
 
-const generateChallenge = async () => {
+const generateChallenge = () => {
   const intensity = Math.min(
     Math.floor(Math.random() * 3) + 1 + Math.floor(gameLevel.value / 3),
     3
@@ -477,55 +500,7 @@ const generateChallenge = async () => {
     ? targets[Math.floor(Math.random() * targets.length)]
     : null;
 
-  // Database card (session-aware)
-  let dbCard = null;
-  try {
-    dbCard = await nextCard({
-      gameType: 'DO_OR_DRINK',
-      cardType: 'DO',
-      intensity,
-    });
-  } catch {}
-
-  // Fallback challenges if API fails
-  const fallbacks = [
-    [
-      "Give someone a sensual neck massage for 30 seconds",
-      "Remove one clothing item of your choice",
-      "Let someone trace their fingers along your inner thigh for 15 seconds",
-      "Whisper something sexy in someone's ear",
-      "Show your best seductive look to the group",
-    ],
-    [
-      "French kiss the person to your left for 10 seconds",
-      "Let someone undo one button or zipper on your clothing",
-      "Give a 20-second lap dance to someone of your choice",
-      "Let someone give you a sensual massage on your shoulders",
-      "Exchange a passionate kiss with someone of the group's choice",
-    ],
-    [
-      "Let someone give you a passionate hickey anywhere they choose",
-      "Perform a sensual lap dance for someone of your choice",
-      "Exchange top wear with the person to your right (go to bathroom if needed)",
-      "Let the group vote on one intimate act you must perform",
-      "Demonstrate your best orgasm face for the group",
-    ],
-  ];
-
-  let challengeText = dbCard?.text;
-  if (!challengeText) {
-    const useWildcard = Math.random() < 0.05;
-    if (useWildcard) {
-      try {
-        const wc = await wildcard('DO_OR_DRINK');
-        challengeText = wc?.text || fallbacks[intensity - 1][Math.floor(Math.random() * fallbacks[intensity - 1].length)];
-      } catch {
-        challengeText = fallbacks[intensity - 1][Math.floor(Math.random() * fallbacks[intensity - 1].length)];
-      }
-    } else {
-      challengeText = fallbacks[intensity - 1][Math.floor(Math.random() * fallbacks[intensity - 1].length)];
-    }
-  }
+  const challengeText = getRandomChallenge();
 
   return {
     text: challengeText,
@@ -535,14 +510,14 @@ const generateChallenge = async () => {
   };
 };
 
-const drawCard = async () => {
+const drawCard = () => {
   if (isDrawing.value || currentCard.value) return;
 
   isDrawing.value = true;
   cardFlipped.value = false;
 
   try {
-    currentCard.value = await generateChallenge();
+    currentCard.value = generateChallenge();
     gameHistory.value.unshift({
       text: `${currentPlayer.value.name} drew a level ${currentCard.value.intensity} challenge`,
       type: "draw",
@@ -739,7 +714,6 @@ const getLogIconColor = (log) => {
 
 onBeforeUnmount(() => {
   clearInterval(hesitationTimer.value);
-  stopPolling();
 });
 </script>
 

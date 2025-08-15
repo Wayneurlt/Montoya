@@ -16,7 +16,15 @@ export function useCardsApi() {
     return await $fetch('/api/cards/wildcard', { method: 'POST', body: { gameType } });
   };
 
-  return { nextCard, seedCards, wildcard };
+  const nextGroupQuestion = async (payload: { gameType: 'NEVER_HAVE_I_EVER' | 'MOST_LIKELY_TO' | 'WOULD_YOU_RATHER'; intensity?: number; sessionCode?: string }) => {
+    return await $fetch('/api/group-questions/next', { method: 'POST', body: payload });
+  };
+
+  const seedGroupQuestions = async (questions: Array<{ gameType: 'NEVER_HAVE_I_EVER' | 'MOST_LIKELY_TO' | 'WOULD_YOU_RATHER'; text: string; intensity?: number; isActive?: boolean }>) => {
+    return await $fetch('/api/group-questions/seed', { method: 'POST', body: { questions } });
+  };
+
+  return { nextCard, seedCards, wildcard, nextGroupQuestion, seedGroupQuestions };
 }
 
 
