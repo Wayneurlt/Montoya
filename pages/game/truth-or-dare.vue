@@ -271,6 +271,7 @@ import { truthQuestions } from "~/data/questions/truth";
 import { spicyTruthQuestions } from "~/data/questions/spicytruth";
 import { dareQuestions } from "~/data/questions/dare";
 import { spicyDareQuestions } from "~/data/questions/spicydare";
+import { useTruthTracker, useDareTracker } from "~/composables/useQuestionTracker";
 
 // Game Configuration
 const MAX_HESITATION_TIME = 15;
@@ -297,9 +298,11 @@ const isDrawing = ref(false);
 const clothingItems = ref(JSON.parse(JSON.stringify(CLOTHING_ITEMS)));
 const isSpicyMode = ref(false);
 
-// Used question tracking to avoid repeats
-const usedTruths = ref(new Set());
-const usedDares = ref(new Set());
+// Initialize question trackers
+const normalTruthTracker = useTruthTracker(truthQuestions, false);
+const spicyTruthTracker = useTruthTracker(spicyTruthQuestions, true);
+const normalDareTracker = useDareTracker(dareQuestions, false);
+const spicyDareTracker = useDareTracker(spicyDareQuestions, true);
 
 // Computed Properties
 const currentPlayer = computed(() => players.value[currentPlayerIndex.value]);
@@ -309,32 +312,21 @@ const remainingClothing = computed(
 
 // Question Selection Logic
 const getRandomQuestion = (type) => {
-  let questionPool;
-  let usedSet;
+  let tracker;
   
   if (type === "TRUTH") {
-    questionPool = isSpicyMode.value ? spicyTruthQuestions : truthQuestions;
-    usedSet = usedTruths.value;
+    tracker = isSpicyMode.value ? spicyTruthTracker : normalTruthTracker;
   } else {
-    questionPool = isSpicyMode.value ? spicyDareQuestions : dareQuestions;
-    usedSet = usedDares.value;
+    tracker = isSpicyMode.value ? spicyDareTracker : normalDareTracker;
   }
   
-  // Get unused questions
-  const unusedQuestions = questionPool.filter((_, index) => !usedSet.has(index));
+  const result = tracker.getNextQuestion();
   
-  // If all questions have been used, reset the used set
-  if (unusedQuestions.length === 0) {
-    usedSet.clear();
-    return questionPool[Math.floor(Math.random() * questionPool.length)];
-  }
+  // Log usage stats for debugging
+  const stats = tracker.getUsageStats.value;
+  console.log(`${type} ${isSpicyMode.value ? 'Spicy' : 'Normal'} - Used: ${stats.usedCount}/${stats.totalQuestions} (${stats.usagePercentage}%)`);
   
-  // Pick a random unused question
-  const randomUnused = unusedQuestions[Math.floor(Math.random() * unusedQuestions.length)];
-  const questionIndex = questionPool.indexOf(randomUnused);
-  usedSet.add(questionIndex);
-  
-  return randomUnused;
+  return result.question;
 };
 
 // Game Logic
@@ -463,6 +455,12 @@ const updateGameLevel = () => {
 // Lifecycle Hooks
 onMounted(() => {
   if (typeof window !== "undefined") {
+    // Initialize question trackers
+    normalTruthTracker.initializeTracker();
+    spicyTruthTracker.initializeTracker();
+    normalDareTracker.initializeTracker();
+    spicyDareTracker.initializeTracker();
+    
     const savedSession = localStorage.getItem("gameSession");
     if (savedSession) {
       const session = JSON.parse(savedSession);

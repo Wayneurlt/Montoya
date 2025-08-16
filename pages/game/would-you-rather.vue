@@ -31,33 +31,25 @@
 import { ref, onMounted } from 'vue';
 import { Icon } from '@iconify/vue';
 import { wouldYouRatherQuestions } from '~/data/questions/wouldyourather';
+import { useWouldYouRatherTracker } from '~/composables/useQuestionTracker';
 
 const question = ref(null);
 
-// Used question tracking to avoid repeats
-const usedQuestions = ref(new Set());
+// Initialize question tracker
+const questionTracker = useWouldYouRatherTracker(wouldYouRatherQuestions);
 const showPenalty = ref(false);
 const penaltyMessage = ref('');
 
 const fetchAnother = () => {
   showPenalty.value = false;
-  // Get unused questions
-  const unusedQuestions = wouldYouRatherQuestions.filter((_, index) => !usedQuestions.value.has(index));
   
-  // If all questions have been used, reset the used set
-  if (unusedQuestions.length === 0) {
-    usedQuestions.value.clear();
-    const randomQuestion = wouldYouRatherQuestions[Math.floor(Math.random() * wouldYouRatherQuestions.length)];
-    question.value = { text: randomQuestion };
-    return;
-  }
+  const result = questionTracker.getNextQuestion();
   
-  // Pick a random unused question
-  const randomUnused = unusedQuestions[Math.floor(Math.random() * unusedQuestions.length)];
-  const questionIndex = wouldYouRatherQuestions.indexOf(randomUnused);
-  usedQuestions.value.add(questionIndex);
+  // Log usage stats for debugging
+  const stats = questionTracker.getUsageStats.value;
+  console.log(`Would You Rather - Used: ${stats.usedCount}/${stats.totalQuestions} (${stats.usagePercentage}%)`);
   
-  question.value = { text: randomUnused };
+  question.value = { text: result.question };
 };
 
 const applyPenalty = () => {
@@ -77,7 +69,13 @@ const applyPenalty = () => {
   }, 5000);
 };
 
-onMounted(fetchAnother);
+onMounted(() => {
+  if (typeof window !== "undefined") {
+    // Initialize question tracker
+    questionTracker.initializeTracker();
+    fetchAnother();
+  }
+});
 </script>
 
 <style>

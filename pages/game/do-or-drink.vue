@@ -328,6 +328,7 @@
 import { ref, computed, onMounted, onBeforeUnmount } from "vue";
 import { Icon } from "@iconify/vue";
 import { doOrDrinkQuestions } from "~/data/questions/doordrink";
+import { useDoOrDrinkTracker } from "~/composables/useQuestionTracker";
 // Sessionless: no server session polling
 
 // Game Configuration
@@ -424,26 +425,18 @@ const intensityTextClass = computed(() => {
   return INTENSITY_LEVELS[currentCard.value.intensity - 1]?.textColor || "";
 });
 
-// Used question tracking to avoid repeats
-const usedQuestions = ref(new Set());
+// Initialize question tracker
+const challengeTracker = useDoOrDrinkTracker(doOrDrinkQuestions);
 
 // Question Selection Logic
 const getRandomChallenge = () => {
-  // Get unused questions
-  const unusedQuestions = doOrDrinkQuestions.filter((_, index) => !usedQuestions.value.has(index));
+  const result = challengeTracker.getNextQuestion();
   
-  // If all questions have been used, reset the used set
-  if (unusedQuestions.length === 0) {
-    usedQuestions.value.clear();
-    return doOrDrinkQuestions[Math.floor(Math.random() * doOrDrinkQuestions.length)];
-  }
+  // Log usage stats for debugging
+  const stats = challengeTracker.getUsageStats.value;
+  console.log(`Do or Drink - Used: ${stats.usedCount}/${stats.totalQuestions} (${stats.usagePercentage}%)`);
   
-  // Pick a random unused question
-  const randomUnused = unusedQuestions[Math.floor(Math.random() * unusedQuestions.length)];
-  const questionIndex = doOrDrinkQuestions.indexOf(randomUnused);
-  usedQuestions.value.add(questionIndex);
-  
-  return randomUnused;
+  return result.question;
 };
 
 // Game Logic
@@ -711,6 +704,13 @@ const getLogIconColor = (log) => {
   }
   return "text-blue-400";
 };
+
+onMounted(() => {
+  if (typeof window !== "undefined") {
+    // Initialize question tracker
+    challengeTracker.initializeTracker();
+  }
+});
 
 onBeforeUnmount(() => {
   clearInterval(hesitationTimer.value);
