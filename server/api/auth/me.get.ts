@@ -41,7 +41,5 @@ export default defineEventHandler(async (event) => {
       statusCode: 401,
       statusMessage: 'Invalid token'
     })
-  } finally {
-    await prisma.$disconnect()
   }
 })

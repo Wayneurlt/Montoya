@@ -26,7 +26,5 @@ export default defineEventHandler(async (event) => {
       statusCode: 500,
       statusMessage: 'Failed to store analytics event'
     })
-  } finally {
-    await prisma.$disconnect()
   }
 })

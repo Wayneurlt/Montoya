@@ -49,7 +49,5 @@ export default defineEventHandler(async (event) => {
       statusCode: 500,
       statusMessage: 'Failed to fetch questions'
     })
-  } finally {
-    await prisma.$disconnect()
   }
 })
