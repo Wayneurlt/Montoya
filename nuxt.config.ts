@@ -23,7 +23,10 @@ export default defineNuxtConfig({
     },
   },
   runtimeConfig: {
-    // These are your existing server-side keys
+    // Server-side environment variables
+    databaseUrl: process.env.DATABASE_URL,
+    jwtSecret: process.env.JWT_SECRET || 'your-super-secret-jwt-key-here',
+    adminPassword: process.env.ADMIN_PASSWORD || 'admin123',
     oauth: {
       google: {
         clientId: "",
@@ -35,14 +38,13 @@ export default defineNuxtConfig({
         clientSecret: "",
       },
     },
-    environment: process.env.ENVIROMENT,
+    environment: process.env.ENVIRONMENT || process.env.ENVIROMENT,
 
-    // --- NEW CONFIGURATION ADDED HERE ---
-    // Keys inside 'public' are available on the client-side
+    // Public environment variables (available on client-side)
     public: {
       geminiApiKey: process.env.GEMINI_API_KEY,
+      siteUrl: process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'http://localhost:3000',
     },
-    // --- END OF NEW CONFIGURATION ---
   },
   app: {
     head: {

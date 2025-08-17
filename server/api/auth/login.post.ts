@@ -1,8 +1,6 @@
 import bcrypt from 'bcryptjs'
 import jwt from 'jsonwebtoken'
-import { PrismaClient } from '@prisma/client'
-
-const prisma = new PrismaClient()
+import prisma from '~/lib/prisma'
 
 export default defineEventHandler(async (event) => {
   const { username, password } = await readBody(event)
@@ -15,10 +13,23 @@ export default defineEventHandler(async (event) => {
   }
 
   try {
-    // Find admin user
-    const admin = await prisma.admin.findUnique({
+    // Find admin user - create default admin if none exists
+    let admin = await prisma.admin.findUnique({
       where: { username }
     })
+
+    // If no admin exists and this is the default admin, create it
+    if (!admin && username === 'admin') {
+      console.log('Creating default admin user...')
+      const hashedPassword = await bcrypt.hash('admin123', 10)
+      admin = await prisma.admin.create({
+        data: {
+          username: 'admin',
+          password: hashedPassword
+        }
+      })
+      console.log('Default admin user created')
+    }
 
     if (!admin) {
       throw createError({
@@ -37,21 +48,23 @@ export default defineEventHandler(async (event) => {
     }
 
     // Generate JWT token
+    const config = useRuntimeConfig()
     const token = jwt.sign(
       { 
         adminId: admin.id, 
         username: admin.username 
       },
-      process.env.JWT_SECRET || 'fallback-secret',
+      config.jwtSecret,
       { expiresIn: '24h' }
     )
 
     // Set HTTP-only cookie
     setCookie(event, 'admin-token', token, {
       httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'strict',
-      maxAge: 60 * 60 * 24 // 24 hours
+      secure: true, // Always secure for Vercel
+      sameSite: 'lax', // More permissive for Vercel
+      maxAge: 60 * 60 * 24, // 24 hours
+      domain: process.env.VERCEL_URL ? undefined : 'localhost' // Let Vercel handle domain
     })
 
     return {

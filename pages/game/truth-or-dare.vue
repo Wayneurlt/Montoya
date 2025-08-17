@@ -651,13 +651,27 @@ async function loadQuestions() {
   try {
     console.log('🔄 Loading questions from database...')
     
+    // Add timeout and retry logic for Vercel
+    const fetchWithRetry = async (url, retries = 3) => {
+      for (let i = 0; i < retries; i++) {
+        try {
+          const response = await $fetch(url, { timeout: 10000 })
+          return response
+        } catch (error) {
+          console.warn(`Attempt ${i + 1} failed for ${url}:`, error)
+          if (i === retries - 1) throw error
+          await new Promise(resolve => setTimeout(resolve, 1000 * (i + 1)))
+        }
+      }
+    }
+    
     // Load truth questions (normal and spicy)
-    const truthResponse = await $fetch('/api/questions/truth-or-dare?type=TRUTH&limit=100')
+    const truthResponse = await fetchWithRetry('/api/questions/truth-or-dare?type=TRUTH&limit=100')
     console.log('Truth API response:', truthResponse)
     const allTruthQuestions = truthResponse.questions || []
     
     // Load dare questions (normal and spicy)
-    const dareResponse = await $fetch('/api/questions/truth-or-dare?type=DARE&limit=100')
+    const dareResponse = await fetchWithRetry('/api/questions/truth-or-dare?type=DARE&limit=100')
     console.log('Dare API response:', dareResponse)
     const allDareQuestions = dareResponse.questions || []
     
@@ -689,8 +703,20 @@ async function loadQuestions() {
   } catch (error) {
     console.error('❌ Error loading questions from database:', error)
     // Fallback: use some default questions to prevent game from breaking
-    const fallbackTruths = ['What is your biggest secret?', 'Who do you have a crush on?']
-    const fallbackDares = ['Give someone a hug', 'Do a silly dance']
+    const fallbackTruths = [
+      'What is your biggest secret?', 
+      'Who do you have a crush on?', 
+      'What is the most daring thing you\'ve done?',
+      'Have you ever lied to get someone to like you?',
+      'What is your biggest turn-on?'
+    ]
+    const fallbackDares = [
+      'Give someone a hug', 
+      'Do a silly dance',
+      'Compliment the person next to you',
+      'Sing a love song to someone',
+      'Give your best model walk'
+    ]
     
     normalTruthTracker = useTruthTracker(fallbackTruths, false);
     spicyTruthTracker = useTruthTracker(fallbackTruths, true);

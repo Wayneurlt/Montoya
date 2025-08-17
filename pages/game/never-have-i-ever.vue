@@ -93,7 +93,12 @@ async function loadQuestions() {
     questionTracker = useNeverHaveIEverTracker([
       'Never have I ever kissed someone',
       'Never have I ever been on a date',
-      'Never have I ever told a lie'
+      'Never have I ever told a lie',
+      'Never have I ever sent a risky text',
+      'Never have I ever had a crush on a teacher',
+      'Never have I ever ghosted someone',
+      'Never have I ever used a dating app',
+      'Never have I ever been caught lying'
     ])
     questionTracker.initializeTracker();
     console.log('⚠️ Using fallback Never Have I Ever questions')

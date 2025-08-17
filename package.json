@@ -3,7 +3,7 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "build": "nuxt build",
+    "build": "prisma generate && nuxt build",
     "dev": "nuxt dev --host 0.0.0.0",
     "generate": "nuxt generate",
     "preview": "nuxt preview",
@@ -12,7 +12,8 @@
     "prisma:migrate": "npx prisma migrate",
     "prisma:studio": "npx prisma studio",
     "prisma:schema": "npx prisma db push",
-    "prisma": "npm run prisma:generate && npm run prisma:migrate && npm run prisma:schema"
+    "prisma": "npm run prisma:generate && npm run prisma:migrate && npm run prisma:schema",
+    "vercel-build": "prisma generate && prisma db push && nuxt build"
   },
   "dependencies": {
     "@iconify/vue": "^5.0.0",

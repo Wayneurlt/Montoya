@@ -93,7 +93,11 @@ async function loadQuestions() {
     questionTracker = useMostLikelyToTracker([
       'Who is most likely to become famous?',
       'Who is most likely to get married first?',
-      'Who is most likely to travel the world?'
+      'Who is most likely to travel the world?',
+      'Who is most likely to become a millionaire?',
+      'Who is most likely to write a book?',
+      'Who is most likely to move to another country?',
+      'Who is most likely to have the most kids?'
     ])
     questionTracker.initializeTracker();
     console.log('⚠️ Using fallback Most Likely To questions')

@@ -17,7 +17,8 @@ export function requireAdmin(event: H3Event<EventHandlerRequest>): AdminUser {
   }
 
   try {
-    const decoded = jwt.verify(token, process.env.JWT_SECRET || 'fallback-secret') as AdminUser
+    const config = useRuntimeConfig()
+    const decoded = jwt.verify(token, config.jwtSecret) as AdminUser
     return decoded
   } catch (error) {
     throw createError({

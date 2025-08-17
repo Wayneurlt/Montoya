@@ -735,7 +735,11 @@ async function loadQuestions() {
     challengeTracker = useDoOrDrinkTracker([
       { text: 'Give someone a compliment', intensity: 1, drinkAmount: '1 sip' },
       { text: 'Do a funny dance', intensity: 2, drinkAmount: '2 sips' },
-      { text: 'Tell a joke', intensity: 1, drinkAmount: '1 sip' }
+      { text: 'Tell a joke', intensity: 1, drinkAmount: '1 sip' },
+      { text: 'Give someone a high five', intensity: 1, drinkAmount: '1 sip' },
+      { text: 'Do your best impression', intensity: 2, drinkAmount: '2 sips' },
+      { text: 'Sing a song', intensity: 2, drinkAmount: '2 sips' },
+      { text: 'Do 10 push-ups', intensity: 3, drinkAmount: '3 sips' }
     ])
     challengeTracker.initializeTracker();
     console.log('⚠️ Using fallback Do or Drink questions')

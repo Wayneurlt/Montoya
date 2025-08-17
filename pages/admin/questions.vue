@@ -24,11 +24,28 @@
     <div class="space-y-8">
       <!-- Truth or Dare Section -->
       <div class="bg-white/5 border border-white/10 rounded-xl p-6">
-        <h2 class="text-xl font-bold mb-4 text-pink-400">🎯 Truth or Dare</h2>
+        <div class="flex items-center justify-between mb-4">
+          <h2 class="text-xl font-bold text-pink-400">🎯 Truth or Dare</h2>
+          <div class="flex gap-2">
+            <UButton size="sm" color="blue" variant="soft" @click="openCreateFor('TRUTH_OR_DARE', 'TRUTH')">
+              <Icon name="i-mdi-plus" class="w-4 h-4 mr-1" />
+              Add Truth
+            </UButton>
+            <UButton size="sm" color="purple" variant="soft" @click="openCreateFor('TRUTH_OR_DARE', 'DARE')">
+              <Icon name="i-mdi-plus" class="w-4 h-4 mr-1" />
+              Add Dare
+            </UButton>
+          </div>
+        </div>
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
           <!-- Truth Cards -->
           <div>
-            <h3 class="text-lg font-semibold mb-3 text-blue-300">Truth Questions ({{ truthCards.length }})</h3>
+            <div class="flex items-center justify-between mb-3">
+              <h3 class="text-lg font-semibold text-blue-300">Truth Questions ({{ truthCards.length }})</h3>
+              <UButton size="xs" color="blue" variant="ghost" @click="openCreateFor('TRUTH_OR_DARE', 'TRUTH')">
+                <Icon name="i-mdi-plus" class="w-3 h-3" />
+              </UButton>
+            </div>
             <div class="space-y-2 max-h-64 overflow-y-auto">
               <div v-for="card in truthCards.slice(0, 10)" :key="card.id" 
                    class="p-3 bg-white/5 rounded-lg border border-white/10">
@@ -49,7 +66,12 @@
 
           <!-- Dare Cards -->
           <div>
-            <h3 class="text-lg font-semibold mb-3 text-purple-300">Dare Questions ({{ dareCards.length }})</h3>
+            <div class="flex items-center justify-between mb-3">
+              <h3 class="text-lg font-semibold text-purple-300">Dare Questions ({{ dareCards.length }})</h3>
+              <UButton size="xs" color="purple" variant="ghost" @click="openCreateFor('TRUTH_OR_DARE', 'DARE')">
+                <Icon name="i-mdi-plus" class="w-3 h-3" />
+              </UButton>
+            </div>
             <div class="space-y-2 max-h-64 overflow-y-auto">
               <div v-for="card in dareCards.slice(0, 10)" :key="card.id" 
                    class="p-3 bg-white/5 rounded-lg border border-white/10">
@@ -72,7 +94,13 @@
 
       <!-- Do or Drink Section -->
       <div class="bg-white/5 border border-white/10 rounded-xl p-6">
-        <h2 class="text-xl font-bold mb-4 text-orange-400">🍺 Do or Drink</h2>
+        <div class="flex items-center justify-between mb-4">
+          <h2 class="text-xl font-bold text-orange-400">🍺 Do or Drink</h2>
+          <UButton size="sm" color="orange" variant="soft" @click="openCreateFor('DO_OR_DRINK', 'DO')">
+            <Icon name="i-mdi-plus" class="w-4 h-4 mr-1" />
+            Add Challenge
+          </UButton>
+        </div>
         <div class="space-y-2 max-h-64 overflow-y-auto">
           <div v-for="card in doOrDrinkCards.slice(0, 15)" :key="card.id" 
                class="p-3 bg-white/5 rounded-lg border border-white/10">
@@ -96,11 +124,32 @@
 
       <!-- Group Games Section -->
       <div class="bg-white/5 border border-white/10 rounded-xl p-6">
-        <h2 class="text-xl font-bold mb-4 text-green-400">👥 Group Games</h2>
+        <div class="flex items-center justify-between mb-4">
+          <h2 class="text-xl font-bold text-green-400">👥 Group Games</h2>
+          <div class="flex gap-2 flex-wrap">
+            <UButton size="sm" color="red" variant="soft" @click="openCreateFor('NEVER_HAVE_I_EVER')">
+              <Icon name="i-mdi-plus" class="w-4 h-4 mr-1" />
+              Add NHIE
+            </UButton>
+            <UButton size="sm" color="yellow" variant="soft" @click="openCreateFor('MOST_LIKELY_TO')">
+              <Icon name="i-mdi-plus" class="w-4 h-4 mr-1" />
+              Add MLT
+            </UButton>
+            <UButton size="sm" color="cyan" variant="soft" @click="openCreateFor('WOULD_YOU_RATHER')">
+              <Icon name="i-mdi-plus" class="w-4 h-4 mr-1" />
+              Add WYR
+            </UButton>
+          </div>
+        </div>
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
           <!-- Never Have I Ever -->
           <div>
-            <h3 class="text-lg font-semibold mb-3 text-red-300">Never Have I Ever ({{ neverHaveQuestions.length }})</h3>
+            <div class="flex items-center justify-between mb-3">
+              <h3 class="text-lg font-semibold text-red-300">Never Have I Ever ({{ neverHaveQuestions.length }})</h3>
+              <UButton size="xs" color="red" variant="ghost" @click="openCreateFor('NEVER_HAVE_I_EVER')">
+                <Icon name="i-mdi-plus" class="w-3 h-3" />
+              </UButton>
+            </div>
             <div class="space-y-2 max-h-48 overflow-y-auto">
               <div v-for="q in neverHaveQuestions.slice(0, 8)" :key="q.id" 
                    class="p-3 bg-white/5 rounded-lg border border-white/10">
@@ -121,7 +170,12 @@
 
           <!-- Most Likely To -->
           <div>
-            <h3 class="text-lg font-semibold mb-3 text-yellow-300">Most Likely To ({{ mostLikelyQuestions.length }})</h3>
+            <div class="flex items-center justify-between mb-3">
+              <h3 class="text-lg font-semibold text-yellow-300">Most Likely To ({{ mostLikelyQuestions.length }})</h3>
+              <UButton size="xs" color="yellow" variant="ghost" @click="openCreateFor('MOST_LIKELY_TO')">
+                <Icon name="i-mdi-plus" class="w-3 h-3" />
+              </UButton>
+            </div>
             <div class="space-y-2 max-h-48 overflow-y-auto">
               <div v-for="q in mostLikelyQuestions.slice(0, 8)" :key="q.id" 
                    class="p-3 bg-white/5 rounded-lg border border-white/10">
@@ -142,7 +196,12 @@
 
           <!-- Would You Rather -->
           <div>
-            <h3 class="text-lg font-semibold mb-3 text-cyan-300">Would You Rather ({{ wouldYouRatherQuestions.length }})</h3>
+            <div class="flex items-center justify-between mb-3">
+              <h3 class="text-lg font-semibold text-cyan-300">Would You Rather ({{ wouldYouRatherQuestions.length }})</h3>
+              <UButton size="xs" color="cyan" variant="ghost" @click="openCreateFor('WOULD_YOU_RATHER')">
+                <Icon name="i-mdi-plus" class="w-3 h-3" />
+              </UButton>
+            </div>
             <div class="space-y-2 max-h-48 overflow-y-auto">
               <div v-for="q in wouldYouRatherQuestions.slice(0, 8)" :key="q.id" 
                    class="p-3 bg-white/5 rounded-lg border border-white/10">

@@ -93,7 +93,11 @@ async function loadQuestions() {
     questionTracker = useWouldYouRatherTracker([
       'Would you rather have the ability to fly or be invisible?',
       'Would you rather be rich or famous?',
-      'Would you rather live in the past or future?'
+      'Would you rather live in the past or future?',
+      'Would you rather read minds or predict the future?',
+      'Would you rather be the smartest or the funniest person?',
+      'Would you rather have unlimited money or unlimited time?',
+      'Would you rather be able to speak all languages or play all instruments?'
     ])
     questionTracker.initializeTracker();
     console.log('⚠️ Using fallback Would You Rather questions')
