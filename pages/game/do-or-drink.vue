@@ -327,7 +327,7 @@
 <script setup>
 import { ref, computed, onMounted, onBeforeUnmount } from "vue";
 import { Icon } from "@iconify/vue";
-import { doOrDrinkQuestions } from "~/data/questions/doordrink";
+// Questions are now loaded from database via API
 import { useDoOrDrinkTracker } from "~/composables/useQuestionTracker";
 // Sessionless: no server session polling
 
@@ -425,11 +425,18 @@ const intensityTextClass = computed(() => {
   return INTENSITY_LEVELS[currentCard.value.intensity - 1]?.textColor || "";
 });
 
-// Initialize question tracker
-const challengeTracker = useDoOrDrinkTracker(doOrDrinkQuestions);
+// Initialize question tracker (will be populated from database)
+let challengeTracker = null;
 
 // Question Selection Logic
 const getRandomChallenge = () => {
+  if (!challengeTracker) {
+    return {
+      question: { text: 'Questions are loading... Please wait.', intensity: 1, drinkAmount: '1 sip' },
+      isRepeat: false
+    }
+  }
+  
   const result = challengeTracker.getNextQuestion();
   
   // Log usage stats for debugging
@@ -705,10 +712,40 @@ const getLogIconColor = (log) => {
   return "text-blue-400";
 };
 
-onMounted(() => {
-  if (typeof window !== "undefined") {
-    // Initialize question tracker
+// Load questions from database
+async function loadQuestions() {
+  try {
+    console.log('🔄 Loading Do or Drink questions from database...')
+    const response = await $fetch('/api/questions/do-or-drink?limit=100')
+    console.log('Do or Drink API response:', response)
+    const questions = response.questions || []
+    
+    // Create tracker with loaded questions
+    challengeTracker = useDoOrDrinkTracker(questions.map(q => ({
+      text: q.text,
+      intensity: q.intensity,
+      drinkAmount: q.drinkAmount || '2 sips'
+    })))
     challengeTracker.initializeTracker();
+    
+    console.log(`✅ Loaded ${questions.length} Do or Drink questions`)
+  } catch (error) {
+    console.error('❌ Error loading Do or Drink questions:', error)
+    // Fallback questions
+    challengeTracker = useDoOrDrinkTracker([
+      { text: 'Give someone a compliment', intensity: 1, drinkAmount: '1 sip' },
+      { text: 'Do a funny dance', intensity: 2, drinkAmount: '2 sips' },
+      { text: 'Tell a joke', intensity: 1, drinkAmount: '1 sip' }
+    ])
+    challengeTracker.initializeTracker();
+    console.log('⚠️ Using fallback Do or Drink questions')
+  }
+}
+
+onMounted(async () => {
+  if (typeof window !== "undefined") {
+    // Load questions from database
+    await loadQuestions()
   }
 });
 

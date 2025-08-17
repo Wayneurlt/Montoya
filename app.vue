@@ -1,7 +1,9 @@
 <template>
   <UApp>
     <NuxtRouteAnnouncer />
-    <NuxtPage />
+    <NuxtLayout>
+      <NuxtPage />
+    </NuxtLayout>
     <Notivue v-slot="item">
       <Notification :item="item" />
     </Notivue>
@@ -9,7 +11,12 @@
 </template>
 
 <script setup lang="ts">
+import { useAnalytics } from '~/composables/useAnalytics'
+const { trackPageView } = useAnalytics()
+
 onMounted(() => {
- console.log(window.innerHeight, window.innerWidth);
+  console.log(window.innerHeight, window.innerWidth);
+  
+  trackPageView('app')
 });
 </script>

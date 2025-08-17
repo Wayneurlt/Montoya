@@ -28,7 +28,7 @@
         >
           Strip Truth or Dare
         </h1>
-        <div class="flex justify-center items-center gap-2 flex-wrap">
+        <div class="flex justify-center items-center gap-3 flex-wrap mb-4">
           <span
             class="text-sm px-3 py-1 rounded-full"
             :class="
@@ -46,173 +46,272 @@
           >
             Level {{ gameLevel }}
           </span>
-          <!-- Spicy Mode Toggle -->
-          <button
-            @click="isSpicyMode = !isSpicyMode"
-            class="text-sm px-3 py-1 rounded-full transition-all"
-            :class="
-              isSpicyMode
-                ? 'bg-red-500/20 text-red-300 border border-red-400/50'
-                : 'bg-gray-500/20 text-gray-300 border border-gray-400/50'
-            "
-          >
-            {{ isSpicyMode ? '🌶️ Spicy' : '😇 Normal' }}
+        </div>
+        
+        <!-- Enhanced Spicy Mode Toggle -->
+        <div class="bg-gradient-to-r from-white/5 to-white/10 rounded-xl p-5 border border-white/20 shadow-lg">
+          <div class="flex items-center justify-center gap-2 mb-4">
+            <Icon icon="mdi:fire" class="w-5 h-5 text-orange-400" />
+            <h3 class="text-lg font-semibold text-white">Game Intensity</h3>
+          </div>
+          <div class="flex bg-gray-800/60 rounded-xl p-1.5 max-w-sm mx-auto shadow-inner">
+            <button
+              @click="isSpicyMode = false"
+              class="flex-1 px-5 py-3 rounded-lg transition-all duration-300 text-sm font-semibold flex items-center justify-center gap-2 relative overflow-hidden"
+              :class="
+                !isSpicyMode
+                  ? 'bg-gradient-to-r from-green-500 to-emerald-500 text-white shadow-lg transform scale-105'
+                  : 'text-gray-300 hover:text-white hover:bg-white/5'
+              "
+            >
+              <span class="text-base">😇</span>
+              <span>Normal</span>
+              <span v-if="!isSpicyMode" class="absolute inset-0 bg-white/20 animate-pulse rounded-lg"></span>
+            </button>
+            <button
+              @click="isSpicyMode = true"
+              class="flex-1 px-5 py-3 rounded-lg transition-all duration-300 text-sm font-semibold flex items-center justify-center gap-2 relative overflow-hidden"
+              :class="
+                isSpicyMode
+                  ? 'bg-gradient-to-r from-red-500 to-rose-500 text-white shadow-lg transform scale-105'
+                  : 'text-gray-300 hover:text-white hover:bg-white/5'
+              "
+            >
+              <span class="text-base">🌶️</span>
+              <span>Spicy</span>
+              <span v-if="isSpicyMode" class="absolute inset-0 bg-white/20 animate-pulse rounded-lg"></span>
+            </button>
+          </div>
+          <div class="text-center mt-4">
+            <p class="text-sm font-medium" :class="isSpicyMode ? 'text-red-300' : 'text-green-300'">
+              {{ isSpicyMode ? '🔥 Hot and steamy questions' : '✨ Playful and safe questions' }}
+            </p>
+            <p class="text-xs text-white/60 mt-1">
+              {{ isSpicyMode ? 'For adventurous players' : 'Perfect for everyone' }}
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Top Bar: Turn + Compact Clothing Counter + Settings -->
+      <div class="flex items-center justify-between mb-6">
+        <div class="bg-white/5 rounded-xl px-4 py-3 border border-white/10">
+          <div class="text-xs text-white/60">Current Turn</div>
+          <div class="text-lg font-bold flex items-center gap-2">
+            <span>{{ currentPlayer?.name }}</span>
+            <span class="text-xl">{{ currentPlayer?.gender === 'male' ? '♂' : '♀' }}</span>
+          </div>
+        </div>
+
+        <div class="flex items-center gap-3">
+          <!-- Compact clothing chip -->
+          <div class="flex items-center gap-1 bg-white/5 px-3 py-2 rounded-full border border-white/10 text-sm">
+            <Icon icon="mdi:tshirt-crew" class="w-4 h-4" />
+            <span class="font-semibold">{{ remainingClothing }}</span>
+          </div>
+          <!-- Settings button -->
+          <button @click="showSettings = true" class="bg-white/10 hover:bg-white/20 px-3 py-2 rounded-lg border border-white/10 text-sm flex items-center gap-2">
+            <Icon icon="mdi:cog" class="w-4 h-4" />
+            Settings
           </button>
         </div>
       </div>
 
-      <!-- Player Status Bar -->
-      <div
-        class="flex justify-between items-center mb-6 p-4 bg-gradient-to-r from-white/5 to-white/10 rounded-xl border border-white/10"
-      >
-        <div>
-          <h3 class="text-sm font-medium text-white/70">Current Turn:</h3>
-          <p class="text-xl font-bold flex items-center gap-2">
-            <span>{{ currentPlayer?.name }}</span>
-            <span class="text-2xl">{{
-              currentPlayer?.gender === "male" ? "♂" : "♀"
-            }}</span>
-          </p>
-        </div>
-        <div class="text-right">
-          <h3 class="text-sm font-medium text-white/70">Clothing Left:</h3>
-          <p class="text-xl font-bold flex items-center justify-end gap-1">
-            <span>{{ remainingClothing }}</span>
-            <Icon icon="mdi:tshirt-crew" class="w-5 h-5" />
-          </p>
-        </div>
-      </div>
+      <!-- Clothing Status moved to Settings modal -->
 
-      <!-- Clothing Status -->
+      <!-- Choose Your Card -->
       <div class="mb-8">
-        <h3 class="text-lg font-semibold mb-3 flex items-center gap-2">
-          <Icon icon="mdi:wardrobe" class="w-5 h-5" />
-          <span>Clothing Status</span>
-        </h3>
-        <div class="flex flex-wrap gap-2">
-          <div
-            v-for="(item, index) in clothingItems"
-            :key="index"
-            class="px-4 py-2 rounded-full transition-all flex items-center gap-2"
-            :class="
-              item.removed
-                ? 'bg-gray-700/50 text-gray-400 line-through'
-                : 'bg-gradient-to-r from-pink-600 to-purple-600 hover:from-pink-700 hover:to-purple-700 cursor-pointer'
-            "
-            @click="toggleClothing(index)"
-          >
-            <Icon :icon="item.icon" class="w-4 h-4" />
-            <span>{{ item.name }}</span>
-          </div>
+        <div class="text-center mb-6">
+          <h3 class="text-2xl font-bold mb-2 bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-pink-400">
+            Choose Your Challenge
+          </h3>
+          <p class="text-white/60 text-sm">
+            {{ currentPlayer?.name }}, it's your turn! Pick Truth or Dare to continue.
+          </p>
         </div>
-      </div>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+          
+          <!-- Truth Card -->
+          <div class="relative">
+            <div
+              class="cursor-pointer perspective-1000"
+              @click="drawSpecificCard('TRUTH')"
+            >
+              <div
+                class="relative w-full h-64 transition-transform duration-700 transform-style-preserve-3d"
+                :class="{ 'rotate-y-180': currentCard?.type === 'TRUTH' && cardFlipped }"
+              >
+                <!-- Truth Card Front -->
+                <div
+                  class="absolute w-full h-full backface-hidden bg-gradient-to-br from-blue-600 via-blue-700 to-indigo-800 rounded-2xl flex flex-col justify-center items-center p-6 shadow-2xl border-2 hover:scale-105 transition-all duration-300 hover:shadow-blue-500/30"
+                  :class="{ 
+                    'opacity-50': isDrawing && selectedCardType !== 'TRUTH',
+                    'border-blue-400/50': !isDrawing || selectedCardType === 'TRUTH',
+                    'border-white/20': isDrawing && selectedCardType !== 'TRUTH'
+                  }"
+                >
+                  <div class="text-center relative">
+                    <!-- Floating background elements -->
+                    <div class="absolute -top-2 -right-2 w-8 h-8 bg-blue-400/20 rounded-full animate-bounce" style="animation-delay: 0s;"></div>
+                    <div class="absolute -bottom-1 -left-1 w-6 h-6 bg-indigo-400/30 rounded-full animate-bounce" style="animation-delay: 1s;"></div>
+                    
+                    <div class="text-6xl mb-4 animate-pulse">
+                      <Icon icon="mdi:chat-question" />
+                    </div>
+                    <p class="text-3xl font-bold mb-3 tracking-wide">TRUTH</p>
+                    <p class="text-base font-medium mb-3" :class="isSpicyMode ? 'text-red-200' : 'text-blue-200'">
+                      {{ isSpicyMode ? '🔥 Answer honestly...' : '✨ Share your secrets...' }}
+                    </p>
+                    <div class="mt-4 text-sm px-4 py-2 rounded-full bg-white/25 backdrop-blur-sm font-semibold">
+                      {{ isSpicyMode ? '🌶️ Spicy Mode' : '😇 Normal Mode' }}
+                    </div>
+                  </div>
+                </div>
 
-      <!-- Game Card -->
-      <div
-        class="relative w-full h-72 mb-8 cursor-pointer perspective-1000"
-        @click="flipCard"
-      >
-        <div
-          class="relative w-full h-full transition-transform duration-700 transform-style-preserve-3d"
-          :class="{ 'rotate-y-180': cardFlipped }"
-        >
-          <!-- Front of Card -->
-          <div
-            class="absolute w-full h-full backface-hidden bg-gradient-to-br from-pink-600 to-purple-600 rounded-2xl flex flex-col justify-center items-center p-6 shadow-lg border-2 border-white/20"
-          >
-            <div class="text-center">
-              <p class="text-3xl font-bold mb-4">Truth or Dare?</p>
-              <p v-if="!currentCard" class="text-lg opacity-80">
-                Draw a card to begin the game
-              </p>
-              <p v-else class="text-lg opacity-80">
-                Click to reveal your challenge
-              </p>
-              <div class="mt-6 text-5xl">
-                <Icon
-                  v-if="currentCard?.type === 'TRUTH'"
-                  icon="mdi:chat-question"
-                />
-                <Icon
-                  v-else-if="currentCard?.type === 'DARE'"
-                  icon="mdi:fire"
-                />
-                <Icon v-else icon="mdi:cards" />
+                <!-- Truth Card Back -->
+                <div
+                  class="absolute w-full h-full backface-hidden bg-white text-gray-900 rounded-2xl flex flex-col justify-center items-center p-6 shadow-lg rotate-y-180 border-2 border-white/20"
+                >
+                  <div v-if="currentCard?.type === 'TRUTH'" class="text-center w-full">
+                    <span class="font-bold text-lg px-4 py-1 rounded-full mb-4 inline-flex items-center gap-2 bg-blue-100 text-blue-800">
+                      <Icon icon="mdi:chat-question" class="w-5 h-5" />
+                      TRUTH
+                    </span>
+                    <p class="text-lg font-medium mb-4 px-2">
+                      {{ currentCard.text }}
+                    </p>
+                    <div
+                      v-if="currentCard.target"
+                      class="bg-gray-100 rounded-lg p-3 max-w-xs mx-auto"
+                    >
+                      <p class="text-sm font-medium text-gray-700 flex items-center justify-center gap-2">
+                        <Icon icon="mdi:account-arrow-right" class="w-5 h-5" />
+                        <span>
+                          To: {{ currentCard.target.name }}
+                          <span class="text-lg">{{ currentCard.target.gender === "male" ? "♂" : "♀" }}</span>
+                        </span>
+                      </p>
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
+            
+            <!-- Truth Action Button -->
+            <button
+              @click="drawSpecificCard('TRUTH')"
+              class="w-full mt-4 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 py-3 rounded-xl font-bold transition-all duration-300 flex items-center justify-center gap-3 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg hover:shadow-blue-500/30 hover:scale-105"
+              :disabled="isDrawing || (currentCard && currentCard.type !== 'TRUTH')"
+            >
+              <Icon v-if="isDrawing && selectedCardType === 'TRUTH'" icon="svg-spinners:3-dots-fade" class="w-5 h-5" />
+              <Icon v-else icon="mdi:chat-question" class="w-5 h-5" />
+              <span class="text-base">
+                {{ (isDrawing && selectedCardType === 'TRUTH') ? "Getting Truth..." : "Draw Truth" }}
+              </span>
+            </button>
           </div>
 
-          <!-- Back of Card -->
-          <div
-            class="absolute w-full h-full backface-hidden bg-white text-gray-900 rounded-2xl flex flex-col justify-center items-center p-6 shadow-lg rotate-y-180 border-2 border-white/20"
-          >
-            <div v-if="currentCard" class="text-center w-full">
-              <span
-                class="font-bold text-lg px-4 py-1 rounded-full mb-4 inline-flex items-center gap-2"
-                :class="
-                  currentCard.type === 'TRUTH'
-                    ? 'bg-blue-100 text-blue-800'
-                    : 'bg-pink-100 text-pink-800'
-                "
-              >
-                <Icon
-                  :icon="
-                    currentCard.type === 'TRUTH'
-                      ? 'mdi:chat-question'
-                      : 'mdi:fire'
-                  "
-                  class="w-5 h-5"
-                />
-                {{ currentCard.type }}
-              </span>
-              <p class="text-xl font-medium mb-4 px-4">
-                {{ currentCard.text }}
-              </p>
-
+          <!-- Dare Card -->
+          <div class="relative">
+            <div
+              class="cursor-pointer perspective-1000"
+              @click="drawSpecificCard('DARE')"
+            >
               <div
-                v-if="currentCard.target"
-                class="bg-gray-100 rounded-lg p-3 w-full max-w-xs mx-auto"
+                class="relative w-full h-64 transition-transform duration-700 transform-style-preserve-3d"
+                :class="{ 'rotate-y-180': currentCard?.type === 'DARE' && cardFlipped }"
               >
-                <p
-                  class="text-sm font-medium text-gray-700 flex items-center justify-center gap-2"
+                <!-- Dare Card Front -->
+                <div
+                  class="absolute w-full h-full backface-hidden bg-gradient-to-br from-pink-600 via-red-600 to-rose-700 rounded-2xl flex flex-col justify-center items-center p-6 shadow-2xl border-2 hover:scale-105 transition-all duration-300 hover:shadow-pink-500/30"
+                  :class="{ 
+                    'opacity-50': isDrawing && selectedCardType !== 'DARE',
+                    'border-pink-400/50': !isDrawing || selectedCardType === 'DARE',
+                    'border-white/20': isDrawing && selectedCardType !== 'DARE'
+                  }"
                 >
-                  <Icon icon="mdi:account-arrow-right" class="w-5 h-5" />
-                  <span>
-                    To: {{ currentCard.target.name }}
-                    <span class="text-lg">{{
-                      currentCard.target.gender === "male" ? "♂" : "♀"
-                    }}</span>
-                  </span>
-                </p>
+                  <div class="text-center relative">
+                    <!-- Floating background elements -->
+                    <div class="absolute -top-1 -right-3 w-7 h-7 bg-pink-400/20 rounded-full animate-bounce" style="animation-delay: 0.5s;"></div>
+                    <div class="absolute -bottom-2 -left-2 w-5 h-5 bg-red-400/30 rounded-full animate-bounce" style="animation-delay: 1.5s;"></div>
+                    
+                    <div class="text-6xl mb-4 animate-pulse">
+                      <Icon icon="mdi:fire" />
+                    </div>
+                    <p class="text-3xl font-bold mb-3 tracking-wide">DARE</p>
+                    <p class="text-base font-medium mb-3" :class="isSpicyMode ? 'text-red-200' : 'text-pink-200'">
+                      {{ isSpicyMode ? '🔥 Take the heat...' : '💪 Show your courage...' }}
+                    </p>
+                    <div class="mt-4 text-sm px-4 py-2 rounded-full bg-white/25 backdrop-blur-sm font-semibold">
+                      {{ isSpicyMode ? '🌶️ Spicy Mode' : '😇 Normal Mode' }}
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Dare Card Back -->
+                <div
+                  class="absolute w-full h-full backface-hidden bg-white text-gray-900 rounded-2xl flex flex-col justify-center items-center p-6 shadow-lg rotate-y-180 border-2 border-white/20"
+                >
+                  <div v-if="currentCard?.type === 'DARE'" class="text-center w-full">
+                    <span class="font-bold text-lg px-4 py-1 rounded-full mb-4 inline-flex items-center gap-2 bg-pink-100 text-pink-800">
+                      <Icon icon="mdi:fire" class="w-5 h-5" />
+                      DARE
+                    </span>
+                    <p class="text-lg font-medium mb-4 px-2">
+                      {{ currentCard.text }}
+                    </p>
+                    <div
+                      v-if="currentCard.target"
+                      class="bg-gray-100 rounded-lg p-3 max-w-xs mx-auto"
+                    >
+                      <p class="text-sm font-medium text-gray-700 flex items-center justify-center gap-2">
+                        <Icon icon="mdi:account-arrow-right" class="w-5 h-5" />
+                        <span>
+                          To: {{ currentCard.target.name }}
+                          <span class="text-lg">{{ currentCard.target.gender === "male" ? "♂" : "♀" }}</span>
+                        </span>
+                      </p>
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
+            
+            <!-- Dare Action Button -->
+            <button
+              @click="drawSpecificCard('DARE')"
+              class="w-full mt-4 bg-gradient-to-r from-pink-600 to-red-600 hover:from-pink-700 hover:to-red-700 py-3 rounded-xl font-bold transition-all duration-300 flex items-center justify-center gap-3 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg hover:shadow-pink-500/30 hover:scale-105"
+              :disabled="isDrawing || (currentCard && currentCard.type !== 'DARE')"
+            >
+              <Icon v-if="isDrawing && selectedCardType === 'DARE'" icon="svg-spinners:3-dots-fade" class="w-5 h-5" />
+              <Icon v-else icon="mdi:fire" class="w-5 h-5" />
+              <span class="text-base">
+                {{ (isDrawing && selectedCardType === 'DARE') ? "Getting Dare..." : "Draw Dare" }}
+              </span>
+            </button>
           </div>
         </div>
       </div>
 
       <!-- Action Buttons -->
-      <div class="grid grid-cols-2 gap-4 mb-6">
-        <button
-          @click="drawCard"
-          class="bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700 py-3 rounded-xl font-bold transition-all flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
-          :disabled="isDrawing || currentCard"
-        >
-          <Icon
-            v-if="isDrawing"
-            icon="svg-spinners:3-dots-fade"
-            class="w-5 h-5"
-          />
-          <Icon v-else icon="mdi:cards" class="w-5 h-5" />
-          {{ isDrawing ? "Generating..." : "Draw Card" }}
-        </button>
-        <button
-          @click="completeChallenge"
-          class="bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 py-3 rounded-xl font-bold transition-all flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
-          :disabled="!currentCard || !cardFlipped"
-        >
-          <Icon icon="mdi:check-bold" class="w-5 h-5" />
-          Completed
-        </button>
+      <div v-if="currentCard && cardFlipped" class="mb-6">
+        <div class="grid grid-cols-1 gap-3">
+          <button
+            @click="completeChallenge"
+            class="w-full bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 py-4 rounded-xl font-bold text-lg transition-all flex items-center justify-center gap-2 shadow-lg"
+          >
+            <Icon icon="mdi:check-bold" class="w-6 h-6" />
+            Challenge Completed!
+          </button>
+          
+          <button
+            @click="resetCard"
+            class="w-full bg-gradient-to-r from-gray-600 to-gray-700 hover:from-gray-700 hover:to-gray-800 py-2 rounded-xl font-medium transition-all flex items-center justify-center gap-2 text-sm"
+          >
+            <Icon icon="mdi:refresh" class="w-4 h-4" />
+            Choose Different Card
+          </button>
+        </div>
       </div>
 
       <!-- Hesitation Timer -->
@@ -236,6 +335,61 @@
           ></div>
         </div>
       </div>
+
+      <!-- Settings Modal -->
+      <transition name="fade">
+        <div v-if="showSettings" class="fixed inset-0 bg-black/60 flex items-center justify-center z-40">
+          <div class="bg-slate-900 rounded-2xl border border-white/10 w-full max-w-lg p-6 shadow-2xl">
+            <div class="flex items-center justify-between mb-4">
+              <h3 class="text-xl font-semibold">Settings</h3>
+              <button @click="showSettings = false" class="text-white/60 hover:text-white">
+                <Icon icon="mdi:close" class="w-5 h-5" />
+              </button>
+            </div>
+
+            <!-- Game Intensity quick toggle -->
+            <div class="mb-5">
+              <div class="text-sm text-white/70 mb-2">Game Intensity</div>
+              <div class="flex bg-gray-800/60 rounded-xl p-1.5">
+                <button
+                  @click="isSpicyMode = false"
+                  class="flex-1 px-4 py-2 rounded-lg text-sm font-semibold"
+                  :class="!isSpicyMode ? 'bg-green-600 text-white' : 'text-white/70 hover:text-white hover:bg-white/5'"
+                >😇 Normal</button>
+                <button
+                  @click="isSpicyMode = true"
+                  class="flex-1 px-4 py-2 rounded-lg text-sm font-semibold"
+                  :class="isSpicyMode ? 'bg-red-600 text-white' : 'text-white/70 hover:text-white hover:bg-white/5'"
+                >🌶️ Spicy</button>
+              </div>
+            </div>
+
+            <!-- Clothing status list -->
+            <div class="mb-5">
+              <div class="text-sm text-white/70 mb-2 flex items-center gap-2">
+                <Icon icon="mdi:wardrobe" class="w-4 h-4" />
+                Clothing Status
+              </div>
+              <div class="flex flex-wrap gap-2">
+                <button
+                  v-for="(item, index) in clothingItems"
+                  :key="index"
+                  class="px-3 py-1.5 rounded-full text-sm border"
+                  :class="item.removed ? 'bg-gray-800 text-gray-400 border-gray-700 line-through' : 'bg-white/10 text-white border-white/10 hover:bg-white/20'"
+                  @click="toggleClothing(index)"
+                >
+                  <Icon :icon="item.icon" class="w-4 h-4" />
+                  <span class="ml-1">{{ item.name }}</span>
+                </button>
+              </div>
+            </div>
+
+            <div class="flex justify-end gap-2">
+              <button @click="showSettings = false" class="px-4 py-2 rounded-lg bg-white/10 hover:bg-white/20 border border-white/10">Close</button>
+            </div>
+          </div>
+        </div>
+      </transition>
 
       <!-- Game Log -->
       <div class="bg-white/5 rounded-xl p-4 max-h-40 overflow-y-auto">
@@ -267,11 +421,9 @@
 <script setup>
 import { ref, computed, onMounted, onBeforeUnmount } from "vue";
 import { Icon } from "@iconify/vue";
-import { truthQuestions } from "~/data/questions/truth";
-import { spicyTruthQuestions } from "~/data/questions/spicytruth";
-import { dareQuestions } from "~/data/questions/dare";
-import { spicyDareQuestions } from "~/data/questions/spicydare";
+// Questions are now loaded from database via API
 import { useTruthTracker, useDareTracker } from "~/composables/useQuestionTracker";
+import { useAnalytics } from "~/composables/useAnalytics";
 
 // Game Configuration
 const MAX_HESITATION_TIME = 15;
@@ -297,12 +449,21 @@ const gameLevel = ref(1);
 const isDrawing = ref(false);
 const clothingItems = ref(JSON.parse(JSON.stringify(CLOTHING_ITEMS)));
 const isSpicyMode = ref(false);
+const selectedCardType = ref('');
+const showSettings = ref(false);
 
-// Initialize question trackers
-const normalTruthTracker = useTruthTracker(truthQuestions, false);
-const spicyTruthTracker = useTruthTracker(spicyTruthQuestions, true);
-const normalDareTracker = useDareTracker(dareQuestions, false);
-const spicyDareTracker = useDareTracker(spicyDareQuestions, true);
+// Question storage
+const truthQuestionsDB = ref([])
+const dareQuestionsDB = ref([])
+
+// Initialize question trackers (will be populated from database)
+let normalTruthTracker = null;
+let spicyTruthTracker = null;
+let normalDareTracker = null;
+let spicyDareTracker = null;
+
+// Initialize analytics
+const { trackPageView, updateActivity } = useAnalytics();
 
 // Computed Properties
 const currentPlayer = computed(() => players.value[currentPlayerIndex.value]);
@@ -318,6 +479,15 @@ const getRandomQuestion = (type) => {
     tracker = isSpicyMode.value ? spicyTruthTracker : normalTruthTracker;
   } else {
     tracker = isSpicyMode.value ? spicyDareTracker : normalDareTracker;
+  }
+  
+  // Check if tracker exists (questions might still be loading)
+  if (!tracker) {
+    console.warn('Question tracker not ready yet, questions may still be loading')
+    return {
+      question: 'Questions are loading... Please try again in a moment.',
+      isRepeat: false
+    }
   }
   
   const result = tracker.getNextQuestion();
@@ -344,12 +514,16 @@ const getRandomTarget = () => {
   return validTargets[Math.floor(Math.random() * validTargets.length)];
 };
 
-const drawCard = async () => {
-  if (isDrawing.value || currentCard.value) return;
+const drawSpecificCard = async (type) => {
+  if (isDrawing.value || (currentCard.value && currentCard.value.type !== type)) return;
+  
+  // Track user activity
+  updateActivity();
+  
   isDrawing.value = true;
+  selectedCardType.value = type;
   cardFlipped.value = false;
 
-  const type = Math.random() > 0.5 ? "TRUTH" : "DARE";
   let target = null;
   if (type === "DARE" && players.value.length > 1) {
     target = getRandomTarget();
@@ -363,7 +537,18 @@ const drawCard = async () => {
     target,
   };
 
-  isDrawing.value = false;
+  // Auto-flip the card after a short delay
+  setTimeout(() => {
+    cardFlipped.value = true;
+    startHesitationTimer();
+    isDrawing.value = false;
+  }, 800);
+};
+
+// Keep the old function for compatibility but make it choose randomly
+const drawCard = async () => {
+  const type = Math.random() > 0.5 ? "TRUTH" : "DARE";
+  drawSpecificCard(type);
 };
 
 const flipCard = () => {
@@ -375,6 +560,14 @@ const flipCard = () => {
       resetHesitationTimer();
     }
   }
+};
+
+// Reset current card to allow new selection
+const resetCard = () => {
+  currentCard.value = null;
+  cardFlipped.value = false;
+  selectedCardType.value = '';
+  resetHesitationTimer();
 };
 
 const startHesitationTimer = () => {
@@ -433,6 +626,7 @@ const completeChallenge = () => {
 const nextTurn = () => {
   currentCard.value = null;
   cardFlipped.value = false;
+  selectedCardType.value = '';
   currentPlayerIndex.value =
     (currentPlayerIndex.value + 1) % players.value.length;
 };
@@ -452,14 +646,74 @@ const updateGameLevel = () => {
   gameLevel.value = Math.min(Math.floor(removedCount / 2) + 1, 5);
 };
 
-// Lifecycle Hooks
-onMounted(() => {
-  if (typeof window !== "undefined") {
-    // Initialize question trackers
+// Load questions from database
+async function loadQuestions() {
+  try {
+    console.log('🔄 Loading questions from database...')
+    
+    // Load truth questions (normal and spicy)
+    const truthResponse = await $fetch('/api/questions/truth-or-dare?type=TRUTH&limit=100')
+    console.log('Truth API response:', truthResponse)
+    const allTruthQuestions = truthResponse.questions || []
+    
+    // Load dare questions (normal and spicy)
+    const dareResponse = await $fetch('/api/questions/truth-or-dare?type=DARE&limit=100')
+    console.log('Dare API response:', dareResponse)
+    const allDareQuestions = dareResponse.questions || []
+    
+    // Separate by intensity (1-3 = normal, 4-5 = spicy)
+    const normalTruths = allTruthQuestions.filter(q => q.intensity <= 3).map(q => q.text)
+    const spicyTruths = allTruthQuestions.filter(q => q.intensity >= 4).map(q => q.text)
+    const normalDares = allDareQuestions.filter(q => q.intensity <= 3).map(q => q.text)
+    const spicyDares = allDareQuestions.filter(q => q.intensity >= 4).map(q => q.text)
+    
+    console.log(`📊 Question distribution:`)
+    console.log(`- Normal Truths: ${normalTruths.length}`)
+    console.log(`- Spicy Truths: ${spicyTruths.length}`)
+    console.log(`- Normal Dares: ${normalDares.length}`)
+    console.log(`- Spicy Dares: ${spicyDares.length}`)
+    
+    // Create trackers with loaded questions
+    normalTruthTracker = useTruthTracker(normalTruths, false);
+    spicyTruthTracker = useTruthTracker(spicyTruths, true);
+    normalDareTracker = useDareTracker(normalDares, false);
+    spicyDareTracker = useDareTracker(spicyDares, true);
+    
+    // Initialize trackers
     normalTruthTracker.initializeTracker();
     spicyTruthTracker.initializeTracker();
     normalDareTracker.initializeTracker();
     spicyDareTracker.initializeTracker();
+    
+    console.log(`✅ Successfully loaded and initialized question trackers`)
+  } catch (error) {
+    console.error('❌ Error loading questions from database:', error)
+    // Fallback: use some default questions to prevent game from breaking
+    const fallbackTruths = ['What is your biggest secret?', 'Who do you have a crush on?']
+    const fallbackDares = ['Give someone a hug', 'Do a silly dance']
+    
+    normalTruthTracker = useTruthTracker(fallbackTruths, false);
+    spicyTruthTracker = useTruthTracker(fallbackTruths, true);
+    normalDareTracker = useDareTracker(fallbackDares, false);
+    spicyDareTracker = useDareTracker(fallbackDares, true);
+    
+    normalTruthTracker.initializeTracker();
+    spicyTruthTracker.initializeTracker();
+    normalDareTracker.initializeTracker();
+    spicyDareTracker.initializeTracker();
+    
+    console.log('⚠️ Using fallback questions due to API error')
+  }
+}
+
+// Lifecycle Hooks
+onMounted(async () => {
+  if (typeof window !== "undefined") {
+    // Track page view
+    trackPageView('truth-or-dare');
+    
+    // Load questions from database
+    await loadQuestions()
     
     const savedSession = localStorage.getItem("gameSession");
     if (savedSession) {

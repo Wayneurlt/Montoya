@@ -30,18 +30,23 @@
 <script setup>
 import { ref, onMounted } from 'vue';
 import { Icon } from '@iconify/vue';
-import { neverHaveIEverQuestions } from '~/data/questions/neverhaveiever';
+// Questions are now loaded from database via API
 import { useNeverHaveIEverTracker } from '~/composables/useQuestionTracker';
 
 const question = ref(null);
 
-// Initialize question tracker
-const questionTracker = useNeverHaveIEverTracker(neverHaveIEverQuestions);
+// Initialize question tracker (will be populated from database)
+let questionTracker = null;
 const showPenalty = ref(false);
 const penaltyMessage = ref('');
 
 const fetchAnother = () => {
   showPenalty.value = false;
+  
+  if (!questionTracker) {
+    question.value = 'Questions are loading... Please wait.';
+    return;
+  }
   
   const result = questionTracker.getNextQuestion();
   
@@ -69,10 +74,36 @@ const applyPenalty = () => {
   }, 5000);
 };
 
-onMounted(() => {
-  if (typeof window !== "undefined") {
-    // Initialize question tracker
+// Load questions from database
+async function loadQuestions() {
+  try {
+    console.log('🔄 Loading Never Have I Ever questions from database...')
+    const response = await $fetch('/api/questions/group-game?gameType=NEVER_HAVE_I_EVER&limit=100')
+    console.log('Never Have I Ever API response:', response)
+    const questions = response.questions || []
+    
+    // Create tracker with loaded questions
+    questionTracker = useNeverHaveIEverTracker(questions.map(q => q.text))
     questionTracker.initializeTracker();
+    
+    console.log(`✅ Loaded ${questions.length} Never Have I Ever questions`)
+  } catch (error) {
+    console.error('❌ Error loading Never Have I Ever questions:', error)
+    // Fallback questions
+    questionTracker = useNeverHaveIEverTracker([
+      'Never have I ever kissed someone',
+      'Never have I ever been on a date',
+      'Never have I ever told a lie'
+    ])
+    questionTracker.initializeTracker();
+    console.log('⚠️ Using fallback Never Have I Ever questions')
+  }
+}
+
+onMounted(async () => {
+  if (typeof window !== "undefined") {
+    // Load questions from database
+    await loadQuestions()
     fetchAnother();
   }
 });

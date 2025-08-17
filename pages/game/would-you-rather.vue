@@ -30,18 +30,23 @@
 <script setup>
 import { ref, onMounted } from 'vue';
 import { Icon } from '@iconify/vue';
-import { wouldYouRatherQuestions } from '~/data/questions/wouldyourather';
+// Questions are now loaded from database via API
 import { useWouldYouRatherTracker } from '~/composables/useQuestionTracker';
 
 const question = ref(null);
 
 // Initialize question tracker
-const questionTracker = useWouldYouRatherTracker(wouldYouRatherQuestions);
+let questionTracker = null;
 const showPenalty = ref(false);
 const penaltyMessage = ref('');
 
 const fetchAnother = () => {
   showPenalty.value = false;
+  
+  if (!questionTracker) {
+    question.value = 'Questions are loading... Please wait.';
+    return;
+  }
   
   const result = questionTracker.getNextQuestion();
   
@@ -69,10 +74,36 @@ const applyPenalty = () => {
   }, 5000);
 };
 
-onMounted(() => {
-  if (typeof window !== "undefined") {
-    // Initialize question tracker
+// Load questions from database
+async function loadQuestions() {
+  try {
+    console.log('🔄 Loading Would You Rather questions from database...')
+    const response = await $fetch('/api/questions/group-game?gameType=WOULD_YOU_RATHER&limit=100')
+    console.log('Would You Rather API response:', response)
+    const questions = response.questions || []
+    
+    // Create tracker with loaded questions
+    questionTracker = useWouldYouRatherTracker(questions.map(q => q.text))
     questionTracker.initializeTracker();
+    
+    console.log(`✅ Loaded ${questions.length} Would You Rather questions`)
+  } catch (error) {
+    console.error('❌ Error loading Would You Rather questions:', error)
+    // Fallback questions
+    questionTracker = useWouldYouRatherTracker([
+      'Would you rather have the ability to fly or be invisible?',
+      'Would you rather be rich or famous?',
+      'Would you rather live in the past or future?'
+    ])
+    questionTracker.initializeTracker();
+    console.log('⚠️ Using fallback Would You Rather questions')
+  }
+}
+
+onMounted(async () => {
+  if (typeof window !== "undefined") {
+    // Load questions from database
+    await loadQuestions()
     fetchAnother();
   }
 });

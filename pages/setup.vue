@@ -250,8 +250,9 @@
 </template>
 
 <script setup>
-import { ref, computed } from "vue";
+import { ref, computed, onMounted } from "vue";
 import { Icon } from "@iconify/vue";
+import { useAnalytics } from "~/composables/useAnalytics";
 
 const gameMode = ref("free-for-all"); // 'free-for-all' or 'relationship'
 
@@ -366,7 +367,13 @@ const canStart = computed(() => {
   return players.value.length >= 2;
 });
 
+const { trackGameSelection, trackPageView } = useAnalytics();
+
 const startGame = async () => {
+  // Track game selection
+  const gameName = availableGames.value.find(g => g.value === selectedGame.value)?.name || selectedGame.value;
+  trackGameSelection(gameName);
+
   // Persist minimal session info locally for the game pages
   const saved = {
     mode: gameMode.value,
@@ -377,6 +384,11 @@ const startGame = async () => {
   }
   navigateTo(`/game/${selectedGame.value}`);
 };
+
+// Track page view on mount
+onMounted(() => {
+  trackPageView('setup');
+});
 </script>
 
 <style>

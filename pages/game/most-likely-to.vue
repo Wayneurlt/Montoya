@@ -30,18 +30,23 @@
 <script setup>
 import { ref, onMounted } from 'vue';
 import { Icon } from '@iconify/vue';
-import { mostLikelyToQuestions } from '~/data/questions/mostlikelyto';
+// Questions are now loaded from database via API
 import { useMostLikelyToTracker } from '~/composables/useQuestionTracker';
 
 const question = ref(null);
 
 // Initialize question tracker
-const questionTracker = useMostLikelyToTracker(mostLikelyToQuestions);
+let questionTracker = null;
 const showPenalty = ref(false);
 const penaltyMessage = ref('');
 
 const fetchAnother = () => {
   showPenalty.value = false;
+  
+  if (!questionTracker) {
+    question.value = 'Questions are loading... Please wait.';
+    return;
+  }
   
   const result = questionTracker.getNextQuestion();
   
@@ -69,10 +74,36 @@ const applyPenalty = () => {
   }, 5000);
 };
 
-onMounted(() => {
-  if (typeof window !== "undefined") {
-    // Initialize question tracker
+// Load questions from database
+async function loadQuestions() {
+  try {
+    console.log('🔄 Loading Most Likely To questions from database...')
+    const response = await $fetch('/api/questions/group-game?gameType=MOST_LIKELY_TO&limit=100')
+    console.log('Most Likely To API response:', response)
+    const questions = response.questions || []
+    
+    // Create tracker with loaded questions
+    questionTracker = useMostLikelyToTracker(questions.map(q => q.text))
     questionTracker.initializeTracker();
+    
+    console.log(`✅ Loaded ${questions.length} Most Likely To questions`)
+  } catch (error) {
+    console.error('❌ Error loading Most Likely To questions:', error)
+    // Fallback questions
+    questionTracker = useMostLikelyToTracker([
+      'Who is most likely to become famous?',
+      'Who is most likely to get married first?',
+      'Who is most likely to travel the world?'
+    ])
+    questionTracker.initializeTracker();
+    console.log('⚠️ Using fallback Most Likely To questions')
+  }
+}
+
+onMounted(async () => {
+  if (typeof window !== "undefined") {
+    // Load questions from database
+    await loadQuestions()
     fetchAnother();
   }
 });
