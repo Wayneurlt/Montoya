@@ -93,7 +93,7 @@ const showDesc = (text) => {
 };
 
 const navigateToSetup = () => {
-  navigateTo("/game-setup");
+  navigateTo("/setup");
 };
 </script>
 
