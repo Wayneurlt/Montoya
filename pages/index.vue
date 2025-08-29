@@ -61,12 +61,12 @@
       </p>
 
       <!-- CTA Button -->
-      <button
-        @click="navigateToSetup"
+      <a href="/setup" 
+        
         class="bg-gradient-to-r from-pink-600 to-purple-600 hover:from-pink-500 hover:to-purple-500 text-white px-8 py-3 rounded-full text-lg font-bold shadow-lg hover:shadow-pink-500/30 transition-all duration-300 transform hover:scale-105 animate-pulse-slow"
       >
         START THE CHAOS
-      </button>
+    </a>
 
       <!-- Player counter -->
       <div class="mt-12 text-sm text-gray-400">
