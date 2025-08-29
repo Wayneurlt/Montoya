@@ -1,164 +1,341 @@
 <template>
   <div>
+    <!-- Header -->
     <div class="flex items-center justify-between mb-6">
       <div>
         <h1 class="text-2xl sm:text-3xl font-bold">Manage Questions</h1>
         <p class="text-white/60 text-sm mt-1">
-          Total: {{ totalQuestions }} questions across all games
+          Total: {{ totalQuestions }} questions
         </p>
       </div>
       <div class="flex gap-2">
         <UButton icon="i-mdi:database-import" color="neutral" variant="soft" @click="seedAllQuestions">
           Import All
         </UButton>
-        <UDropdown :items="quickAddItems">
-          <UButton icon="i-mdi:plus" color="primary">
-            Add Question
-            <UIcon name="i-heroicons-chevron-down-20-solid" class="w-4 h-4 ml-1" />
-          </UButton>
-        </UDropdown>
+        <UButton icon="i-mdi:plus" color="primary" @click="showAddForm = true">
+          Add Question
+        </UButton>
       </div>
     </div>
 
-    <!-- Game Sections -->
-    <div class="space-y-8">
-      <!-- Truth or Dare Section -->
-      <div class="bg-white/5 border border-white/10 rounded-xl p-6">
-        <h2 class="text-xl font-bold mb-4 text-pink-400">🎯 Truth or Dare</h2>
-        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <!-- Truth Cards -->
-          <div>
-            <h3 class="text-lg font-semibold mb-3 text-blue-300">Truth Questions ({{ truthCards.length }})</h3>
-            <div class="space-y-2 max-h-64 overflow-y-auto">
-              <div v-for="card in truthCards.slice(0, 10)" :key="card.id" 
-                   class="p-3 bg-white/5 rounded-lg border border-white/10">
-                <div class="text-sm text-white/90">{{ card.text }}</div>
-                <div class="flex justify-between items-center mt-2">
-                  <span class="text-xs text-white/60">Intensity: {{ card.intensity }}</span>
-                  <div class="flex gap-1">
-                    <UButton size="xs" color="neutral" variant="soft" @click="editQuestion(card)">Edit</UButton>
-                    <UButton size="xs" color="red" variant="soft" @click="deleteQuestion(card)">Delete</UButton>
-                  </div>
-                </div>
-              </div>
-              <div v-if="truthCards.length > 10" class="text-center text-white/60 text-sm">
-                ... and {{ truthCards.length - 10 }} more
-              </div>
-            </div>
-          </div>
+    <!-- Search and Filters -->
+    <div class="bg-white/5 border border-white/10 rounded-xl p-4 mb-6">
+      <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <UInput
+          v-model="searchQuery"
+          placeholder="Search questions..."
+          icon="i-heroicons-magnifying-glass"
+          class="w-full"
+        />
+        <USelectMenu
+          v-model="selectedGameType"
+          :options="gameTypeFilterOptions"
+          placeholder="All Game Types"
+          class="w-full"
+        />
+        <USelectMenu
+          v-model="selectedIntensity"
+          :options="intensityFilterOptions"
+          placeholder="All Intensities"
+          class="w-full"
+        />
+        <USelectMenu
+          v-model="selectedStatus"
+          :options="statusFilterOptions"
+          placeholder="All Status"
+          class="w-full"
+        />
+      </div>
+    </div>
 
-          <!-- Dare Cards -->
-          <div>
-            <h3 class="text-lg font-semibold mb-3 text-purple-300">Dare Questions ({{ dareCards.length }})</h3>
-            <div class="space-y-2 max-h-64 overflow-y-auto">
-              <div v-for="card in dareCards.slice(0, 10)" :key="card.id" 
-                   class="p-3 bg-white/5 rounded-lg border border-white/10">
-                <div class="text-sm text-white/90">{{ card.text }}</div>
-                <div class="flex justify-between items-center mt-2">
-                  <span class="text-xs text-white/60">Intensity: {{ card.intensity }}</span>
-                  <div class="flex gap-1">
-                    <UButton size="xs" color="neutral" variant="soft" @click="editQuestion(card)">Edit</UButton>
-                    <UButton size="xs" color="red" variant="soft" @click="deleteQuestion(card)">Delete</UButton>
-                  </div>
-                </div>
-              </div>
-              <div v-if="dareCards.length > 10" class="text-center text-white/60 text-sm">
-                ... and {{ dareCards.length - 10 }} more
-              </div>
-            </div>
-          </div>
+    <!-- Add Question Form -->
+    <div v-if="showAddForm" class="bg-white/5 border border-white/10 rounded-xl p-6 mb-6">
+      <div class="flex items-center justify-between mb-6">
+        <div>
+          <h3 class="text-lg font-semibold text-white">
+            {{ editingQuestion ? 'Edit Question' : 'Add New Question' }}
+          </h3>
+          <p class="text-white/60 text-sm mt-1">
+            Fill in all required fields to create a new question
+          </p>
+        </div>
+        <UButton 
+          color="neutral" 
+          variant="ghost" 
+          icon="i-heroicons-x-mark-20-solid" 
+          @click="closeAddForm"
+        />
+      </div>
+
+      <!-- Form Validation Messages -->
+      <div v-if="formErrors.length > 0" class="mb-4 p-4 bg-red-500/10 border border-red-500/20 rounded-lg">
+        <div class="flex items-center gap-2 mb-2">
+          <UIcon name="i-heroicons-exclamation-triangle" class="w-5 h-5 text-red-400" />
+          <span class="text-red-400 font-medium">Please fix the following errors:</span>
+        </div>
+        <ul class="list-disc list-inside text-red-300 text-sm space-y-1">
+          <li v-for="error in formErrors" :key="error">{{ error }}</li>
+        </ul>
+      </div>
+
+      <!-- Success Message -->
+      <div v-if="successMessage" class="mb-4 p-4 bg-green-500/10 border border-green-500/20 rounded-lg">
+        <div class="flex items-center gap-2">
+          <UIcon name="i-heroicons-check-circle" class="w-5 h-5 text-green-400" />
+          <span class="text-green-400">{{ successMessage }}</span>
         </div>
       </div>
 
-      <!-- Do or Drink Section -->
-      <div class="bg-white/5 border border-white/10 rounded-xl p-6">
-        <h2 class="text-xl font-bold mb-4 text-orange-400">🍺 Do or Drink</h2>
-        <div class="space-y-2 max-h-64 overflow-y-auto">
-          <div v-for="card in doOrDrinkCards.slice(0, 15)" :key="card.id" 
-               class="p-3 bg-white/5 rounded-lg border border-white/10">
-            <div class="text-sm text-white/90">{{ card.text }}</div>
-            <div class="flex justify-between items-center mt-2">
-              <div class="flex gap-3 text-xs text-white/60">
-                <span>Intensity: {{ card.intensity }}</span>
-                <span v-if="card.drinkAmount">Drink: {{ card.drinkAmount }}</span>
+      <div class="space-y-6">
+                 <!-- Game Type Selection -->
+         <div class="space-y-3">
+           <label class="text-sm font-medium text-white/80 flex items-center gap-2">
+             Game Type
+             <span class="text-red-400">*</span>
+           </label>
+           <div class="grid grid-cols-2 lg:grid-cols-3 gap-3">
+             <UButton
+               v-for="option in gameTypeOptions"
+               :key="option.value"
+               :color="newQuestion.gameType === option.value ? 'primary' : 'neutral'"
+               :variant="newQuestion.gameType === option.value ? 'solid' : 'outline'"
+               @click="onGameTypeChange(option.value)"
+               class="h-20 flex flex-col items-center justify-center gap-2 cursor-pointer"
+               type="button"
+             >
+               <div class="text-2xl">{{ getGameIcon(option.value) }}</div>
+               <div class="text-sm font-medium text-center">{{ option.label }}</div>
+             </UButton>
+           </div>
+           <p class="text-xs text-white/60">{{ getGameTypeDescription(newQuestion.gameType) }}</p>
+         </div>
+
+        <!-- Truth/Dare Type Selection -->
+        <div v-if="newQuestion.gameType === 'TRUTH_OR_DARE'" class="space-y-3">
+          <label class="text-sm font-medium text-white/80 flex items-center gap-2">
+            Question Type
+            <span class="text-red-400">*</span>
+          </label>
+          <div class="grid grid-cols-2 gap-3">
+            <UButton
+              :color="newQuestion.type === 'TRUTH' ? 'primary' : 'neutral'"
+              :variant="newQuestion.type === 'TRUTH' ? 'solid' : 'outline'"
+              @click="newQuestion.type = 'TRUTH'"
+              class="h-12 cursor-pointer"
+              type="button"
+            >
+              <div class="flex items-center gap-2">
+                <span class="text-lg">🎯</span>
+                <span>Truth</span>
               </div>
-              <div class="flex gap-1">
-                <UButton size="xs" color="neutral" variant="soft" @click="editQuestion(card)">Edit</UButton>
-                <UButton size="xs" color="red" variant="soft" @click="deleteQuestion(card)">Delete</UButton>
+            </UButton>
+            <UButton
+              :color="newQuestion.type === 'DARE' ? 'secondary' : 'neutral'"
+              :variant="newQuestion.type === 'DARE' ? 'solid' : 'outline'"
+              @click="newQuestion.type = 'DARE'"
+              class="h-12 cursor-pointer"
+              type="button"
+            >
+              <div class="flex items-center gap-2">
+                <span class="text-lg">⚡</span>
+                <span>Dare</span>
               </div>
+            </UButton>
+          </div>
+        </div>
+
+        <!-- Intensity Selection -->
+        <div class="space-y-3">
+          <label class="text-sm font-medium text-white/80 flex items-center gap-2">
+            Intensity Level
+            <span class="text-red-400">*</span>
+          </label>
+          <div class="grid grid-cols-5 gap-2">
+            <UButton
+              v-for="level in 5"
+              :key="level"
+              :color="getIntensityButtonColor(level)"
+              :variant="newQuestion.intensity === level ? 'solid' : 'outline'"
+              @click="newQuestion.intensity = level"
+              class="h-16 flex flex-col items-center justify-center gap-1 cursor-pointer"
+              type="button"
+            >
+              <div class="text-xl">{{ getIntensityEmoji(level) }}</div>
+              <div class="text-xs font-medium">Level {{ level }}</div>
+            </UButton>
+          </div>
+          <div class="text-sm text-white/70 bg-white/10 p-3 rounded-lg">
+            <strong>{{ getIntensityLabel(newQuestion.intensity) }}:</strong> {{ getIntensityDescription(newQuestion.intensity) }}
+          </div>
+        </div>
+
+        <!-- Drink Amount Selection -->
+        <div v-if="newQuestion.gameType === 'DO_OR_DRINK'" class="space-y-3">
+          <label class="text-sm font-medium text-white/80">
+            Drink Amount (Optional)
+          </label>
+          <USelectMenu
+            v-model="newQuestion.drinkAmount"
+            :options="drinkAmountOptions"
+            placeholder="Select Drink Amount"
+            searchable
+            creatable
+          />
+          <p class="text-xs text-white/60">Specify how much the player should drink if they choose not to do the challenge</p>
+        </div>
+
+        <!-- Question Text -->
+        <div class="space-y-3">
+          <label class="text-sm font-medium text-white/80 flex items-center gap-2">
+            Question Text
+            <span class="text-red-400">*</span>
+          </label>
+          <UTextarea
+            v-model="newQuestion.text"
+            :placeholder="getQuestionPlaceholder()"
+            :rows="4"
+            :error="getFieldError('text')"
+            class="w-full"
+            maxlength="500"
+          />
+          <div class="flex justify-between items-center text-xs">
+            <span :class="newQuestion.text.length > 450 ? 'text-orange-400' : 'text-white/60'">
+              {{ newQuestion.text.length }}/500 characters
+            </span>
+            <span v-if="newQuestion.text.length > 450" class="text-orange-400">
+              {{ 500 - newQuestion.text.length }} characters left
+            </span>
+          </div>
+        </div>
+
+        <!-- Preview -->
+        <div v-if="newQuestion.text && newQuestion.gameType" class="space-y-3">
+          <label class="text-sm font-medium text-white/80">Preview</label>
+          <div class="bg-white/10 p-4 rounded-lg border border-white/20">
+            <div class="text-white font-medium mb-3 text-lg">{{ newQuestion.text }}</div>
+            <div class="flex flex-wrap items-center gap-3 text-sm text-white/70">
+              <span class="flex items-center gap-1 bg-white/20 px-2 py-1 rounded">
+                {{ getGameIcon(newQuestion.gameType) }} {{ getGameTypeLabel(newQuestion.gameType) }}
+              </span>
+              <span v-if="newQuestion.type" class="flex items-center gap-1 bg-white/20 px-2 py-1 rounded">
+                {{ newQuestion.type === 'TRUTH' ? '🎯' : '⚡' }} {{ newQuestion.type }}
+              </span>
+              <span class="flex items-center gap-1 bg-white/20 px-2 py-1 rounded">
+                {{ getIntensityEmoji(newQuestion.intensity) }} Level {{ newQuestion.intensity }}
+              </span>
+              <span v-if="newQuestion.drinkAmount" class="flex items-center gap-1 bg-white/20 px-2 py-1 rounded">
+                🍺 {{ newQuestion.drinkAmount }}
+              </span>
             </div>
           </div>
-          <div v-if="doOrDrinkCards.length > 15" class="text-center text-white/60 text-sm">
-            ... and {{ doOrDrinkCards.length - 15 }} more
+        </div>
+
+        <!-- Action Buttons -->
+        <div class="flex justify-between items-center pt-4 border-t border-white/10">
+          <div class="text-sm text-white/60">
+            {{ getFormStatus() }}
+          </div>
+          <div class="flex gap-3">
+            <UButton 
+              color="neutral" 
+              variant="soft" 
+              @click="closeAddForm"
+              type="button"
+            >
+              Cancel
+            </UButton>
+            <UButton
+              color="primary"
+              :loading="saving"
+              :disabled="!canSave || formErrors.length > 0"
+              @click="saveQuestion"
+              type="button"
+            >
+              {{ editingQuestion ? 'Update Question' : 'Add Question' }}
+            </UButton>
           </div>
         </div>
       </div>
+    </div>
 
-      <!-- Group Games Section -->
-      <div class="bg-white/5 border border-white/10 rounded-xl p-6">
-        <h2 class="text-xl font-bold mb-4 text-green-400">👥 Group Games</h2>
-        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          <!-- Never Have I Ever -->
-          <div>
-            <h3 class="text-lg font-semibold mb-3 text-red-300">Never Have I Ever ({{ neverHaveQuestions.length }})</h3>
-            <div class="space-y-2 max-h-48 overflow-y-auto">
-              <div v-for="q in neverHaveQuestions.slice(0, 8)" :key="q.id" 
-                   class="p-3 bg-white/5 rounded-lg border border-white/10">
-                <div class="text-sm text-white/90">{{ q.text }}</div>
-                <div class="flex justify-between items-center mt-2">
-                  <span class="text-xs text-white/60">Intensity: {{ q.intensity }}</span>
-                  <div class="flex gap-1">
-                    <UButton size="xs" color="neutral" variant="soft" @click="editQuestion(q)">Edit</UButton>
-                    <UButton size="xs" color="red" variant="soft" @click="deleteQuestion(q)">Delete</UButton>
-                  </div>
+    <!-- Questions Table -->
+    <div class="bg-white/5 border border-white/10 rounded-xl overflow-hidden">
+      <div class="overflow-x-auto">
+        <table class="w-full">
+          <thead class="bg-white/10">
+            <tr>
+              <th class="px-4 py-3 text-left text-sm font-medium text-white">Question</th>
+              <th class="px-4 py-3 text-left text-sm font-medium text-white">Game Type</th>
+              <th class="px-4 py-3 text-left text-sm font-medium text-white">Type</th>
+              <th class="px-4 py-3 text-left text-sm font-medium text-white">Intensity</th>
+              <th class="px-4 py-3 text-left text-sm font-medium text-white">Status</th>
+              <th class="px-4 py-3 text-left text-sm font-medium text-white">Actions</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-white/10">
+            <tr v-for="question in paginatedQuestions" :key="question.id" class="hover:bg-white/5">
+              <td class="px-4 py-3 text-sm text-white/90 max-w-xs truncate">
+                {{ question.text }}
+              </td>
+              <td class="px-4 py-3 text-sm text-white/70">
+                {{ getGameTypeLabel(question.gameType) }}
+              </td>
+              <td class="px-4 py-3 text-sm text-white/70">
+                {{ question.type || '-' }}
+              </td>
+              <td class="px-4 py-3 text-sm">
+                <UBadge :color="getIntensityColor(question.intensity)" variant="soft">
+                  Level {{ question.intensity }}
+                </UBadge>
+              </td>
+              <td class="px-4 py-3 text-sm">
+                <UBadge :color="question.isActive ? 'success' : 'neutral'" variant="soft">
+                  {{ question.isActive ? 'Active' : 'Inactive' }}
+                </UBadge>
+              </td>
+              <td class="px-4 py-3 text-sm">
+                <div class="flex gap-2">
+                  <UButton size="xs" color="neutral" variant="soft" @click="editQuestion(question)">
+                    Edit
+                  </UButton>
+                  <UButton size="xs" color="error" variant="soft" @click="deleteQuestion(question)">
+                    Delete
+                  </UButton>
                 </div>
-              </div>
-              <div v-if="neverHaveQuestions.length > 8" class="text-center text-white/60 text-sm">
-                ... and {{ neverHaveQuestions.length - 8 }} more
-              </div>
-            </div>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Pagination -->
+      <div class="px-4 py-3 bg-white/5 border-t border-white/10">
+        <div class="flex items-center justify-between">
+          <div class="text-sm text-white/60">
+            Showing {{ startIndex + 1 }} to {{ endIndex }} of {{ filteredQuestions.length }} questions
           </div>
-
-          <!-- Most Likely To -->
-          <div>
-            <h3 class="text-lg font-semibold mb-3 text-yellow-300">Most Likely To ({{ mostLikelyQuestions.length }})</h3>
-            <div class="space-y-2 max-h-48 overflow-y-auto">
-              <div v-for="q in mostLikelyQuestions.slice(0, 8)" :key="q.id" 
-                   class="p-3 bg-white/5 rounded-lg border border-white/10">
-                <div class="text-sm text-white/90">{{ q.text }}</div>
-                <div class="flex justify-between items-center mt-2">
-                  <span class="text-xs text-white/60">Intensity: {{ q.intensity }}</span>
-                  <div class="flex gap-1">
-                    <UButton size="xs" color="neutral" variant="soft" @click="editQuestion(q)">Edit</UButton>
-                    <UButton size="xs" color="red" variant="soft" @click="deleteQuestion(q)">Delete</UButton>
-                  </div>
-                </div>
-              </div>
-              <div v-if="mostLikelyQuestions.length > 8" class="text-center text-white/60 text-sm">
-                ... and {{ mostLikelyQuestions.length - 8 }} more
-              </div>
-            </div>
-          </div>
-
-          <!-- Would You Rather -->
-          <div>
-            <h3 class="text-lg font-semibold mb-3 text-cyan-300">Would You Rather ({{ wouldYouRatherQuestions.length }})</h3>
-            <div class="space-y-2 max-h-48 overflow-y-auto">
-              <div v-for="q in wouldYouRatherQuestions.slice(0, 8)" :key="q.id" 
-                   class="p-3 bg-white/5 rounded-lg border border-white/10">
-                <div class="text-sm text-white/90">{{ q.text }}</div>
-                <div class="flex justify-between items-center mt-2">
-                  <span class="text-xs text-white/60">Intensity: {{ q.intensity }}</span>
-                  <div class="flex gap-1">
-                    <UButton size="xs" color="neutral" variant="soft" @click="editQuestion(q)">Edit</UButton>
-                    <UButton size="xs" color="red" variant="soft" @click="deleteQuestion(q)">Delete</UButton>
-                  </div>
-                </div>
-              </div>
-              <div v-if="wouldYouRatherQuestions.length > 8" class="text-center text-white/60 text-sm">
-                ... and {{ wouldYouRatherQuestions.length - 8 }} more
-              </div>
-            </div>
+          <div class="flex gap-2">
+            <UButton
+              size="sm"
+              color="neutral"
+              variant="soft"
+              :disabled="currentPage === 1"
+              @click="currentPage--"
+            >
+              Previous
+            </UButton>
+            <span class="px-3 py-1 text-sm text-white/70">
+              Page {{ currentPage }} of {{ totalPages }}
+            </span>
+            <UButton
+              size="sm"
+              color="neutral"
+              variant="soft"
+              :disabled="currentPage === totalPages"
+              @click="currentPage++"
+            >
+              Next
+            </UButton>
           </div>
         </div>
       </div>
@@ -169,147 +346,6 @@
       <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-white mx-auto"></div>
       <p class="text-white/60 mt-2">Loading questions...</p>
     </div>
-
-    <!-- Add/Edit Question Modal -->
-    <UModal v-model="showEditModal" :ui="{ width: 'sm:max-w-lg' }">
-      <UCard>
-        <template #header>
-          <div class="flex items-center justify-between">
-            <h3 class="text-lg font-semibold text-gray-900">
-              {{ editingQuestion?.id ? 'Edit Question' : 'Add New Question' }}
-            </h3>
-            <UButton color="gray" variant="ghost" icon="i-heroicons-x-mark-20-solid" @click="showEditModal = false" />
-          </div>
-        </template>
-
-        <div class="space-y-4">
-          <!-- Step 1: Game Type (only for new questions) -->
-          <div v-if="!editingQuestion?.id" class="space-y-3">
-            <label class="text-sm font-medium text-gray-700">1. Choose Game Type</label>
-            <USelectMenu 
-              v-model="newQuestion.gameType" 
-              :options="gameTypeSelectOptions" 
-              placeholder="Select a game type..."
-              @change="onGameTypeChange"
-            />
-          </div>
-
-          <!-- Step 2: Truth or Dare Type (only for Truth or Dare) -->
-          <div v-if="newQuestion.gameType === 'TRUTH_OR_DARE' && !editingQuestion?.id" class="space-y-3">
-            <label class="text-sm font-medium text-gray-700">2. Truth or Dare?</label>
-            <div class="flex gap-2">
-              <UButton 
-                :color="newQuestion.type === 'TRUTH' ? 'blue' : 'gray'" 
-                :variant="newQuestion.type === 'TRUTH' ? 'solid' : 'outline'"
-                @click="newQuestion.type = 'TRUTH'"
-                class="flex-1"
-              >
-                🎯 Truth
-              </UButton>
-              <UButton 
-                :color="newQuestion.type === 'DARE' ? 'purple' : 'gray'" 
-                :variant="newQuestion.type === 'DARE' ? 'solid' : 'outline'"
-                @click="newQuestion.type = 'DARE'"
-                class="flex-1"
-              >
-                ⚡ Dare
-              </UButton>
-            </div>
-          </div>
-
-          <!-- Step 3: Question Text -->
-          <div class="space-y-3">
-            <label class="text-sm font-medium text-gray-700">
-              {{ editingQuestion?.id ? 'Question Text' : (newQuestion.gameType ? '3.' : '2.') }} Write Your Question *
-            </label>
-            <UTextarea 
-              v-model="newQuestion.text" 
-              :placeholder="getSimplePlaceholder()" 
-              :rows="3"
-              autoresize
-              required
-            />
-            <div class="text-xs text-gray-500">{{ newQuestion.text.length }}/500 characters</div>
-          </div>
-
-          <!-- Step 4: Intensity Level -->
-          <div class="space-y-3">
-            <label class="text-sm font-medium text-gray-700">
-              {{ editingQuestion?.id ? 'Intensity Level' : (newQuestion.gameType ? '4.' : '3.') }} How Intense? *
-            </label>
-            <div class="flex gap-2">
-              <UButton 
-                v-for="level in 5" 
-                :key="level"
-                :color="getIntensityButtonColor(level)"
-                :variant="newQuestion.intensity === level ? 'solid' : 'outline'"
-                @click="newQuestion.intensity = level"
-                size="sm"
-                class="flex-1 text-center"
-              >
-                <div class="flex flex-col items-center">
-                  <div class="text-lg">{{ getIntensityEmoji(level) }}</div>
-                  <div class="text-xs">{{ level }}</div>
-                </div>
-              </UButton>
-            </div>
-            <div class="text-xs text-gray-500">{{ getIntensityDescription(newQuestion.intensity) }}</div>
-          </div>
-
-          <!-- Step 5: Drink Amount (for Do or Drink only) -->
-          <div v-if="newQuestion.gameType === 'DO_OR_DRINK'" class="space-y-3">
-            <label class="text-sm font-medium text-gray-700">
-              {{ editingQuestion?.id ? 'Drink Amount' : '5.' }} Drink Amount (Optional)
-            </label>
-            <USelectMenu 
-              v-model="newQuestion.drinkAmount" 
-              :options="drinkAmountSelectOptions"
-              placeholder="Choose drink amount..."
-              searchable
-              creatable
-            />
-          </div>
-
-          <!-- Preview -->
-          <div v-if="newQuestion.text && newQuestion.gameType" class="space-y-3">
-            <label class="text-sm font-medium text-gray-700">Preview</label>
-            <div class="bg-gray-50 p-4 rounded-lg border">
-              <div class="text-gray-900 font-medium mb-2">{{ newQuestion.text }}</div>
-              <div class="flex items-center gap-4 text-sm text-gray-600">
-                <span class="flex items-center gap-1">
-                  {{ getGameIcon(newQuestion.gameType) }} {{ getGameTypeLabel(newQuestion.gameType) }}
-                </span>
-                <span v-if="newQuestion.type" class="flex items-center gap-1">
-                  {{ newQuestion.type === 'TRUTH' ? '🎯' : '⚡' }} {{ newQuestion.type }}
-                </span>
-                <span class="flex items-center gap-1">
-                  {{ getIntensityEmoji(newQuestion.intensity) }} Level {{ newQuestion.intensity }}
-                </span>
-                <span v-if="newQuestion.drinkAmount" class="flex items-center gap-1">
-                  🍺 {{ newQuestion.drinkAmount }}
-                </span>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <template #footer>
-          <div class="flex justify-end gap-3">
-            <UButton color="gray" variant="soft" @click="showEditModal = false">
-              Cancel
-            </UButton>
-            <UButton 
-              color="primary" 
-              :loading="saving"
-              :disabled="!canSave"
-              @click="saveQuestion"
-            >
-              {{ editingQuestion?.id ? 'Update' : 'Add Question' }}
-            </UButton>
-          </div>
-        </template>
-      </UCard>
-    </UModal>
   </div>
 </template>
 
@@ -322,16 +358,21 @@ definePageMeta({
 // State
 const loading = ref(true)
 const saving = ref(false)
-const showEditModal = ref(false)
+const showAddForm = ref(false)
 const editingQuestion = ref(null)
 
-// Question categories
-const truthCards = ref([])
-const dareCards = ref([])
-const doOrDrinkCards = ref([])
-const neverHaveQuestions = ref([])
-const mostLikelyQuestions = ref([])
-const wouldYouRatherQuestions = ref([])
+// Search and filters
+const searchQuery = ref('')
+const selectedGameType = ref('')
+const selectedIntensity = ref('')
+const selectedStatus = ref('')
+
+// Pagination
+const currentPage = ref(1)
+const pageSize = ref(20)
+
+// Questions data
+const questions = ref([])
 
 // Form data
 const newQuestion = reactive({
@@ -342,6 +383,7 @@ const newQuestion = reactive({
   drinkAmount: ''
 })
 
+// Options
 const gameTypeOptions = [
   { label: 'Truth or Dare', value: 'TRUTH_OR_DARE' },
   { label: 'Do or Drink', value: 'DO_OR_DRINK' },
@@ -350,81 +392,161 @@ const gameTypeOptions = [
   { label: 'Would You Rather', value: 'WOULD_YOU_RATHER' }
 ]
 
-const drinkAmountOptions = ['1 sip', '2 sips', '3 sips', '1 gulp', '2 gulps', '3 gulps', 'shot', 'finish drink']
+const truthDareOptions = [
+  { label: 'Truth', value: 'TRUTH' },
+  { label: 'Dare', value: 'DARE' }
+]
 
-// Select menu options
-const gameTypeSelectOptions = computed(() => gameTypeOptions.map(option => ({
-  label: `${getGameIcon(option.value)} ${option.label}`,
-  value: option.value
-})))
+const intensityOptions = [
+  { label: 'Level 1 - Mild', value: 1 },
+  { label: 'Level 2 - Light', value: 2 },
+  { label: 'Level 3 - Medium', value: 3 },
+  { label: 'Level 4 - Spicy', value: 4 },
+  { label: 'Level 5 - Wild', value: 5 }
+]
 
-const drinkAmountSelectOptions = computed(() => drinkAmountOptions.map(amount => ({
-  label: amount,
-  value: amount
-})))
+const drinkAmountOptions = [
+  { label: '1 sip', value: '1 sip' },
+  { label: '2 sips', value: '2 sips' },
+  { label: '3 sips', value: '3 sips' },
+  { label: '1 gulp', value: '1 gulp' },
+  { label: '2 gulps', value: '2 gulps' },
+  { label: '3 gulps', value: '3 gulps' },
+  { label: 'shot', value: 'shot' },
+  { label: 'finish drink', value: 'finish drink' }
+]
+
+// Filter options
+const gameTypeFilterOptions = computed(() => [
+  { label: 'All Game Types', value: '' },
+  ...gameTypeOptions
+])
+
+const intensityFilterOptions = computed(() => [
+  { label: 'All Intensities', value: '' },
+  ...intensityOptions
+])
+
+const statusFilterOptions = computed(() => [
+  { label: 'All Status', value: '' },
+  { label: 'Active', value: 'active' },
+  { label: 'Inactive', value: 'inactive' }
+])
 
 // Computed properties
 const canSave = computed(() => {
   return newQuestion.text.trim() && 
          newQuestion.gameType && 
          (newQuestion.gameType !== 'TRUTH_OR_DARE' || newQuestion.type) &&
-         newQuestion.intensity >= 1 && 
-         newQuestion.intensity <= 5
+         newQuestion.intensity
 })
 
-const totalQuestions = computed(() => {
-  return truthCards.value.length + 
-         dareCards.value.length + 
-         doOrDrinkCards.value.length + 
-         neverHaveQuestions.value.length + 
-         mostLikelyQuestions.value.length + 
-         wouldYouRatherQuestions.value.length
+const totalQuestions = computed(() => questions.value.length)
+
+const filteredQuestions = computed(() => {
+  let filtered = questions.value
+
+  if (searchQuery.value) {
+    filtered = filtered.filter(q => 
+      q.text.toLowerCase().includes(searchQuery.value.toLowerCase())
+    )
+  }
+
+  if (selectedGameType.value) {
+    filtered = filtered.filter(q => q.gameType === selectedGameType.value)
+  }
+
+  if (selectedIntensity.value) {
+    filtered = filtered.filter(q => q.intensity === parseInt(selectedIntensity.value))
+  }
+
+  if (selectedStatus.value) {
+    const isActive = selectedStatus.value === 'active'
+    filtered = filtered.filter(q => q.isActive === isActive)
+  }
+
+  return filtered
 })
 
-const quickAddItems = computed(() => [
-  [{
-    label: 'Truth Question',
-    icon: '🎯',
-    click: () => openCreateFor('TRUTH_OR_DARE', 'TRUTH')
-  }, {
-    label: 'Dare Challenge',
-    icon: '⚡',
-    click: () => openCreateFor('TRUTH_OR_DARE', 'DARE')
-  }],
-  [{
-    label: 'Do or Drink',
-    icon: '🍺',
-    click: () => openCreateFor('DO_OR_DRINK', 'DO')
-  }],
-  [{
-    label: 'Never Have I Ever',
-    icon: '🙋',
-    click: () => openCreateFor('NEVER_HAVE_I_EVER')
-  }, {
-    label: 'Most Likely To',
-    icon: '🤔',
-    click: () => openCreateFor('MOST_LIKELY_TO')
-  }, {
-    label: 'Would You Rather',
-    icon: '🤷',
-    click: () => openCreateFor('WOULD_YOU_RATHER')
-  }]
-])
+const totalPages = computed(() => Math.ceil(filteredQuestions.value.length / pageSize.value))
+
+const startIndex = computed(() => (currentPage.value - 1) * pageSize.value)
+const endIndex = computed(() => Math.min(startIndex.value + pageSize.value, filteredQuestions.value.length))
+
+const paginatedQuestions = computed(() => {
+  return filteredQuestions.value.slice(startIndex.value, endIndex.value)
+})
+
+// State for form validation
+const formErrors = ref<string[]>([])
+const successMessage = ref('')
 
 // Helper functions
-function onGameTypeChange(gameType: string) {
-  newQuestion.gameType = gameType
-  // Reset type when changing game type
-  if (gameType !== 'TRUTH_OR_DARE') {
-    newQuestion.type = gameType === 'DO_OR_DRINK' ? 'DO' : ''
+function getGameTypeLabel(gameType: string) {
+  const labels = {
+    'TRUTH_OR_DARE': 'Truth or Dare',
+    'DO_OR_DRINK': 'Do or Drink',
+    'NEVER_HAVE_I_EVER': 'Never Have I Ever',
+    'MOST_LIKELY_TO': 'Most Likely To',
+    'WOULD_YOU_RATHER': 'Would You Rather'
   }
-  // Set default drink amount for Do or Drink
-  if (gameType === 'DO_OR_DRINK' && !newQuestion.drinkAmount) {
-    newQuestion.drinkAmount = '2 sips'
-  }
+  return labels[gameType] || gameType
 }
 
-function getSimplePlaceholder() {
+function getGameTypeDescription(gameType: string) {
+  const descriptions = {
+    'TRUTH_OR_DARE': 'Ask truths or give dares to players',
+    'DO_OR_DRINK': 'Players must do a challenge or drink',
+    'NEVER_HAVE_I_EVER': 'Group elimination game with "Never have I ever" questions',
+    'MOST_LIKELY_TO': 'Players vote on who is most likely to do something',
+    'WOULD_YOU_RATHER': 'Players choose between two difficult options'
+  }
+  return descriptions[gameType] || 'Select a game type to get started'
+}
+
+function getGameIcon(gameType: string) {
+  const icons = {
+    'TRUTH_OR_DARE': '🎯',
+    'DO_OR_DRINK': '🍺',
+    'NEVER_HAVE_I_EVER': '🙋',
+    'MOST_LIKELY_TO': '🤔',
+    'WOULD_YOU_RATHER': '🤷'
+  }
+  return icons[gameType] || '❓'
+}
+
+function getIntensityColor(level: number) {
+  const colors = ['success', 'info', 'warning', 'error', 'error']
+  return colors[level - 1] || 'neutral'
+}
+
+function getIntensityButtonColor(level: number) {
+  const colors = ['success', 'info', 'warning', 'error', 'error']
+  return colors[level - 1] || 'neutral'
+}
+
+function getIntensityEmoji(level: number) {
+  const emojis = ['😊', '😏', '😈', '🔥', '💀']
+  return emojis[level - 1] || '😊'
+}
+
+function getIntensityLabel(level: number) {
+  const labels = ['Mild', 'Light', 'Medium', 'Spicy', 'Wild']
+  return labels[level - 1] || 'Mild'
+}
+
+function getIntensityDescription(level: number) {
+  const descriptions = [
+    'Safe for everyone - family friendly content',
+    'Slightly playful - good for warming up the group',
+    'Getting interesting - moderate challenge level',
+    'Bold and daring - things get spicy and fun',
+    'Extreme level - only for the brave and adventurous!'
+  ]
+  return descriptions[level - 1] || descriptions[0]
+}
+
+function getQuestionPlaceholder() {
   if (!newQuestion.gameType) return 'Enter your question here...'
   
   const placeholders = {
@@ -439,105 +561,137 @@ function getSimplePlaceholder() {
   return placeholders[newQuestion.gameType] || 'Enter your question here...'
 }
 
-function getIntensityButtonColor(level: number) {
-  const colors = ['green', 'blue', 'yellow', 'orange', 'red']
-  return colors[level - 1] || 'gray'
-}
-
-function getGameIcon(gameType: string) {
-  const icons = {
-    'TRUTH_OR_DARE': '🎯',
-    'DO_OR_DRINK': '🍺',
-    'NEVER_HAVE_I_EVER': '🙋',
-    'MOST_LIKELY_TO': '🤔',
-    'WOULD_YOU_RATHER': '🤷'
+function onGameTypeChange(gameType: string) {
+  newQuestion.gameType = gameType
+  // Reset type when changing game type
+  if (gameType !== 'TRUTH_OR_DARE') {
+    newQuestion.type = gameType === 'DO_OR_DRINK' ? 'DO' : ''
   }
-  return icons[gameType] || '❓'
-}
-
-function getGameDescription(gameType: string) {
-  const descriptions = {
-    'TRUTH_OR_DARE': 'Ask truths or give dares',
-    'DO_OR_DRINK': 'Do the challenge or drink',
-    'NEVER_HAVE_I_EVER': 'Group elimination game',
-    'MOST_LIKELY_TO': 'Vote who\'s most likely',
-    'WOULD_YOU_RATHER': 'Choose between options'
+  // Set default drink amount for Do or Drink
+  if (gameType === 'DO_OR_DRINK' && !newQuestion.drinkAmount) {
+    newQuestion.drinkAmount = '2 sips'
   }
-  return descriptions[gameType] || ''
+  validateForm()
 }
 
-function getGameTypeLabel(gameType: string) {
-  const labels = {
-    'TRUTH_OR_DARE': 'Truth or Dare',
-    'DO_OR_DRINK': 'Do or Drink',
-    'NEVER_HAVE_I_EVER': 'Never Have I Ever',
-    'MOST_LIKELY_TO': 'Most Likely To',
-    'WOULD_YOU_RATHER': 'Would You Rather'
+function validateForm() {
+  const errors: string[] = []
+  
+  if (!newQuestion.gameType) {
+    errors.push('Game type is required')
   }
-  return labels[gameType] || gameType
+  
+  if (newQuestion.gameType === 'TRUTH_OR_DARE' && !newQuestion.type) {
+    errors.push('Question type (Truth or Dare) is required')
+  }
+  
+  if (!newQuestion.text.trim()) {
+    errors.push('Question text is required')
+  } else if (newQuestion.text.trim().length < 10) {
+    errors.push('Question text must be at least 10 characters long')
+  } else if (newQuestion.text.trim().length > 500) {
+    errors.push('Question text cannot exceed 500 characters')
+  }
+  
+  if (!newQuestion.intensity || newQuestion.intensity < 1 || newQuestion.intensity > 5) {
+    errors.push('Intensity level must be between 1 and 5')
+  }
+  
+  formErrors.value = errors
+  return errors.length === 0
 }
 
-
-
-function getIntensityEmoji(level: number) {
-  const emojis = ['😊', '😏', '😈', '🔥', '💀']
-  return emojis[level - 1] || '😊'
+function getFieldError(field: string): string | undefined {
+  const error = formErrors.value.find(err => err.toLowerCase().includes(field.toLowerCase()))
+  return error
 }
 
-function getIntensityLabel(level: number) {
-  const labels = ['Mild', 'Light', 'Medium', 'Spicy', 'Wild']
-  return labels[level - 1] || 'Mild'
+function getFormStatus() {
+  if (formErrors.value.length > 0) {
+    return `${formErrors.value.length} error(s) need to be fixed`
+  }
+  if (!newQuestion.text.trim() || !newQuestion.gameType) {
+    return 'Please fill in all required fields'
+  }
+  return 'Ready to save'
 }
 
-
-
-function getIntensityDescription(level: number) {
-  const descriptions = [
-    'Safe for everyone - family friendly',
-    'Slightly playful - good for warming up',
-    'Getting interesting - moderate challenge',
-    'Bold and daring - things get spicy',
-    'Extreme level - only for the brave!'
-  ]
-  return descriptions[level - 1] || descriptions[0]
-}
-
-// Load all questions and categorize them
+// Load questions
 async function loadQuestions() {
   loading.value = true
-  console.log('🔄 Loading questions for admin dashboard...')
-  
   try {
-    // Load all questions from the unified API
     const response = await $fetch('/api/admin/all-questions?pageSize=1000')
-    console.log('✅ Questions response:', response)
-    
-    if (!response || !response.items) {
-      throw new Error('Invalid response format')
-    }
-
-    const allQuestions = response.items
-
-    // Categorize questions
-    truthCards.value = allQuestions.filter(q => q.gameType === 'TRUTH_OR_DARE' && q.type === 'TRUTH')
-    dareCards.value = allQuestions.filter(q => q.gameType === 'TRUTH_OR_DARE' && q.type === 'DARE')
-    doOrDrinkCards.value = allQuestions.filter(q => q.gameType === 'DO_OR_DRINK')
-    neverHaveQuestions.value = allQuestions.filter(q => q.gameType === 'NEVER_HAVE_I_EVER')
-    mostLikelyQuestions.value = allQuestions.filter(q => q.gameType === 'MOST_LIKELY_TO')
-    wouldYouRatherQuestions.value = allQuestions.filter(q => q.gameType === 'WOULD_YOU_RATHER')
-
-    console.log('📊 Questions categorized:')
-    console.log(`- Truth: ${truthCards.value.length}`)
-    console.log(`- Dare: ${dareCards.value.length}`)
-    console.log(`- Do or Drink: ${doOrDrinkCards.value.length}`)
-    console.log(`- Never Have I Ever: ${neverHaveQuestions.value.length}`)
-    console.log(`- Most Likely To: ${mostLikelyQuestions.value.length}`)
-    console.log(`- Would You Rather: ${wouldYouRatherQuestions.value.length}`)
-    
+    questions.value = response.items || []
   } catch (error) {
-    console.error('❌ Error loading questions:', error)
+    console.error('Error loading questions:', error)
   } finally {
     loading.value = false
+  }
+}
+
+// Save question
+async function saveQuestion() {
+  if (!validateForm()) {
+    return
+  }
+
+  saving.value = true
+  successMessage.value = ''
+  
+  try {
+    if (editingQuestion.value) {
+      // Update existing question
+      const endpoint = (editingQuestion.value as any).source === 'group' 
+        ? `/api/admin/questions/${(editingQuestion.value as any).id}`
+        : `/api/admin/cards/${(editingQuestion.value as any).id}`
+      
+      await $fetch(endpoint, {
+        method: 'PUT',
+        body: {
+          text: newQuestion.text,
+          intensity: parseInt(newQuestion.intensity.toString()),
+          ...(newQuestion.drinkAmount && { drinkAmount: newQuestion.drinkAmount })
+        }
+      })
+      successMessage.value = 'Question updated successfully!'
+    } else {
+      // Create new question
+      if (['NEVER_HAVE_I_EVER', 'MOST_LIKELY_TO', 'WOULD_YOU_RATHER'].includes(newQuestion.gameType)) {
+        await $fetch('/api/admin/questions', {
+          method: 'POST',
+          body: {
+            gameType: newQuestion.gameType,
+            text: newQuestion.text,
+            intensity: parseInt(newQuestion.intensity.toString()),
+            isActive: true
+          }
+        })
+      } else {
+        await $fetch('/api/admin/cards', {
+          method: 'POST',
+          body: {
+            type: newQuestion.type || 'DO',
+            gameType: newQuestion.gameType,
+            text: newQuestion.text,
+            intensity: parseInt(newQuestion.intensity.toString()),
+            ...(newQuestion.drinkAmount && { drinkAmount: newQuestion.drinkAmount })
+          }
+        })
+      }
+      successMessage.value = 'Question added successfully!'
+    }
+    
+    await loadQuestions()
+    
+    // Close form after a short delay to show success message
+    setTimeout(() => {
+      closeAddForm()
+    }, 1500)
+  } catch (error) {
+    console.error('Error saving question:', error)
+    formErrors.value = ['Failed to save question. Please try again.']
+  } finally {
+    saving.value = false
   }
 }
 
@@ -549,89 +703,7 @@ function editQuestion(question) {
   newQuestion.text = question.text
   newQuestion.intensity = question.intensity
   newQuestion.drinkAmount = question.drinkAmount || ''
-  showEditModal.value = true
-}
-
-// Open create modal
-function openCreate() {
-  editingQuestion.value = null
-  newQuestion.gameType = ''
-  newQuestion.type = ''
-  newQuestion.text = ''
-  newQuestion.intensity = 1
-  newQuestion.drinkAmount = ''
-  showEditModal.value = true
-}
-
-// Open create modal for specific game type
-function openCreateFor(gameType: string, type?: string) {
-  editingQuestion.value = null
-  newQuestion.gameType = gameType
-  newQuestion.type = type || (gameType === 'DO_OR_DRINK' ? 'DO' : '')
-  newQuestion.text = ''
-  newQuestion.intensity = 1
-  newQuestion.drinkAmount = gameType === 'DO_OR_DRINK' ? '2 sips' : ''
-  showEditModal.value = true
-}
-
-// Save question
-async function saveQuestion() {
-  if (!newQuestion.text || !newQuestion.gameType) {
-    return
-  }
-
-  saving.value = true
-  
-  try {
-    if (editingQuestion.value) {
-      // Update existing question
-      const endpoint = editingQuestion.value.source === 'group' 
-        ? `/api/admin/questions/${editingQuestion.value.id}`
-        : `/api/admin/cards/${editingQuestion.value.id}`
-      
-      await $fetch(endpoint, {
-        method: 'PUT',
-        body: {
-          text: newQuestion.text,
-          intensity: parseInt(newQuestion.intensity),
-          ...(newQuestion.drinkAmount && { drinkAmount: newQuestion.drinkAmount })
-        }
-      })
-    } else {
-      // Create new question
-      if (['NEVER_HAVE_I_EVER', 'MOST_LIKELY_TO', 'WOULD_YOU_RATHER'].includes(newQuestion.gameType)) {
-        // Group question
-        await $fetch('/api/admin/questions', {
-          method: 'POST',
-          body: {
-            gameType: newQuestion.gameType,
-            text: newQuestion.text,
-            intensity: parseInt(newQuestion.intensity),
-            isActive: true
-          }
-        })
-      } else {
-        // Game card
-        await $fetch('/api/admin/cards', {
-          method: 'POST',
-          body: {
-            type: newQuestion.type || 'DO',
-            gameType: newQuestion.gameType,
-            text: newQuestion.text,
-            intensity: parseInt(newQuestion.intensity),
-            ...(newQuestion.drinkAmount && { drinkAmount: newQuestion.drinkAmount })
-          }
-        })
-      }
-    }
-    
-    showEditModal.value = false
-    await loadQuestions()
-  } catch (error) {
-    console.error('Error saving question:', error)
-  } finally {
-    saving.value = false
-  }
+  showAddForm.value = true
 }
 
 // Delete question
@@ -661,6 +733,31 @@ async function seedAllQuestions() {
     console.error('Error seeding questions:', error)
   }
 }
+
+// Close add form
+function closeAddForm() {
+  showAddForm.value = false
+  editingQuestion.value = null
+  newQuestion.gameType = ''
+  newQuestion.type = ''
+  newQuestion.text = ''
+  newQuestion.intensity = 1
+  newQuestion.drinkAmount = ''
+  formErrors.value = []
+  successMessage.value = ''
+}
+
+// Watch for form changes to validate in real-time
+watch([() => newQuestion.text, () => newQuestion.gameType, () => newQuestion.type, () => newQuestion.intensity], () => {
+  if (showAddForm.value) {
+    validateForm()
+  }
+})
+
+// Watch for filter changes to reset pagination
+watch([searchQuery, selectedGameType, selectedIntensity, selectedStatus], () => {
+  currentPage.value = 1
+})
 
 // Load questions on mount
 onMounted(() => {

@@ -8,18 +8,32 @@ export default defineEventHandler(async (event) => {
   const query = getQuery(event)
   const gameType = query.gameType as string | undefined
   const search = query.search as string | undefined
+  const intensity = query.intensity as string | undefined
+  const status = query.status as string | undefined
   const page = Number(query.page ?? 1)
   const pageSize = Number(query.pageSize ?? 25)
 
   try {
     let allQuestions: any[] = []
 
+    // Build where conditions for group questions
+    const groupWhereConditions: any = {}
+    if (gameType && ['NEVER_HAVE_I_EVER', 'MOST_LIKELY_TO', 'WOULD_YOU_RATHER'].includes(gameType)) {
+      groupWhereConditions.gameType = gameType as any
+    }
+    if (search) {
+      groupWhereConditions.text = { contains: search, mode: 'insensitive' }
+    }
+    if (intensity) {
+      groupWhereConditions.intensity = parseInt(intensity)
+    }
+    if (status) {
+      groupWhereConditions.isActive = status === 'active'
+    }
+
     // Get Group Game Questions
     const groupQuestions = await prisma.groupGameQuestion.findMany({
-      where: {
-        ...(gameType && ['NEVER_HAVE_I_EVER', 'MOST_LIKELY_TO', 'WOULD_YOU_RATHER'].includes(gameType) ? { gameType: gameType as any } : {}),
-        ...(search ? { text: { contains: search, mode: 'insensitive' } } : {})
-      },
+      where: groupWhereConditions,
       orderBy: { id: 'desc' }
     })
 
@@ -32,17 +46,28 @@ export default defineEventHandler(async (event) => {
       intensity: q.intensity,
       drinkAmount: null,
       isActive: q.isActive,
+      timesUsed: q.timesUsed,
+      lastUsed: q.lastUsed,
       source: 'group'
     }))
 
     allQuestions.push(...transformedGroupQuestions)
 
+    // Build where conditions for game cards
+    const cardWhereConditions: any = {}
+    if (gameType && ['TRUTH_OR_DARE', 'DO_OR_DRINK', 'DICE_OF_DESIRE'].includes(gameType)) {
+      cardWhereConditions.gameType = gameType as any
+    }
+    if (search) {
+      cardWhereConditions.text = { contains: search, mode: 'insensitive' }
+    }
+    if (intensity) {
+      cardWhereConditions.intensity = parseInt(intensity)
+    }
+
     // Get Game Cards
     const gameCards = await prisma.gameCard.findMany({
-      where: {
-        ...(gameType && ['TRUTH_OR_DARE', 'DO_OR_DRINK', 'DICE_OF_DESIRE'].includes(gameType) ? { gameType: gameType as any } : {}),
-        ...(search ? { text: { contains: search, mode: 'insensitive' } } : {})
-      },
+      where: cardWhereConditions,
       orderBy: { id: 'desc' }
     })
 
@@ -55,6 +80,8 @@ export default defineEventHandler(async (event) => {
       intensity: card.intensity,
       drinkAmount: card.drinkAmount,
       isActive: true, // Game cards don't have isActive field
+      timesUsed: card.timesUsed,
+      lastUsed: card.lastUsed,
       source: 'cards'
     }))
 
@@ -69,7 +96,8 @@ export default defineEventHandler(async (event) => {
       items: paginatedQuestions,
       total: allQuestions.length,
       page,
-      pageSize
+      pageSize,
+      totalPages: Math.ceil(allQuestions.length / pageSize)
     }
   } catch (error) {
     console.error('Error fetching all questions:', error)
