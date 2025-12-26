@@ -12,7 +12,9 @@
     "prisma:migrate": "npx prisma migrate",
     "prisma:studio": "npx prisma studio",
     "prisma:schema": "npx prisma db push",
-    "prisma": "npm run prisma:generate && npm run prisma:migrate && npm run prisma:schema"
+    "prisma": "npm run prisma:generate && npm run prisma:migrate && npm run prisma:schema",
+    "db:seed": "node seed-database.js",
+    "db:seed:full": "npx tsc --project tsconfig.seed.json && npm run db:seed"
   },
   "dependencies": {
     "@iconify/vue": "^5.0.0",

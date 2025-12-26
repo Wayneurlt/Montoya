@@ -1,68 +1,65 @@
 <template>
   <div
-    class="min-h-screen bg-gradient-to-br from-purple-900 via-indigo-800 to-fuchsia-900 text-white p-4 relative overflow-hidden"
+    class="min-h-screen bg-gradient-to-br from-slate-950 via-purple-950 to-slate-950 text-white p-3 sm:p-4 relative overflow-hidden"
   >
-    <!-- Animated background elements -->
-    <ClientOnly>
-      <div class="absolute inset-0 opacity-10 pointer-events-none">
-        <div
-          v-for="i in 20"
-          :key="i"
-          class="absolute rounded-full bg-pink-500 animate-float"
-          :style="`left: ${Math.random() * 100}%; top: ${Math.random() * 100}%; 
-                     width: ${Math.random() * 10 + 2}px; height: ${
-            Math.random() * 10 + 2
-          }px;
-                     animation-delay: ${Math.random() * 5}s;`"
-        ></div>
-      </div>
-    </ClientOnly>
+    <!-- Background Icons Pattern -->
+    <BackgroundIcons />
 
     <!-- Main Game Container -->
     <div
-      class="max-w-2xl mx-auto bg-white/10 backdrop-blur-md rounded-xl p-6 md:p-8 shadow-2xl relative z-10"
+      class="max-w-3xl mx-auto bg-white/10 backdrop-blur-md rounded-xl sm:rounded-2xl p-4 sm:p-5 md:p-6 lg:p-8 shadow-2xl relative z-10"
     >
-      <!-- Game Header -->
-      <div class="text-center mb-6">
-        <h1
-          class="text-4xl md:text-5xl font-bold mb-2 bg-clip-text text-transparent bg-gradient-to-r from-pink-500 to-cyan-400"
-        >
-          Do or Drink
-        </h1>
-        <div class="flex justify-center items-center gap-2">
+      <!-- Home Button & Info -->
+      <div class="flex justify-between items-center mb-6">
+        <NuxtLink to="/" class="bg-white/10 hover:bg-white/20 backdrop-blur-md px-4 py-2 rounded-xl transition-all duration-300 flex items-center gap-2 border border-white/20 hover:scale-105 shadow-lg">
+          <Icon icon="mdi:home" class="w-5 h-5" />
+          <span class="font-medium">Home</span>
+        </NuxtLink>
+        
+        <div class="flex items-center gap-2">
           <span
-            class="text-sm px-3 py-1 rounded-full"
+            class="text-sm px-3 py-1.5 rounded-full border shadow-md"
             :class="
               gameMode === 'individual'
-                ? 'bg-pink-500/20 text-pink-300'
+                ? 'bg-pink-500/20 text-pink-300 border-pink-400/30'
                 : gameMode === 'teams'
-                ? 'bg-blue-500/20 text-blue-300'
-                : 'bg-red-500/20 text-red-300'
+                ? 'bg-blue-500/20 text-blue-300 border-blue-400/30'
+                : 'bg-red-500/20 text-red-300 border-red-400/30'
             "
           >
             {{
               gameMode === "individual"
                 ? "Individual"
                 : gameMode === "teams"
-                ? "Team Mode"
+                ? "Teams"
                 : "Elimination"
             }}
           </span>
           <span
-            class="text-sm px-3 py-1 rounded-full bg-purple-500/20 text-purple-300"
+            class="text-sm px-3 py-1.5 rounded-full bg-purple-500/20 text-purple-300 border border-purple-400/30 shadow-md"
           >
             Level {{ gameLevel }}
           </span>
         </div>
       </div>
+      
+      <!-- Game Header -->
+      <div class="text-center mb-8">
+        <h1
+          class="text-5xl md:text-6xl font-black mb-2 bg-clip-text text-transparent bg-gradient-to-r from-red-600 via-orange-600 to-amber-500 drop-shadow-2xl"
+        >
+          Do or Drink
+        </h1>
+        <p class="text-red-200/80 text-sm font-medium mt-2">Complete the challenge or take the penalty!</p>
+      </div>
 
       <!-- Game Settings -->
-      <div class="mb-6">
+      <div class="mb-8">
         <button
           @click="showSettings = !showSettings"
-          class="text-sm bg-black/30 hover:bg-black/50 px-3 py-1 rounded-full flex items-center gap-2"
+          class="text-sm bg-white/10 hover:bg-white/20 px-4 py-2 rounded-xl flex items-center gap-2 border border-white/20 transition-all hover:scale-105 font-medium shadow-lg"
         >
-          <Icon icon="mdi:cog" class="w-4 h-4" />
+          <Icon icon="mdi:cog" class="w-5 h-5" />
           Game Settings
         </button>
 
@@ -126,21 +123,21 @@
 
       <!-- Player Status -->
       <div
-        class="flex justify-between items-center mb-6 p-4 bg-gradient-to-r from-white/5 to-white/10 rounded-xl border border-white/10"
+        class="flex justify-between items-center mb-8 p-6 bg-gradient-to-r from-white/10 to-white/5 rounded-2xl border-2 border-white/20 shadow-xl backdrop-blur-lg"
       >
         <div>
-          <h3 class="text-sm font-medium text-white/70">Current Turn:</h3>
-          <p class="text-xl font-bold flex items-center gap-2">
+          <h3 class="text-xs font-bold text-white/60 uppercase tracking-wider mb-1">Current Turn</h3>
+          <p class="text-2xl font-black flex items-center gap-2">
             <span>{{ currentPlayer?.name }}</span>
-            <span class="text-2xl">{{
+            <span class="text-3xl">{{
               currentPlayer?.gender === "male" ? "♂" : "♀"
             }}</span>
           </p>
         </div>
         <div class="text-right">
-          <h3 class="text-sm font-medium text-white/70">Drinks Taken:</h3>
-          <p class="text-xl font-bold flex items-center justify-end gap-2">
-            <Icon icon="mdi:glass-cocktail" class="w-5 h-5" />
+          <h3 class="text-xs font-bold text-white/60 uppercase tracking-wider mb-1">Drinks Taken</h3>
+          <p class="text-2xl font-black flex items-center justify-end gap-2">
+            <Icon icon="mdi:glass-cocktail" class="w-6 h-6 text-orange-400 animate-pulse" />
             <span>{{ currentPlayer?.drinks || 0 }}</span>
           </p>
         </div>
@@ -148,7 +145,7 @@
 
       <!-- Main Game Card -->
       <div
-        class="relative w-full h-72 mb-8 cursor-pointer perspective-1000"
+        class="relative w-full h-80 mb-8 cursor-pointer perspective-1000 group"
         @click="flipCard"
       >
         <div
@@ -157,45 +154,51 @@
         >
           <!-- Front of Card -->
           <div
-            class="absolute w-full h-full backface-hidden rounded-2xl flex flex-col justify-center items-center p-6 shadow-lg border-2 border-white/20"
+            class="absolute w-full h-full backface-hidden rounded-3xl flex flex-col justify-center items-center p-8 shadow-2xl border-4 border-red-600/40 group-hover:scale-105 transition-all"
             :class="cardColor"
           >
-            <div class="text-center">
-              <p class="text-3xl font-bold mb-2">Do or Drink</p>
-              <p v-if="!currentCard" class="text-lg opacity-80">
+            <!-- Glow effect -->
+            <div class="absolute inset-0 bg-gradient-to-br from-red-500/20 to-transparent rounded-3xl opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+            
+            <div class="text-center relative z-10">
+              <p class="text-4xl font-black mb-4 drop-shadow-lg">Do or Drink</p>
+              <p v-if="!currentCard" class="text-xl opacity-90 font-semibold">
                 Draw a card to begin the game
               </p>
-              <p v-else class="text-lg opacity-80">
+              <p v-else class="text-xl opacity-90 font-bold">
                 Level {{ currentCard?.intensity }} Challenge
-                <span class="block text-sm mt-1"
-                  >{{ currentCard?.drinkAmount }} penalty</span
+                <span class="inline-block text-lg mt-2 px-4 py-2 bg-white/20 rounded-full"
+                  >Penalty: {{ currentCard?.drinkAmount }}</span
                 >
               </p>
-              <div class="mt-6 text-5xl">
+              <div class="mt-8 text-7xl animate-pulse">
                 <Icon
                   v-if="currentCard?.intensity === 1"
                   icon="mdi:emoticon-happy"
+                  class="drop-shadow-lg"
                 />
                 <Icon
                   v-else-if="currentCard?.intensity === 2"
                   icon="mdi:emoticon-excited"
+                  class="drop-shadow-lg"
                 />
                 <Icon
                   v-else-if="currentCard?.intensity === 3"
                   icon="mdi:emoticon-devil"
+                  class="drop-shadow-lg"
                 />
-                <Icon v-else icon="mdi:cards" />
+                <Icon v-else icon="mdi:cards" class="drop-shadow-lg" />
               </div>
             </div>
           </div>
 
           <!-- Back of Card -->
           <div
-            class="absolute w-full h-full backface-hidden bg-white text-gray-900 rounded-2xl flex flex-col justify-center items-center p-6 shadow-lg rotate-y-180 border-2 border-white/20"
+            class="absolute w-full h-full backface-hidden bg-white text-gray-900 rounded-3xl flex flex-col justify-center items-center p-8 shadow-2xl rotate-y-180 border-4 border-white/40"
           >
             <div v-if="currentCard" class="text-center w-full">
               <span
-                class="font-bold text-lg px-4 py-1 rounded-full mb-4 inline-flex items-center gap-2"
+                class="font-black text-xl px-5 py-2 rounded-full mb-6 inline-flex items-center gap-2 shadow-lg"
                 :class="intensityClass"
               >
                 <Icon
@@ -206,32 +209,32 @@
                       ? 'mdi:emoticon-excited'
                       : 'mdi:emoticon-devil'
                   "
-                  class="w-5 h-5"
+                  class="w-6 h-6"
                 />
                 Level {{ currentCard.intensity }}
               </span>
-              <p class="text-xl font-medium mb-4 px-4">
+              <p class="text-2xl font-bold mb-6 px-4 leading-relaxed">
                 {{ currentCard.text }}
               </p>
 
               <div
                 v-if="currentCard.target"
-                class="bg-gray-100 rounded-lg p-3 w-full max-w-xs mx-auto"
+                class="bg-gray-100 rounded-xl p-4 w-full max-w-sm mx-auto mb-4 border-2 border-gray-200"
               >
                 <p
-                  class="text-sm font-medium text-gray-700 flex items-center justify-center gap-2"
+                  class="text-base font-bold text-gray-700 flex items-center justify-center gap-2"
                 >
-                  <Icon icon="mdi:account-arrow-right" class="w-5 h-5" />
+                  <Icon icon="mdi:account-arrow-right" class="w-6 h-6" />
                   <span>
                     To: {{ currentCard.target.name }}
-                    <span class="text-lg">{{
+                    <span class="text-xl">{{
                       currentCard.target.gender === "male" ? "♂" : "♀"
                     }}</span>
                   </span>
                 </p>
               </div>
 
-              <p class="mt-4 font-semibold text-lg" :class="intensityTextClass">
+              <p class="mt-5 font-black text-2xl px-6 py-3 rounded-full inline-block" :class="intensityTextClass">
                 Penalty: {{ currentCard.drinkAmount }}
               </p>
             </div>
@@ -244,22 +247,22 @@
         <button
           @click="drawCard"
           :disabled="isDrawing || currentCard"
-          class="bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700 py-3 rounded-xl font-bold transition-all flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+          class="group bg-gradient-to-r from-red-700 to-orange-700 hover:from-red-600 hover:to-orange-600 py-4 rounded-2xl font-black text-lg transition-all flex items-center justify-center gap-3 disabled:opacity-50 disabled:cursor-not-allowed shadow-xl hover:shadow-red-600/50 border-2 border-red-500/30 hover:scale-105"
         >
           <Icon
             v-if="isDrawing"
             icon="svg-spinners:3-dots-fade"
-            class="w-5 h-5"
+            class="w-6 h-6"
           />
-          <Icon v-else icon="mdi:cards" class="w-5 h-5" />
+          <Icon v-else icon="mdi:cards" class="w-6 h-6 group-hover:rotate-12 transition-transform" />
           {{ isDrawing ? "Generating..." : "Draw Card" }}
         </button>
         <button
           @click="completeChallenge"
           :disabled="!currentCard || !cardFlipped"
-          class="bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 py-3 rounded-xl font-bold transition-all flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+          class="group bg-gradient-to-r from-orange-700 to-amber-700 hover:from-orange-600 hover:to-amber-600 py-4 rounded-2xl font-black text-lg transition-all flex items-center justify-center gap-3 disabled:opacity-50 disabled:cursor-not-allowed shadow-xl hover:shadow-orange-600/50 border-2 border-orange-500/30 hover:scale-105"
         >
-          <Icon icon="mdi:check-bold" class="w-5 h-5" />
+          <Icon icon="mdi:check-bold" class="w-6 h-6 group-hover:scale-110 transition-transform" />
           Completed
         </button>
       </div>
@@ -268,9 +271,9 @@
       <button
         v-if="currentCard && cardFlipped"
         @click="takeDrink"
-        class="w-full mb-6 bg-gradient-to-r from-red-500 to-pink-600 hover:from-red-600 hover:to-pink-700 py-3 rounded-xl font-bold transition-all flex items-center justify-center gap-2"
+        class="group w-full mb-8 bg-gradient-to-r from-amber-700 to-red-700 hover:from-amber-600 hover:to-red-600 py-5 rounded-2xl font-black text-lg transition-all flex items-center justify-center gap-3 shadow-xl hover:shadow-amber-600/50 border-2 border-amber-500/30 hover:scale-105"
       >
-        <Icon icon="mdi:glass-cocktail" class="w-5 h-5" />
+        <Icon icon="mdi:glass-cocktail" class="w-6 h-6 group-hover:animate-bounce" />
         Take Drink Instead ({{ currentCard.drinkAmount }})
       </button>
 
@@ -335,21 +338,21 @@ import { useDoOrDrinkTracker } from "~/composables/useQuestionTracker";
 const INTENSITY_LEVELS = [
   {
     name: "Mild",
-    color: "from-green-600 to-teal-600",
-    textColor: "text-green-800",
-    bgColor: "bg-green-100",
+    color: "from-orange-700 to-red-700",
+    textColor: "text-orange-900",
+    bgColor: "bg-orange-200",
   },
   {
     name: "Medium",
-    color: "from-yellow-600 to-orange-600",
-    textColor: "text-yellow-800",
-    bgColor: "bg-yellow-100",
+    color: "from-red-700 to-rose-700",
+    textColor: "text-red-900",
+    bgColor: "bg-red-200",
   },
   {
     name: "Hot",
-    color: "from-red-600 to-pink-600",
-    textColor: "text-red-800",
-    bgColor: "bg-red-100",
+    color: "from-rose-700 to-red-900",
+    textColor: "text-rose-900",
+    bgColor: "bg-rose-200",
   },
 ];
 
@@ -408,10 +411,10 @@ const currentPlayer = computed(
 );
 
 const cardColor = computed(() => {
-  if (!currentCard.value) return "bg-gradient-to-br from-gray-600 to-gray-700";
+  if (!currentCard.value) return "bg-gradient-to-br from-red-900 to-black";
   return (
     INTENSITY_LEVELS[currentCard.value.intensity - 1]?.color ||
-    "bg-gradient-to-br from-gray-600 to-gray-700"
+    "bg-gradient-to-br from-red-900 to-black"
   );
 });
 
@@ -430,20 +433,24 @@ let challengeTracker = null;
 
 // Question Selection Logic
 const getRandomChallenge = () => {
+  console.log('🎯 getRandomChallenge called, challengeTracker:', challengeTracker ? 'exists' : 'null')
+  
   if (!challengeTracker) {
-    return {
-      question: { text: 'Questions are loading... Please wait.', intensity: 1, drinkAmount: '1 sip' },
-      isRepeat: false
-    }
+    console.log('⚠️ No challengeTracker, returning loading message')
+    return 'Questions are loading... Please wait.';
   }
   
   const result = challengeTracker.getNextQuestion();
+  console.log('📋 Tracker result:', result)
   
   // Log usage stats for debugging
   const stats = challengeTracker.getUsageStats.value;
   console.log(`Do or Drink - Used: ${stats.usedCount}/${stats.totalQuestions} (${stats.usagePercentage}%)`);
   
-  return result.question;
+  // Since questions are now just strings, result.question is the string itself
+  const question = result.question
+  console.log('🎭 Returning question:', question)
+  return question;
 };
 
 // Game Logic
@@ -501,13 +508,17 @@ const generateChallenge = () => {
     : null;
 
   const challengeText = getRandomChallenge();
+  console.log('🎲 Generated challenge text:', challengeText)
 
-  return {
+  const challenge = {
     text: challengeText,
     intensity,
     drinkAmount,
     target,
   };
+  
+  console.log('🎯 Final challenge object:', challenge)
+  return challenge;
 };
 
 const drawCard = () => {
@@ -716,26 +727,38 @@ const getLogIconColor = (log) => {
 async function loadQuestions() {
   try {
     console.log('🔄 Loading Do or Drink questions from database...')
-    const response = await $fetch('/api/questions/do-or-drink?limit=100')
-    console.log('Do or Drink API response:', response)
-    const questions = response.questions || []
     
-    // Create tracker with loaded questions
-    challengeTracker = useDoOrDrinkTracker(questions.map(q => ({
-      text: q.text,
-      intensity: q.intensity,
-      drinkAmount: q.drinkAmount || '2 sips'
-    })))
+    // Use standard fetch instead of $fetch to avoid potential issues
+    const response = await fetch('/api/questions/do-or-drink?limit=100')
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`)
+    }
+    
+    const data = await response.json()
+    console.log('Do or Drink API response:', data)
+    const questions = data.questions || []
+    
+    console.log('Questions array:', questions)
+    console.log('Questions length:', questions.length)
+    console.log('First question:', questions[0])
+    
+    // Create tracker with loaded questions - questions are now just strings
+    console.log('🔧 Creating tracker with questions:', questions)
+    challengeTracker = useDoOrDrinkTracker(questions)
+    console.log('📊 Tracker created:', challengeTracker)
+    
     challengeTracker.initializeTracker();
+    console.log('✅ Tracker initialized')
     
     console.log(`✅ Loaded ${questions.length} Do or Drink questions`)
   } catch (error) {
     console.error('❌ Error loading Do or Drink questions:', error)
-    // Fallback questions
+    // Fallback questions - only text
+    console.log('🔄 Creating fallback tracker...')
     challengeTracker = useDoOrDrinkTracker([
-      { text: 'Give someone a compliment', intensity: 1, drinkAmount: '1 sip' },
-      { text: 'Do a funny dance', intensity: 2, drinkAmount: '2 sips' },
-      { text: 'Tell a joke', intensity: 1, drinkAmount: '1 sip' }
+      'Give someone a compliment',
+      'Do a funny dance', 
+      'Tell a joke'
     ])
     challengeTracker.initializeTracker();
     console.log('⚠️ Using fallback Do or Drink questions')
@@ -743,9 +766,13 @@ async function loadQuestions() {
 }
 
 onMounted(async () => {
+  console.log('🚀 Component mounted, loading questions...')
   if (typeof window !== "undefined") {
     // Load questions from database
     await loadQuestions()
+    console.log('🏁 Questions loading completed')
+  } else {
+    console.log('⚠️ Not in browser environment')
   }
 });
 

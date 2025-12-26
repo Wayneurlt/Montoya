@@ -22,3 +22,7 @@ logs
 .env
 .env.*
 !.env.example
+
+# Compiled question data files
+data/questions/js/
+tsconfig.seed.json

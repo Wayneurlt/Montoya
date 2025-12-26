@@ -1,13 +1,13 @@
 // Seed script to populate database with questions from data files
 import { PrismaClient } from '@prisma/client'
-import { wouldYouRatherQuestions } from './data/questions/wouldyourather.js'
-import { neverHaveIEverQuestions } from './data/questions/neverhaveiever.js'
-import { mostLikelyToQuestions } from './data/questions/mostlikelyto.js'
-import { truthQuestions } from './data/questions/truth.js'
-import { dareQuestions } from './data/questions/dare.js'
-import { spicyTruthQuestions } from './data/questions/spicytruth.js'
-import { spicyDareQuestions } from './data/questions/spicydare.js'
-import { doOrDrinkQuestions } from './data/questions/doordrink.js'
+import { wouldYouRatherQuestions } from './data/questions/js/wouldyourather.js'
+import { neverHaveIEverQuestions } from './data/questions/js/neverhaveiever.js'
+import { mostLikelyToQuestions } from './data/questions/js/mostlikelyto.js'
+import { truthQuestions } from './data/questions/js/truth.js'
+import { dareQuestions } from './data/questions/js/dare.js'
+import { spicyTruthQuestions } from './data/questions/js/spicytruth.js'
+import { spicyDareQuestions } from './data/questions/js/spicydare.js'
+import { doOrDrinkQuestions } from './data/questions/js/doordrink.js'
 
 const prisma = new PrismaClient()
 

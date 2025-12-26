@@ -1,0 +1,97 @@
+/* Montoya Unified Color Scheme */
+:root {
+  /* Primary Brand Colors - Deep Purple to Violet */
+  --color-primary-50: #faf5ff;
+  --color-primary-100: #f3e8ff;
+  --color-primary-200: #e9d5ff;
+  --color-primary-300: #d8b4fe;
+  --color-primary-400: #c084fc;
+  --color-primary-500: #a855f7;
+  --color-primary-600: #9333ea;
+  --color-primary-700: #7e22ce;
+  --color-primary-800: #6b21a8;
+  --color-primary-900: #581c87;
+  --color-primary-950: #3b0764;
+
+  /* Accent Colors - Vibrant Pink */
+  --color-accent-50: #fdf2f8;
+  --color-accent-100: #fce7f3;
+  --color-accent-200: #fbcfe8;
+  --color-accent-300: #f9a8d4;
+  --color-accent-400: #f472b6;
+  --color-accent-500: #ec4899;
+  --color-accent-600: #db2777;
+  --color-accent-700: #be185d;
+  --color-accent-800: #9f1239;
+  --color-accent-900: #831843;
+  --color-accent-950: #500724;
+
+  /* Secondary - Cyan/Teal */
+  --color-secondary-50: #ecfeff;
+  --color-secondary-100: #cffafe;
+  --color-secondary-200: #a5f3fc;
+  --color-secondary-300: #67e8f9;
+  --color-secondary-400: #22d3ee;
+  --color-secondary-500: #06b6d4;
+  --color-secondary-600: #0891b2;
+  --color-secondary-700: #0e7490;
+  --color-secondary-800: #155e75;
+  --color-secondary-900: #164e63;
+  --color-secondary-950: #083344;
+
+  /* Success - Emerald */
+  --color-success: #10b981;
+  --color-success-dark: #059669;
+
+  /* Warning - Amber */
+  --color-warning: #f59e0b;
+  --color-warning-dark: #d97706;
+
+  /* Danger - Rose */
+  --color-danger: #f43f5e;
+  --color-danger-dark: #e11d48;
+
+  /* Background Gradients */
+  --gradient-primary: linear-gradient(135deg, #581c87 0%, #7e22ce 50%, #a855f7 100%);
+  --gradient-accent: linear-gradient(135deg, #be185d 0%, #ec4899 50%, #f472b6 100%);
+  --gradient-secondary: linear-gradient(135deg, #0e7490 0%, #22d3ee 50%, #67e8f9 100%);
+  --gradient-dark: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #334155 100%);
+  --gradient-game: linear-gradient(135deg, #3b0764 0%, #581c87 25%, #7e22ce 50%, #9333ea 75%, #a855f7 100%);
+}
+
+/* Utility Classes */
+.bg-montoya-primary {
+  background: var(--gradient-primary);
+}
+
+.bg-montoya-accent {
+  background: var(--gradient-accent);
+}
+
+.bg-montoya-secondary {
+  background: var(--gradient-secondary);
+}
+
+.bg-montoya-dark {
+  background: var(--gradient-dark);
+}
+
+.bg-montoya-game {
+  background: var(--gradient-game);
+}
+
+.text-montoya-primary {
+  color: var(--color-primary-400);
+}
+
+.text-montoya-accent {
+  color: var(--color-accent-400);
+}
+
+.text-montoya-secondary {
+  color: var(--color-secondary-400);
+}
+
+
+
+

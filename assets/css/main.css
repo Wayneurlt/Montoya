@@ -1,5 +1,7 @@
 @import "tailwindcss";
 @import "@nuxt/ui";
+@import "./colors.css";
+
 @keyframes spin-slow {
   0% {
     transform: rotate(0deg);
