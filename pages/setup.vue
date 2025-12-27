@@ -102,7 +102,7 @@
         </div>
 
         <!-- Player List -->
-        <div class="space-y-2 sm:space-y-3 max-h-96 overflow-y-auto pr-1 sm:pr-2">
+        <div class="space-y-2 sm:space-y-3">
           <div
             v-for="(player, index) in tempPlayers"
             :key="player.id"

@@ -67,7 +67,7 @@
       </div>
 
       <!-- Charade Card -->
-      <div v-if="!currentPrompt" class="text-center py-8 sm:py-10 md:py-12">
+      <div v-if="!currentPrompt && !timerActive" class="text-center py-8 sm:py-10 md:py-12">
         <button
           @click="drawPrompt"
           class="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 px-8 sm:px-10 md:px-12 py-4 sm:py-5 rounded-xl sm:rounded-2xl text-lg sm:text-xl md:text-2xl font-black shadow-2xl hover:shadow-purple-600/50 transition-all duration-300 transform hover:scale-110"
@@ -237,6 +237,8 @@ function drawPrompt() {
 }
 
 function startTimer() {
+  if (timerActive.value) return; // Don't restart if already running
+  
   timerActive.value = true;
   timeLeft.value = MAX_TIME;
   
@@ -257,26 +259,27 @@ function stopTimer() {
 }
 
 function correctGuess() {
-  stopTimer();
-  
   // Award point
   if (!scores.value[currentPlayer.value.id]) {
     scores.value[currentPlayer.value.id] = 0;
   }
   scores.value[currentPlayer.value.id]++;
   
-  nextTurn();
+  // Automatically draw next prompt (timer continues)
+  drawPrompt();
 }
 
 function skipPrompt() {
-  stopTimer();
-  nextTurn();
+  // Automatically draw next prompt (timer continues)
+  drawPrompt();
 }
 
 function nextTurn() {
+  stopTimer();
   currentPrompt.value = "";
   currentCategory.value = "";
-  gameStore.nextPlayer();
+  usedPrompts.value = []; // Reset used prompts for next player
+  gameStore.nextTurn();
   roundCount.value++;
 }
 
