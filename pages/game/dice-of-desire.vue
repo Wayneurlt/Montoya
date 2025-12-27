@@ -10,9 +10,9 @@
       v-if="showRules"
       class="fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-4"
     >
-      <div
-        class="bg-gradient-to-br from-purple-900 to-rose-900 rounded-2xl p-6 max-w-md w-full shadow-2xl border border-white/20 backdrop-blur-md"
-      >
+        <div
+          class="bg-gradient-to-br from-purple-900 to-pink-900 rounded-2xl p-6 max-w-md w-full shadow-2xl border border-white/20 backdrop-blur-md"
+        >
         <h2
           class="text-3xl font-bold mb-4 text-center bg-clip-text text-transparent bg-gradient-to-r from-pink-500 to-cyan-400"
         >
@@ -109,10 +109,10 @@
       
       <!-- Game Title -->
       <div class="text-center mb-8">
-        <h1 class="text-5xl md:text-6xl font-black mb-2 bg-clip-text text-transparent bg-gradient-to-r from-rose-600 via-red-600 to-orange-600 drop-shadow-2xl">
+        <h1 class="text-5xl md:text-6xl font-black mb-2 bg-clip-text text-transparent bg-gradient-to-r from-purple-400 via-pink-500 to-cyan-400 drop-shadow-2xl">
           Dice of Desire
         </h1>
-        <p class="text-red-200/80 text-sm font-medium">Roll for intimate commands!</p>
+        <p class="text-purple-200/80 text-sm font-medium">Roll for intimate commands!</p>
       </div>
 
       <!-- Player Status -->
@@ -141,17 +141,17 @@
 
       <!-- Dice Area -->
       <div
-        class="relative bg-gradient-to-br from-red-950/60 to-black/90 rounded-3xl p-8 md:p-10 mb-8 border-2 border-red-700/40 shadow-2xl shadow-red-900/30 backdrop-blur-lg"
+        class="relative bg-gradient-to-br from-purple-950/60 to-pink-950/60 rounded-3xl p-8 md:p-10 mb-8 border-2 border-purple-700/40 shadow-2xl shadow-purple-900/30 backdrop-blur-lg"
       >
         <div class="flex justify-center gap-8 md:gap-12 mb-10">
           <!-- Body Part Die -->
           <div
             @click="rollDice"
-            class="group w-28 h-28 md:w-32 md:h-32 bg-gradient-to-br from-rose-700 to-red-800 rounded-2xl shadow-2xl flex flex-col justify-center items-center cursor-pointer transition-all hover:scale-110"
+            class="group w-28 h-28 md:w-32 md:h-32 bg-gradient-to-br from-purple-700 to-pink-800 rounded-2xl shadow-2xl flex flex-col justify-center items-center cursor-pointer transition-all hover:scale-110"
             :class="{
               'animate-spin': isRolling,
               'scale-110': !isRolling && currentRoll.body,
-              'ring-4 ring-rose-400 shadow-rose-600/50': currentRoll.body === 'Your Choice',
+              'ring-4 ring-purple-400 shadow-purple-600/50': currentRoll.body === 'Your Choice',
             }"
           >
             <div v-if="!isRolling" class="text-center px-2">
@@ -169,11 +169,11 @@
           <!-- Action Die -->
           <div
             @click="rollDice"
-            class="group w-28 h-28 md:w-32 md:h-32 bg-gradient-to-br from-orange-700 to-red-800 rounded-2xl shadow-2xl flex flex-col justify-center items-center cursor-pointer transition-all hover:scale-110"
+            class="group w-28 h-28 md:w-32 md:h-32 bg-gradient-to-br from-pink-700 to-purple-800 rounded-2xl shadow-2xl flex flex-col justify-center items-center cursor-pointer transition-all hover:scale-110"
             :class="{
               'animate-spin': isRolling,
               'scale-110': !isRolling && currentRoll.action,
-              'ring-4 ring-orange-400 shadow-orange-600/50': currentRoll.action === 'Your Choice',
+              'ring-4 ring-pink-400 shadow-pink-600/50': currentRoll.action === 'Your Choice',
             }"
           >
             <div v-if="!isRolling" class="text-center px-2">
@@ -192,7 +192,7 @@
         <button
           @click="rollDice"
           :disabled="isRolling || isTimerRunning"
-          class="group w-full bg-gradient-to-r from-rose-700 to-red-700 hover:from-rose-600 hover:to-red-600 py-5 rounded-2xl font-black text-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-3 shadow-xl hover:shadow-red-600/50 border-2 border-red-500/30 hover:scale-105"
+          class="group w-full bg-gradient-to-r from-purple-700 to-pink-700 hover:from-purple-600 hover:to-pink-600 py-5 rounded-2xl font-black text-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-3 shadow-xl hover:shadow-purple-600/50 border-2 border-purple-500/30 hover:scale-105"
         >
           <Icon
             v-if="isRolling"
@@ -207,17 +207,17 @@
       <!-- Result Display -->
       <div
         v-if="currentResult"
-        class="bg-gradient-to-br from-red-950/60 to-black/90 rounded-3xl p-8 mb-8 border-2 border-red-700/40 shadow-2xl shadow-red-900/30 backdrop-blur-lg"
+        class="bg-gradient-to-br from-purple-950/60 to-pink-950/60 rounded-3xl p-8 mb-8 border-2 border-purple-700/40 shadow-2xl shadow-purple-900/30 backdrop-blur-lg"
       >
         <h3
           class="text-2xl font-black mb-6 text-center flex items-center justify-center gap-3"
         >
           <Icon icon="mdi:fire" class="w-7 h-7 text-orange-500 animate-pulse" />
-          <span class="bg-clip-text text-transparent bg-gradient-to-r from-rose-500 to-orange-500">Your Command</span>
+          <span class="bg-clip-text text-transparent bg-gradient-to-r from-purple-400 to-pink-500">Your Command</span>
           <Icon icon="mdi:fire" class="w-7 h-7 text-orange-500 animate-pulse" style="animation-delay: 0.5s;" />
         </h3>
         <div
-          class="bg-gradient-to-r from-red-700/40 to-orange-700/40 rounded-2xl p-6 mb-8 border-2 border-red-600/30 shadow-xl"
+          class="bg-gradient-to-r from-purple-700/40 to-pink-700/40 rounded-2xl p-6 mb-8 border-2 border-purple-600/30 shadow-xl"
         >
           <p class="text-3xl font-black text-center leading-relaxed drop-shadow-lg">{{ currentResult }}</p>
           <p
@@ -338,9 +338,13 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, onBeforeUnmount } from "vue";
+import { ref, computed, onMounted, onBeforeUnmount, watch } from "vue";
 import { Icon } from "@iconify/vue";
+import { useGameStore } from "~/stores/game";
+import { navigateTo } from "#app";
 // Sessionless: no server session polling
+
+const gameStore = useGameStore();
 
 // Game Configuration
 const BODY_PARTS = [
@@ -398,15 +402,16 @@ const currentRoll = ref({ body: "", action: "" });
 const currentResult = ref("");
 const history = ref([]);
 
-// Load players from game session
-const gameSession = getLocalStorage("gameSession", {});
-const players = ref(gameSession.players || []);
-const currentPlayerIndex = ref(0);
+// Load players from game store
+const players = computed(() => gameStore.players);
+const currentPlayerIndex = ref(gameStore.currentPlayerIndex || 0);
 
-// Set game mode from session
-if (gameSession.mode) {
-  gameMode.value = gameSession.mode;
-}
+// Set game mode from store
+watch(() => gameStore.gameMode, (newMode) => {
+  if (newMode) {
+    gameMode.value = newMode;
+  }
+}, { immediate: true });
 
 // Computed Properties
 const currentPlayer = computed(
@@ -440,11 +445,17 @@ const targetPlayer = computed(() => {
 
 // Lifecycle Hooks
 onMounted(() => {
+  // Load game state from store
+  gameStore.loadFromLocalStorage();
+  
+  // Set game mode from store
+  if (gameStore.gameMode) {
+    gameMode.value = gameStore.gameMode;
+  }
+  
+  // Redirect if no players
   if (players.value.length === 0) {
-    players.value = [
-      { id: "1", name: "Player 1", gender: "male" },
-      { id: "2", name: "Player 2", gender: "female" },
-    ];
+    navigateTo('/setup?game=dice-of-desire');
   }
 });
 
@@ -570,6 +581,7 @@ const startTimer = (duration) => {
 const switchRoles = () => {
   currentPlayerIndex.value =
     (currentPlayerIndex.value + 1) % players.value.length;
+  gameStore.currentPlayerIndex = currentPlayerIndex.value;
 };
 
 const nextTurn = () => {

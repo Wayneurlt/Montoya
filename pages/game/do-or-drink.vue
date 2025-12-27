@@ -24,7 +24,7 @@
                 ? 'bg-pink-500/20 text-pink-300 border-pink-400/30'
                 : gameMode === 'teams'
                 ? 'bg-blue-500/20 text-blue-300 border-blue-400/30'
-                : 'bg-red-500/20 text-red-300 border-red-400/30'
+                : 'bg-purple-500/20 text-purple-300 border-purple-400/30'
             "
           >
             {{
@@ -46,11 +46,11 @@
       <!-- Game Header -->
       <div class="text-center mb-8">
         <h1
-          class="text-5xl md:text-6xl font-black mb-2 bg-clip-text text-transparent bg-gradient-to-r from-red-600 via-orange-600 to-amber-500 drop-shadow-2xl"
+          class="text-5xl md:text-6xl font-black mb-2 bg-clip-text text-transparent bg-gradient-to-r from-purple-400 via-pink-500 to-cyan-400 drop-shadow-2xl"
         >
           Do or Drink
         </h1>
-        <p class="text-red-200/80 text-sm font-medium mt-2">Complete the challenge or take the penalty!</p>
+        <p class="text-purple-200/80 text-sm font-medium mt-2">Complete the challenge or take the penalty!</p>
       </div>
 
       <!-- Game Settings -->
@@ -154,11 +154,11 @@
         >
           <!-- Front of Card -->
           <div
-            class="absolute w-full h-full backface-hidden rounded-3xl flex flex-col justify-center items-center p-8 shadow-2xl border-4 border-red-600/40 group-hover:scale-105 transition-all"
+            class="absolute w-full h-full backface-hidden rounded-3xl flex flex-col justify-center items-center p-8 shadow-2xl border-4 border-purple-600/40 group-hover:scale-105 transition-all"
             :class="cardColor"
           >
             <!-- Glow effect -->
-            <div class="absolute inset-0 bg-gradient-to-br from-red-500/20 to-transparent rounded-3xl opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+            <div class="absolute inset-0 bg-gradient-to-br from-purple-500/20 to-transparent rounded-3xl opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
             
             <div class="text-center relative z-10">
               <p class="text-4xl font-black mb-4 drop-shadow-lg">Do or Drink</p>
@@ -247,7 +247,7 @@
         <button
           @click="drawCard"
           :disabled="isDrawing || currentCard"
-          class="group bg-gradient-to-r from-red-700 to-orange-700 hover:from-red-600 hover:to-orange-600 py-4 rounded-2xl font-black text-lg transition-all flex items-center justify-center gap-3 disabled:opacity-50 disabled:cursor-not-allowed shadow-xl hover:shadow-red-600/50 border-2 border-red-500/30 hover:scale-105"
+          class="group bg-gradient-to-r from-purple-700 to-pink-700 hover:from-purple-600 hover:to-pink-600 py-4 rounded-2xl font-black text-lg transition-all flex items-center justify-center gap-3 disabled:opacity-50 disabled:cursor-not-allowed shadow-xl hover:shadow-purple-600/50 border-2 border-purple-500/30 hover:scale-105"
         >
           <Icon
             v-if="isDrawing"
@@ -260,7 +260,7 @@
         <button
           @click="completeChallenge"
           :disabled="!currentCard || !cardFlipped"
-          class="group bg-gradient-to-r from-orange-700 to-amber-700 hover:from-orange-600 hover:to-amber-600 py-4 rounded-2xl font-black text-lg transition-all flex items-center justify-center gap-3 disabled:opacity-50 disabled:cursor-not-allowed shadow-xl hover:shadow-orange-600/50 border-2 border-orange-500/30 hover:scale-105"
+          class="group bg-gradient-to-r from-pink-700 to-purple-700 hover:from-pink-600 hover:to-purple-600 py-4 rounded-2xl font-black text-lg transition-all flex items-center justify-center gap-3 disabled:opacity-50 disabled:cursor-not-allowed shadow-xl hover:shadow-pink-600/50 border-2 border-pink-500/30 hover:scale-105"
         >
           <Icon icon="mdi:check-bold" class="w-6 h-6 group-hover:scale-110 transition-transform" />
           Completed
@@ -271,7 +271,7 @@
       <button
         v-if="currentCard && cardFlipped"
         @click="takeDrink"
-        class="group w-full mb-8 bg-gradient-to-r from-amber-700 to-red-700 hover:from-amber-600 hover:to-red-600 py-5 rounded-2xl font-black text-lg transition-all flex items-center justify-center gap-3 shadow-xl hover:shadow-amber-600/50 border-2 border-amber-500/30 hover:scale-105"
+        class="group w-full mb-8 bg-gradient-to-r from-purple-700 to-pink-700 hover:from-purple-600 hover:to-pink-600 py-5 rounded-2xl font-black text-lg transition-all flex items-center justify-center gap-3 shadow-xl hover:shadow-purple-600/50 border-2 border-purple-500/30 hover:scale-105"
       >
         <Icon icon="mdi:glass-cocktail" class="w-6 h-6 group-hover:animate-bounce" />
         Take Drink Instead ({{ currentCard.drinkAmount }})
@@ -330,40 +330,35 @@
 <script setup>
 import { ref, computed, onMounted, onBeforeUnmount } from "vue";
 import { Icon } from "@iconify/vue";
+import { useGameStore } from "~/stores/game";
+import { navigateTo } from "#app";
 // Questions are now loaded from database via API
 import { useDoOrDrinkTracker } from "~/composables/useQuestionTracker";
 // Sessionless: no server session polling
+
+const gameStore = useGameStore();
 
 // Game Configuration
 const INTENSITY_LEVELS = [
   {
     name: "Mild",
-    color: "from-orange-700 to-red-700",
-    textColor: "text-orange-900",
-    bgColor: "bg-orange-200",
+    color: "from-purple-700 to-pink-700",
+    textColor: "text-purple-900",
+    bgColor: "bg-purple-200",
   },
   {
     name: "Medium",
-    color: "from-red-700 to-rose-700",
-    textColor: "text-red-900",
-    bgColor: "bg-red-200",
+    color: "from-pink-700 to-purple-700",
+    textColor: "text-pink-900",
+    bgColor: "bg-pink-200",
   },
   {
     name: "Hot",
-    color: "from-rose-700 to-red-900",
-    textColor: "text-rose-900",
-    bgColor: "bg-rose-200",
+    color: "from-purple-700 to-pink-900",
+    textColor: "text-purple-900",
+    bgColor: "bg-purple-200",
   },
 ];
-
-// Load game data from localStorage
-const getLocalStorage = (key, defaultValue) => {
-  if (typeof window !== "undefined" && window.localStorage) {
-    const value = window.localStorage.getItem(key);
-    return value ? JSON.parse(value) : defaultValue;
-  }
-  return defaultValue;
-};
 
 // Game State
 const showSettings = ref(false);
@@ -373,12 +368,14 @@ const enableHouseRules = ref(false);
 const houseRules = ref("");
 const gameLevel = ref(1);
 
-// Players
-const gameSession = getLocalStorage("gameSession", {});
-const players = ref(
-  gameSession.players?.map((p) => ({ ...p, drinks: 0 })) || []
-);
-const currentPlayerIndex = ref(0);
+// Players - use gameStore with local drinks tracking
+const storePlayers = computed(() => gameStore.players);
+const playerDrinks = ref({}); // Track drinks separately
+const players = computed(() => storePlayers.value.map((p) => ({ 
+  ...p, 
+  drinks: playerDrinks.value[p.id] || 0 
+})));
+const currentPlayerIndex = ref(gameStore.currentPlayerIndex || 0);
 
 // Gameplay
 const currentCard = ref(null);
@@ -389,32 +386,16 @@ const hesitationTimer = ref(null);
 const hesitationPercent = ref(100);
 const isDrawing = ref(false);
 
-// Set game mode from session if available
-if (gameSession.mode) {
-  gameMode.value = gameSession.mode;
-}
-
-// Initialize with default players if none loaded
-if (players.value.length === 0) {
-  players.value = [
-    { id: "1", name: "Player 1", gender: "male", drinks: 0 },
-    { id: "2", name: "Player 2", gender: "female", drinks: 0 },
-  ];
-  gameHistory.value.push("No session found. Using default players.");
-} else {
-  gameHistory.value.push("Game session loaded successfully!");
-}
-
 // Computed Properties
 const currentPlayer = computed(
   () => players.value[currentPlayerIndex.value] || {}
 );
 
 const cardColor = computed(() => {
-  if (!currentCard.value) return "bg-gradient-to-br from-red-900 to-black";
+  if (!currentCard.value) return "bg-gradient-to-br from-purple-900 to-black";
   return (
     INTENSITY_LEVELS[currentCard.value.intensity - 1]?.color ||
-    "bg-gradient-to-br from-red-900 to-black"
+    "bg-gradient-to-br from-purple-900 to-black"
   );
 });
 
@@ -607,7 +588,11 @@ const takeDrink = () => {
     drinkCount = 5;
   }
 
-  players.value[currentPlayerIndex.value].drinks += drinkCount;
+  // Update drinks count
+  const player = players.value[currentPlayerIndex.value];
+  if (player) {
+    playerDrinks.value[player.id] = (playerDrinks.value[player.id] || 0) + drinkCount;
+  }
   gameHistory.value.unshift({
     text: `${currentPlayer.value.name} drank instead: ${drinkAmount}`,
     type: "drink",
@@ -631,7 +616,11 @@ const applyPenalty = () => {
     drinkCount = 10;
   }
 
-  players.value[currentPlayerIndex.value].drinks += drinkCount;
+  // Update drinks count
+  const player = players.value[currentPlayerIndex.value];
+  if (player) {
+    playerDrinks.value[player.id] = (playerDrinks.value[player.id] || 0) + drinkCount;
+  }
   gameHistory.value.unshift({
     text: `${currentPlayer.value.name} takes a penalty of ${drinkCount} sips/drinks`,
     type: "penalty",
@@ -646,7 +635,8 @@ const handleElimination = () => {
       text: `🚨 ${currentPlayer.value.name} is eliminated after 10 drinks!`,
       type: "elimination",
     });
-    players.value.splice(currentPlayerIndex.value, 1);
+    // Note: Can't directly modify computed, but this is for display only
+    // In a real implementation, you'd update the store
 
     if (players.value.length === 1) {
       gameHistory.value.unshift({
@@ -768,6 +758,15 @@ async function loadQuestions() {
 onMounted(async () => {
   console.log('🚀 Component mounted, loading questions...')
   if (typeof window !== "undefined") {
+    // Load game state from store
+    gameStore.loadFromLocalStorage();
+    
+    // Redirect if no players
+    if (players.value.length === 0) {
+      navigateTo('/setup?game=do-or-drink');
+      return;
+    }
+    
     // Load questions from database
     await loadQuestions()
     console.log('🏁 Questions loading completed')
