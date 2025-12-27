@@ -27,20 +27,20 @@
       </div>
 
       <!-- Game Header -->
-      <div class="text-center mb-4 sm:mb-5 md:mb-6">
-        <h1 class="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-black mb-3 sm:mb-4 bg-clip-text text-transparent bg-gradient-to-r from-purple-400 via-pink-500 to-cyan-400 drop-shadow-2xl">
+      <div class="text-center mb-2 sm:mb-3 md:mb-4">
+        <h1 class="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-black mb-2 sm:mb-3 bg-clip-text text-transparent bg-gradient-to-r from-purple-400 via-pink-500 to-cyan-400 drop-shadow-2xl">
           🎭 Charades
         </h1>
-        <p class="text-sm sm:text-base md:text-lg text-purple-200 px-2">
+        <p class="text-xs sm:text-sm md:text-base text-purple-200 px-2">
           Act it out without speaking! Your team has to guess what you're acting.
         </p>
       </div>
 
       <!-- Current Player Turn -->
-      <div class="bg-gradient-to-r from-purple-500/20 to-pink-500/20 border-2 border-purple-400/50 rounded-lg sm:rounded-xl p-3 sm:p-4 mb-4 sm:mb-5 md:mb-6">
+      <div class="bg-gradient-to-r from-purple-500/20 to-pink-500/20 border-2 border-purple-400/50 rounded-lg sm:rounded-xl p-2 sm:p-3 md:p-4 mb-2 sm:mb-3 md:mb-4">
         <div class="text-center">
-          <p class="text-xs sm:text-sm text-white/70 mb-1">Current Actor</p>
-          <p class="text-xl sm:text-2xl md:text-3xl font-bold">{{ currentPlayer?.name }}</p>
+          <p class="text-[10px] sm:text-xs md:text-sm text-white/70 mb-0.5 sm:mb-1">Current Actor</p>
+          <p class="text-lg sm:text-xl md:text-2xl lg:text-3xl font-bold">{{ currentPlayer?.name }}</p>
         </div>
       </div>
 

@@ -22,11 +22,11 @@
       </div>
 
       <!-- Game Header -->
-      <div class="text-center mb-4 sm:mb-6 md:mb-8">
-        <h1 class="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-black mb-3 sm:mb-4 bg-clip-text text-transparent bg-gradient-to-r from-purple-400 via-pink-500 to-cyan-400 drop-shadow-2xl">
+      <div class="text-center mb-2 sm:mb-3 md:mb-4">
+        <h1 class="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-black mb-2 sm:mb-3 bg-clip-text text-transparent bg-gradient-to-r from-purple-400 via-pink-500 to-cyan-400 drop-shadow-2xl">
           🕵️ Mr. White
         </h1>
-        <p class="text-sm sm:text-base md:text-lg text-purple-200 px-2 mb-4">
+        <p class="text-xs sm:text-sm md:text-base text-purple-200 px-2 mb-2 sm:mb-3 md:mb-4">
           Find the person with the different word!
         </p>
       </div>

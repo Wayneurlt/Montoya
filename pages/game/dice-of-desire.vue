@@ -83,108 +83,111 @@
     <!-- Game Board -->
     <div v-else class="max-w-3xl mx-auto relative z-10">
       <!-- Header with Home Button & Game Mode -->
-      <div class="flex justify-between items-center mb-6">
-        <NuxtLink to="/" class="bg-white/10 hover:bg-white/20 backdrop-blur-md px-4 py-2 rounded-xl transition-all duration-300 flex items-center gap-2 border border-white/20 hover:scale-105 shadow-lg">
-          <Icon icon="mdi:home" class="w-5 h-5" />
+      <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 sm:gap-0 mb-4 sm:mb-6">
+        <NuxtLink to="/" class="bg-white/10 hover:bg-white/20 backdrop-blur-md px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg sm:rounded-xl transition-all duration-300 flex items-center gap-1.5 sm:gap-2 border border-white/20 hover:scale-105 shadow-lg text-sm sm:text-base w-full sm:w-auto justify-center sm:justify-start">
+          <Icon icon="mdi:home" class="w-4 h-4 sm:w-5 sm:h-5" />
           <span class="font-medium">Home</span>
         </NuxtLink>
         
         <div
-          class="bg-white/10 backdrop-blur-md rounded-xl px-5 py-2 text-base flex items-center gap-2 border-2 border-white/20 shadow-lg"
+          class="bg-white/10 backdrop-blur-md rounded-lg sm:rounded-xl px-3 sm:px-5 py-1.5 sm:py-2 text-xs sm:text-sm md:text-base flex items-center gap-1.5 sm:gap-2 border-2 border-white/20 shadow-lg w-full sm:w-auto justify-center sm:justify-end"
         >
           <Icon
             :icon="
               gameMode === 'free-for-all' ? 'mdi:account-group' : 'mdi:heart'
             "
-            class="w-5 h-5 text-pink-400"
+            class="w-4 h-4 sm:w-5 sm:h-5 text-pink-400"
           />
-          <span class="font-bold">{{
+          <span class="font-bold hidden sm:inline">{{
             gameMode === "free-for-all" ? "Free-for-All" : "Relationship"
           }}</span>
-          <span class="ml-1 px-3 py-1 rounded-full bg-pink-500/30 text-sm font-bold border border-pink-400/50"
-            >Level {{ gameLevel }}</span
+          <span class="font-bold sm:hidden">{{
+            gameMode === "free-for-all" ? "FFA" : "Couple"
+          }}</span>
+          <span class="ml-1 px-2 sm:px-3 py-0.5 sm:py-1 rounded-full bg-pink-500/30 text-xs sm:text-sm font-bold border border-pink-400/50"
+            >Lv {{ gameLevel }}</span
           >
         </div>
       </div>
       
       <!-- Game Title -->
-      <div class="text-center mb-8">
-        <h1 class="text-5xl md:text-6xl font-black mb-2 bg-clip-text text-transparent bg-gradient-to-r from-purple-400 via-pink-500 to-cyan-400 drop-shadow-2xl">
+      <div class="text-center mb-3 sm:mb-4 md:mb-6">
+        <h1 class="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-black mb-1 sm:mb-2 bg-clip-text text-transparent bg-gradient-to-r from-purple-400 via-pink-500 to-cyan-400 drop-shadow-2xl px-2">
           Dice of Desire
         </h1>
-        <p class="text-purple-200/80 text-sm font-medium">Roll for intimate commands!</p>
+        <p class="text-purple-200/80 text-[10px] sm:text-xs md:text-sm font-medium px-2">Roll for intimate commands!</p>
       </div>
 
       <!-- Player Status -->
       <div
-        class="flex justify-between items-center mb-8 p-6 bg-gradient-to-r from-white/10 to-white/5 rounded-2xl border-2 border-white/20 shadow-2xl backdrop-blur-lg"
+        class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 sm:gap-0 mb-3 sm:mb-4 md:mb-6 p-2 sm:p-3 md:p-4 lg:p-6 bg-gradient-to-r from-white/10 to-white/5 rounded-lg sm:rounded-xl md:rounded-2xl border-2 border-white/20 shadow-2xl backdrop-blur-lg"
       >
-        <div>
+        <div class="w-full sm:w-auto">
           <h3 class="text-xs font-bold text-white/60 uppercase tracking-wider mb-1">Current Roller</h3>
-          <p class="text-2xl font-black flex items-center gap-2">
-            <span>{{ currentPlayer.name }}</span>
-            <span class="text-3xl text-blue-400">{{
+          <p class="text-xl sm:text-2xl font-black flex items-center gap-2">
+            <span class="truncate">{{ currentPlayer.name }}</span>
+            <span class="text-2xl sm:text-3xl text-blue-400 flex-shrink-0">{{
               currentPlayer.gender === "male" ? "♂" : "♀"
             }}</span>
           </p>
         </div>
-        <div class="text-right">
+        <div class="text-left sm:text-right w-full sm:w-auto">
           <h3 class="text-xs font-bold text-white/60 uppercase tracking-wider mb-1">Target</h3>
-          <p class="text-2xl font-black flex items-center justify-end gap-2">
-            <span class="text-3xl text-pink-400">{{
+          <p class="text-xl sm:text-2xl font-black flex items-center sm:justify-end gap-2">
+            <span class="text-2xl sm:text-3xl text-pink-400 flex-shrink-0">{{
               targetPlayer.gender === "male" ? "♂" : "♀"
             }}</span>
-            <span>{{ targetPlayer.name }}</span>
+            <span class="truncate">{{ targetPlayer.name }}</span>
           </p>
         </div>
       </div>
 
       <!-- Dice Area -->
       <div
-        class="relative bg-gradient-to-br from-purple-950/60 to-pink-950/60 rounded-3xl p-8 md:p-10 mb-8 border-2 border-purple-700/40 shadow-2xl shadow-purple-900/30 backdrop-blur-lg"
+        class="relative bg-gradient-to-br from-purple-950/60 to-pink-950/60 rounded-xl sm:rounded-2xl md:rounded-3xl p-3 sm:p-4 md:p-6 lg:p-8 mb-3 sm:mb-4 md:mb-6 border-2 border-purple-700/40 shadow-2xl shadow-purple-900/30 backdrop-blur-lg"
       >
-        <div class="flex justify-center gap-8 md:gap-12 mb-10">
+        <div class="flex justify-center gap-3 sm:gap-4 md:gap-6 lg:gap-8 mb-4 sm:mb-5 md:mb-6">
           <!-- Body Part Die -->
           <div
             @click="rollDice"
-            class="group w-28 h-28 md:w-32 md:h-32 bg-gradient-to-br from-purple-700 to-pink-800 rounded-2xl shadow-2xl flex flex-col justify-center items-center cursor-pointer transition-all hover:scale-110"
+            class="group w-20 h-20 sm:w-24 sm:h-24 md:w-28 md:h-28 lg:w-32 lg:h-32 bg-gradient-to-br from-purple-700 to-pink-800 rounded-xl sm:rounded-2xl shadow-2xl flex flex-col justify-center items-center cursor-pointer transition-all hover:scale-110"
             :class="{
               'animate-spin': isRolling,
               'scale-110': !isRolling && currentRoll.body,
               'ring-4 ring-purple-400 shadow-purple-600/50': currentRoll.body === 'Your Choice',
             }"
           >
-            <div v-if="!isRolling" class="text-center px-2">
-              <p class="text-xs md:text-sm text-white/80 font-bold mb-1">Body Part</p>
-              <p class="text-base md:text-lg font-black text-white leading-tight">
+            <div v-if="!isRolling" class="text-center px-1 sm:px-2">
+              <p class="text-[10px] sm:text-xs md:text-sm text-white/80 font-bold mb-0.5 sm:mb-1">Body Part</p>
+              <p class="text-xs sm:text-sm md:text-base lg:text-lg font-black text-white leading-tight">
                 {{ currentRoll.body || "?" }}
               </p>
             </div>
             <div v-else class="text-center">
-              <p class="text-sm text-white/80 font-bold">Rolling...</p>
-              <p class="text-3xl font-bold text-white">⚄</p>
+              <p class="text-[10px] sm:text-xs text-white/80 font-bold">Rolling...</p>
+              <p class="text-xl sm:text-2xl md:text-3xl font-bold text-white">⚄</p>
             </div>
           </div>
 
           <!-- Action Die -->
           <div
             @click="rollDice"
-            class="group w-28 h-28 md:w-32 md:h-32 bg-gradient-to-br from-pink-700 to-purple-800 rounded-2xl shadow-2xl flex flex-col justify-center items-center cursor-pointer transition-all hover:scale-110"
+            class="group w-20 h-20 sm:w-24 sm:h-24 md:w-28 md:h-28 lg:w-32 lg:h-32 bg-gradient-to-br from-pink-700 to-purple-800 rounded-xl sm:rounded-2xl shadow-2xl flex flex-col justify-center items-center cursor-pointer transition-all hover:scale-110"
             :class="{
               'animate-spin': isRolling,
               'scale-110': !isRolling && currentRoll.action,
               'ring-4 ring-pink-400 shadow-pink-600/50': currentRoll.action === 'Your Choice',
             }"
           >
-            <div v-if="!isRolling" class="text-center px-2">
-              <p class="text-xs md:text-sm text-white/80 font-bold mb-1">Action</p>
-              <p class="text-base md:text-lg font-black text-white leading-tight">
+            <div v-if="!isRolling" class="text-center px-1 sm:px-2">
+              <p class="text-[10px] sm:text-xs md:text-sm text-white/80 font-bold mb-0.5 sm:mb-1">Action</p>
+              <p class="text-xs sm:text-sm md:text-base lg:text-lg font-black text-white leading-tight">
                 {{ currentRoll.action || "?" }}
               </p>
             </div>
             <div v-else class="text-center">
-              <p class="text-sm text-white/80 font-bold">Rolling...</p>
-              <p class="text-3xl font-bold text-white">⚂</p>
+              <p class="text-[10px] sm:text-xs text-white/80 font-bold">Rolling...</p>
+              <p class="text-xl sm:text-2xl md:text-3xl font-bold text-white">⚂</p>
             </div>
           </div>
         </div>
@@ -192,7 +195,7 @@
         <button
           @click="rollDice"
           :disabled="isRolling || isTimerRunning"
-          class="group w-full bg-gradient-to-r from-purple-700 to-pink-700 hover:from-purple-600 hover:to-pink-600 py-5 rounded-2xl font-black text-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-3 shadow-xl hover:shadow-purple-600/50 border-2 border-purple-500/30 hover:scale-105"
+          class="group w-full bg-gradient-to-r from-purple-700 to-pink-700 hover:from-purple-600 hover:to-pink-600 py-3 sm:py-4 md:py-5 rounded-xl sm:rounded-2xl font-black text-base sm:text-lg md:text-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 sm:gap-3 shadow-xl hover:shadow-purple-600/50 border-2 border-purple-500/30 hover:scale-105"
         >
           <Icon
             v-if="isRolling"
@@ -207,19 +210,19 @@
       <!-- Result Display -->
       <div
         v-if="currentResult"
-        class="bg-gradient-to-br from-purple-950/60 to-pink-950/60 rounded-3xl p-8 mb-8 border-2 border-purple-700/40 shadow-2xl shadow-purple-900/30 backdrop-blur-lg"
+        class="bg-gradient-to-br from-purple-950/60 to-pink-950/60 rounded-xl sm:rounded-2xl md:rounded-3xl p-3 sm:p-4 md:p-6 mb-3 sm:mb-4 md:mb-6 border-2 border-purple-700/40 shadow-2xl shadow-purple-900/30 backdrop-blur-lg"
       >
         <h3
-          class="text-2xl font-black mb-6 text-center flex items-center justify-center gap-3"
+          class="text-base sm:text-lg md:text-xl lg:text-2xl font-black mb-2 sm:mb-3 md:mb-4 text-center flex items-center justify-center gap-1.5 sm:gap-2 md:gap-3"
         >
-          <Icon icon="mdi:fire" class="w-7 h-7 text-orange-500 animate-pulse" />
+          <Icon icon="mdi:fire" class="w-4 h-4 sm:w-5 sm:h-5 md:w-6 md:h-7 text-orange-500 animate-pulse" />
           <span class="bg-clip-text text-transparent bg-gradient-to-r from-purple-400 to-pink-500">Your Command</span>
-          <Icon icon="mdi:fire" class="w-7 h-7 text-orange-500 animate-pulse" style="animation-delay: 0.5s;" />
+          <Icon icon="mdi:fire" class="w-4 h-4 sm:w-5 sm:h-5 md:w-6 md:h-7 text-orange-500 animate-pulse" style="animation-delay: 0.5s;" />
         </h3>
         <div
-          class="bg-gradient-to-r from-purple-700/40 to-pink-700/40 rounded-2xl p-6 mb-8 border-2 border-purple-600/30 shadow-xl"
+          class="bg-gradient-to-r from-purple-700/40 to-pink-700/40 rounded-lg sm:rounded-xl md:rounded-2xl p-3 sm:p-4 md:p-6 mb-3 sm:mb-4 md:mb-6 border-2 border-purple-600/30 shadow-xl"
         >
-          <p class="text-3xl font-black text-center leading-relaxed drop-shadow-lg">{{ currentResult }}</p>
+          <p class="text-lg sm:text-xl md:text-2xl lg:text-3xl font-black text-center leading-relaxed drop-shadow-lg px-2">{{ currentResult }}</p>
           <p
             v-if="specialEffect"
             class="text-center mt-4 text-yellow-300 font-bold text-lg flex items-center justify-center gap-2 bg-black/20 rounded-full px-6 py-3 mx-auto inline-flex"
@@ -231,7 +234,7 @@
 
         <!-- Timer -->
         <div class="flex flex-col items-center">
-          <div class="relative w-32 h-32 mb-6">
+          <div class="relative w-24 h-24 sm:w-28 sm:h-28 md:w-32 md:h-32 mb-3 sm:mb-4 md:mb-6">
             <svg class="w-full h-full transform -rotate-90" viewBox="0 0 36 36">
               <path
                 d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
@@ -268,19 +271,19 @@
             </span>
           </div>
 
-          <div class="flex gap-4">
+          <div class="flex gap-2 sm:gap-3 md:gap-4">
             <button
               @click="completeAction"
-              class="bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 px-6 py-2 rounded-lg font-medium flex items-center gap-2"
+              class="bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 px-3 sm:px-4 md:px-6 py-1.5 sm:py-2 rounded-lg font-medium flex items-center gap-1.5 sm:gap-2 text-xs sm:text-sm md:text-base"
             >
-              <Icon icon="mdi:check-bold" class="w-5 h-5" />
+              <Icon icon="mdi:check-bold" class="w-4 h-4 sm:w-5 sm:h-5" />
               Completed
             </button>
             <button
               @click="failAction"
-              class="bg-gradient-to-r from-red-500 to-pink-600 hover:from-red-600 hover:to-pink-700 px-6 py-2 rounded-lg font-medium flex items-center gap-2"
+              class="bg-gradient-to-r from-red-500 to-pink-600 hover:from-red-600 hover:to-pink-700 px-3 sm:px-4 md:px-6 py-1.5 sm:py-2 rounded-lg font-medium flex items-center gap-1.5 sm:gap-2 text-xs sm:text-sm md:text-base"
             >
-              <Icon icon="mdi:close-thick" class="w-5 h-5" />
+              <Icon icon="mdi:close-thick" class="w-4 h-4 sm:w-5 sm:h-5" />
               Failed
             </button>
           </div>
@@ -288,12 +291,12 @@
       </div>
 
       <!-- History -->
-      <div class="bg-white/10 rounded-2xl p-6 border border-white/20">
-        <h3 class="text-xl font-bold mb-4 flex items-center gap-2">
-          <Icon icon="mdi:history" class="w-5 h-5" />
+      <div class="bg-white/10 rounded-lg sm:rounded-xl md:rounded-2xl p-3 sm:p-4 md:p-6 border border-white/20">
+        <h3 class="text-base sm:text-lg md:text-xl font-bold mb-2 sm:mb-3 md:mb-4 flex items-center gap-1.5 sm:gap-2">
+          <Icon icon="mdi:history" class="w-4 h-4 sm:w-5 sm:h-5" />
           <span>Game History</span>
         </h3>
-        <ul class="space-y-3 max-h-60 overflow-y-auto pr-2">
+        <ul class="space-y-2 sm:space-y-3 max-h-40 sm:max-h-50 md:max-h-60 overflow-y-auto pr-2 text-xs sm:text-sm">
           <li
             v-for="(item, index) in history"
             :key="index"

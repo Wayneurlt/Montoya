@@ -46,19 +46,19 @@
       </div>
       
       <!-- Game Header -->
-      <div class="text-center mb-4 sm:mb-5 md:mb-6">
+      <div class="text-center mb-2 sm:mb-4 md:mb-6">
         <h1
-          class="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-black mb-3 sm:mb-4 bg-clip-text text-transparent bg-gradient-to-r from-purple-400 via-pink-500 to-cyan-400 drop-shadow-2xl"
+          class="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-black mb-2 sm:mb-3 md:mb-4 bg-clip-text text-transparent bg-gradient-to-r from-purple-400 via-pink-500 to-cyan-400 drop-shadow-2xl"
         >
           Truth or Dare
         </h1>
         
         <!-- Enhanced Spicy Mode Toggle -->
-        <div class="bg-gradient-to-br from-black/50 to-red-950/40 rounded-xl sm:rounded-2xl p-4 sm:p-5 md:p-6 border-2 border-red-700/30 shadow-2xl shadow-red-900/30 backdrop-blur-lg">
-          <div class="flex items-center justify-center gap-2 sm:gap-3 mb-3 sm:mb-4 md:mb-5">
-            <Icon icon="mdi:fire" class="w-5 h-5 sm:w-6 sm:h-6 text-orange-500 animate-pulse" />
-            <h3 class="text-base sm:text-lg md:text-xl font-bold text-white">Game Intensity</h3>
-            <Icon icon="mdi:fire" class="w-5 h-5 sm:w-6 sm:h-6 text-orange-500 animate-pulse" style="animation-delay: 0.5s;" />
+        <div class="bg-gradient-to-br from-black/50 to-red-950/40 rounded-lg sm:rounded-xl md:rounded-2xl p-2 sm:p-3 md:p-4 lg:p-6 border-2 border-red-700/30 shadow-2xl shadow-red-900/30 backdrop-blur-lg">
+          <div class="flex items-center justify-center gap-1.5 sm:gap-2 md:gap-3 mb-2 sm:mb-3 md:mb-4">
+            <Icon icon="mdi:fire" class="w-4 h-4 sm:w-5 sm:h-5 md:w-6 md:h-6 text-orange-500 animate-pulse" />
+            <h3 class="text-sm sm:text-base md:text-lg lg:text-xl font-bold text-white">Game Intensity</h3>
+            <Icon icon="mdi:fire" class="w-4 h-4 sm:w-5 sm:h-5 md:w-6 md:h-6 text-orange-500 animate-pulse" style="animation-delay: 0.5s;" />
           </div>
           <div class="flex bg-black/60 rounded-xl sm:rounded-2xl p-1.5 sm:p-2 max-w-md mx-auto shadow-inner border border-red-800/30">
             <button
@@ -126,16 +126,16 @@
       <!-- Clothing Status moved to Settings modal -->
 
       <!-- Choose Your Card -->
-      <div class="mb-6 sm:mb-7 md:mb-8">
-        <div class="text-center mb-5 sm:mb-6 md:mb-8">
-          <h3 class="text-xl sm:text-2xl md:text-3xl font-black mb-2 sm:mb-3 bg-clip-text text-transparent bg-gradient-to-r from-purple-400 via-pink-500 to-cyan-400 drop-shadow-lg px-2">
+      <div class="mb-3 sm:mb-5 md:mb-8">
+        <div class="text-center mb-3 sm:mb-4 md:mb-6">
+          <h3 class="text-lg sm:text-xl md:text-2xl lg:text-3xl font-black mb-1 sm:mb-2 md:mb-3 bg-clip-text text-transparent bg-gradient-to-r from-purple-400 via-pink-500 to-cyan-400 drop-shadow-lg px-2">
             Choose Your Challenge
           </h3>
-          <p class="text-purple-200/80 text-sm sm:text-base font-medium px-2">
+          <p class="text-purple-200/80 text-xs sm:text-sm md:text-base font-medium px-2">
             <span class="font-bold">{{ currentPlayer?.name }}</span>, it's your turn! Pick Truth or Dare to continue.
           </p>
         </div>
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-5 md:gap-6">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4 md:gap-6">
           
           <!-- Truth Card -->
           <div class="relative">
@@ -144,7 +144,7 @@
               @click="drawSpecificCard('TRUTH')"
             >
               <div
-                class="relative w-full h-48 sm:h-56 md:h-64 transition-transform duration-700 transform-style-preserve-3d"
+                class="relative w-full h-40 sm:h-48 md:h-56 lg:h-64 transition-transform duration-700 transform-style-preserve-3d"
                 :class="{ 'rotate-y-180': currentCard?.type === 'TRUTH' && cardFlipped }"
               >
                 <!-- Truth Card Front -->

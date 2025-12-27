@@ -5,36 +5,36 @@
 
     <div class="max-w-5xl mx-auto relative z-10 pt-4 sm:pt-6 md:pt-8">
       <!-- Header with Home Button -->
-      <div class="flex justify-between items-center mb-8">
-        <NuxtLink to="/" class="bg-white/10 hover:bg-white/20 backdrop-blur-md px-4 py-2 rounded-xl transition-all duration-300 flex items-center gap-2 border border-white/20 hover:scale-105">
-          <Icon icon="mdi:home" class="w-5 h-5" />
+      <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 sm:gap-0 mb-6 sm:mb-8">
+        <NuxtLink to="/" class="bg-white/10 hover:bg-white/20 backdrop-blur-md px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg sm:rounded-xl transition-all duration-300 flex items-center gap-1.5 sm:gap-2 border border-white/20 hover:scale-105 text-sm sm:text-base w-full sm:w-auto justify-center sm:justify-start">
+          <Icon icon="mdi:home" class="w-4 h-4 sm:w-5 sm:h-5" />
           <span class="font-medium">Home</span>
         </NuxtLink>
         
-        <div class="flex items-center gap-2">
-          <div class="bg-white/10 backdrop-blur-md px-4 py-2 rounded-xl border border-white/20">
-            <div class="text-xs text-white/60">Current Turn</div>
-            <div class="text-sm font-bold flex items-center gap-1.5">
-              <span>{{ currentPlayer?.name || 'Player' }}</span>
-              <span class="text-base">{{ currentPlayer?.gender === 'male' ? '♂' : currentPlayer?.gender === 'female' ? '♀' : '' }}</span>
+        <div class="flex items-center gap-2 w-full sm:w-auto justify-center sm:justify-end">
+          <div class="bg-white/10 backdrop-blur-md px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg sm:rounded-xl border border-white/20">
+            <div class="text-[10px] sm:text-xs text-white/60">Current Turn</div>
+            <div class="text-xs sm:text-sm font-bold flex items-center gap-1 sm:gap-1.5">
+              <span class="truncate max-w-[100px] sm:max-w-none">{{ currentPlayer?.name || 'Player' }}</span>
+              <span class="text-xs sm:text-base flex-shrink-0">{{ currentPlayer?.gender === 'male' ? '♂' : currentPlayer?.gender === 'female' ? '♀' : '' }}</span>
             </div>
           </div>
-          <div class="bg-white/10 backdrop-blur-md px-4 py-2 rounded-xl border border-white/20">
-            <div class="flex items-center gap-2">
-              <Icon icon="mdi:head-question" class="w-5 h-5 text-fuchsia-300" />
-              <span class="font-semibold">Round {{ roundCount }}</span>
+          <div class="bg-white/10 backdrop-blur-md px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg sm:rounded-xl border border-white/20">
+            <div class="flex items-center gap-1.5 sm:gap-2">
+              <Icon icon="mdi:head-question" class="w-4 h-4 sm:w-5 sm:h-5 text-fuchsia-300" />
+              <span class="font-semibold text-xs sm:text-sm md:text-base">Round {{ roundCount }}</span>
             </div>
           </div>
         </div>
       </div>
 
       <!-- Game Title Card -->
-      <div class="text-center mb-12 transform hover:scale-105 transition-transform duration-300">
-        <div class="inline-block bg-gradient-to-r from-black/70 to-red-950/60 backdrop-blur-md rounded-2xl px-8 py-4 border-2 border-red-700/40 shadow-2xl shadow-red-900/50">
-          <h1 class="text-5xl md:text-6xl font-black bg-clip-text text-transparent bg-gradient-to-r from-rose-500 via-red-500 to-orange-500 mb-2">
+      <div class="text-center mb-3 sm:mb-4 md:mb-6 transform hover:scale-105 transition-transform duration-300 px-2">
+        <div class="inline-block bg-gradient-to-r from-black/70 to-red-950/60 backdrop-blur-md rounded-lg sm:rounded-xl md:rounded-2xl px-3 sm:px-4 md:px-6 lg:px-8 py-2 sm:py-3 md:py-4 border-2 border-red-700/40 shadow-2xl shadow-red-900/50 w-full sm:w-auto">
+          <h1 class="text-2xl sm:text-3xl md:text-4xl lg:text-5xl xl:text-6xl font-black bg-clip-text text-transparent bg-gradient-to-r from-rose-500 via-red-500 to-orange-500 mb-1 sm:mb-2">
             Would You Rather
           </h1>
-          <p class="text-red-200/80 text-sm font-medium tracking-wide">Make impossible choices!</p>
+          <p class="text-red-200/80 text-[10px] sm:text-xs md:text-sm font-medium tracking-wide">Make impossible choices!</p>
         </div>
       </div>
 

@@ -185,7 +185,7 @@
         </div>
 
         <!-- Player List -->
-        <div class="space-y-2 sm:space-y-3">
+        <div class="space-y-2 sm:space-y-3 max-h-[50vh] sm:max-h-none overflow-y-auto pr-2">
           <div
             v-for="(player, index) in tempPlayers"
             :key="player.id"
@@ -648,20 +648,6 @@ const availableGames = computed(() => {
       name: "Mr. White",
       description: "Blend in or be found",
       icon: "mdi:incognito",
-      familyFriendly: true,
-    },
-    {
-      value: "trivia",
-      name: "Trivia Time",
-      description: "Test your knowledge",
-      icon: "mdi:head-question",
-      familyFriendly: true,
-    },
-    {
-      value: "two-truths-one-lie",
-      name: "Two Truths One Lie",
-      description: "Spot the lie",
-      icon: "mdi:comment-question-outline",
       familyFriendly: true,
     },
     // Adult games

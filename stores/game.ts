@@ -7,9 +7,7 @@ export type GameType =
   // Family games
   | 'charades' 
   | 'imposter' 
-  | 'mr-white' 
-  | 'trivia' 
-  | 'two-truths-one-lie'
+  | 'mr-white'
   // Adult games
   | 'truth-or-dare' 
   | 'dice-of-desire' 
