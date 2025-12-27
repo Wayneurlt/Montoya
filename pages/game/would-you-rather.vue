@@ -11,10 +11,19 @@
           <span class="font-medium">Home</span>
         </NuxtLink>
         
-        <div class="bg-white/10 backdrop-blur-md px-4 py-2 rounded-xl border border-white/20">
-          <div class="flex items-center gap-2">
-            <Icon icon="mdi:head-question" class="w-5 h-5 text-fuchsia-300" />
-            <span class="font-semibold">Round {{ roundCount }}</span>
+        <div class="flex items-center gap-2">
+          <div class="bg-white/10 backdrop-blur-md px-4 py-2 rounded-xl border border-white/20">
+            <div class="text-xs text-white/60">Current Turn</div>
+            <div class="text-sm font-bold flex items-center gap-1.5">
+              <span>{{ currentPlayer?.name || 'Player' }}</span>
+              <span class="text-base">{{ currentPlayer?.gender === 'male' ? '♂' : currentPlayer?.gender === 'female' ? '♀' : '' }}</span>
+            </div>
+          </div>
+          <div class="bg-white/10 backdrop-blur-md px-4 py-2 rounded-xl border border-white/20">
+            <div class="flex items-center gap-2">
+              <Icon icon="mdi:head-question" class="w-5 h-5 text-fuchsia-300" />
+              <span class="font-semibold">Round {{ roundCount }}</span>
+            </div>
           </div>
         </div>
       </div>
@@ -163,8 +172,12 @@
 import { ref, computed, onMounted } from 'vue';
 import { Icon } from '@iconify/vue';
 import { useAnalytics } from '~/composables/useAnalytics';
+import { useGameStore } from '~/stores/game';
 // Questions are now loaded from database via API
 import { useWouldYouRatherTracker } from '~/composables/useQuestionTracker';
+
+const gameStore = useGameStore();
+const currentPlayer = computed(() => gameStore.currentPlayer);
 
 const question = ref(null);
 
@@ -300,6 +313,9 @@ onMounted(async () => {
   if (typeof window !== "undefined") {
     // Track page view
     trackPageView('would-you-rather');
+    
+    // Load game state
+    gameStore.loadFromLocalStorage();
     
     // Load questions from database
     await loadQuestions()
