@@ -46,21 +46,46 @@
       </div>
 
       <!-- Game Preview -->
-      <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 md:gap-6 mb-8 md:mb-12 max-w-4xl mx-auto px-4">
-        <div class="bg-white/10 backdrop-blur-md rounded-xl p-4 sm:p-6 border border-white/20 hover:scale-105 transition-all">
-          <div class="text-4xl mb-3">🎭</div>
-          <h3 class="text-lg sm:text-xl font-bold mb-2">Truth or Dare</h3>
-          <p class="text-xs sm:text-sm text-white/70">Reveal your secrets or take the dare</p>
+      <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 md:gap-4 mb-8 md:mb-12 max-w-5xl mx-auto px-4">
+        <div class="bg-white/10 backdrop-blur-md rounded-xl p-3 sm:p-4 border border-white/20 hover:scale-105 transition-all">
+          <div class="text-3xl sm:text-4xl mb-2">🎭</div>
+          <h3 class="text-sm sm:text-base font-bold mb-1">Truth or Dare</h3>
+          <p class="text-xs text-white/70">Reveal or risk</p>
         </div>
-        <div class="bg-white/10 backdrop-blur-md rounded-xl p-4 sm:p-6 border border-white/20 hover:scale-105 transition-all">
-          <div class="text-4xl mb-3">🍺</div>
-          <h3 class="text-lg sm:text-xl font-bold mb-2">Do or Drink</h3>
-          <p class="text-xs sm:text-sm text-white/70">Complete challenges or take a shot</p>
+        <div class="bg-white/10 backdrop-blur-md rounded-xl p-3 sm:p-4 border border-white/20 hover:scale-105 transition-all">
+          <div class="text-3xl sm:text-4xl mb-2">🍺</div>
+          <h3 class="text-sm sm:text-base font-bold mb-1">Do or Drink</h3>
+          <p class="text-xs text-white/70">Challenge accepted</p>
         </div>
-        <div class="bg-white/10 backdrop-blur-md rounded-xl p-4 sm:p-6 border border-white/20 hover:scale-105 transition-all">
-          <div class="text-4xl mb-3">🎲</div>
-          <h3 class="text-lg sm:text-xl font-bold mb-2">Dice of Desire</h3>
-          <p class="text-xs sm:text-sm text-white/70">Roll for spicy surprises</p>
+        <div class="bg-white/10 backdrop-blur-md rounded-xl p-3 sm:p-4 border border-white/20 hover:scale-105 transition-all">
+          <div class="text-3xl sm:text-4xl mb-2">🎲</div>
+          <h3 class="text-sm sm:text-base font-bold mb-1">Dice of Desire</h3>
+          <p class="text-xs text-white/70">Roll & reveal</p>
+        </div>
+        <div class="bg-white/10 backdrop-blur-md rounded-xl p-3 sm:p-4 border border-white/20 hover:scale-105 transition-all">
+          <div class="text-3xl sm:text-4xl mb-2">🕵️</div>
+          <h3 class="text-sm sm:text-base font-bold mb-1">Imposter</h3>
+          <p class="text-xs text-white/70">Find the fake</p>
+        </div>
+        <div class="bg-white/10 backdrop-blur-md rounded-xl p-3 sm:p-4 border border-white/20 hover:scale-105 transition-all">
+          <div class="text-3xl sm:text-4xl mb-2">🎬</div>
+          <h3 class="text-sm sm:text-base font-bold mb-1">Charades</h3>
+          <p class="text-xs text-white/70">Act it out</p>
+        </div>
+        <div class="bg-white/10 backdrop-blur-md rounded-xl p-3 sm:p-4 border border-white/20 hover:scale-105 transition-all">
+          <div class="text-3xl sm:text-4xl mb-2">🤷</div>
+          <h3 class="text-sm sm:text-base font-bold mb-1">Most Likely To</h3>
+          <p class="text-xs text-white/70">Who fits best?</p>
+        </div>
+        <div class="bg-white/10 backdrop-blur-md rounded-xl p-3 sm:p-4 border border-white/20 hover:scale-105 transition-all">
+          <div class="text-3xl sm:text-4xl mb-2">🙅</div>
+          <h3 class="text-sm sm:text-base font-bold mb-1">Never Have I</h3>
+          <p class="text-xs text-white/70">Confess all</p>
+        </div>
+        <div class="bg-white/10 backdrop-blur-md rounded-xl p-3 sm:p-4 border border-white/20 hover:scale-105 transition-all">
+          <div class="text-3xl sm:text-4xl mb-2">🤔</div>
+          <h3 class="text-sm sm:text-base font-bold mb-1">Would You Rather</h3>
+          <p class="text-xs text-white/70">Choose wisely</p>
         </div>
       </div>
 

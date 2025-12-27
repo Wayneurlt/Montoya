@@ -238,7 +238,7 @@
           </p>
         </div>
 
-        <div class="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4">
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 md:gap-4">
           <button
             v-for="level in comfortLevels"
             :key="level.value"
@@ -369,6 +369,7 @@ import { ref, computed, onMounted } from "vue";
 import { Icon } from "@iconify/vue";
 import { useGameStore } from "~/stores/game";
 import { useAnalytics } from "~/composables/useAnalytics";
+import { navigateTo } from "#app";
 
 const gameStore = useGameStore();
 const { trackGameSelection, trackPageView } = useAnalytics();
@@ -451,12 +452,6 @@ const relationshipTypes = [
 
 const comfortLevels = [
   {
-    value: "family",
-    label: "Family Mode",
-    emoji: "👨‍👩‍👧‍👦",
-    description: "Kid-friendly, wholesome, everyone can play",
-  },
-  {
     value: "chill",
     label: "Chill",
     emoji: "😌",
@@ -508,9 +503,16 @@ const availableGames = computed(() => {
       familyFriendly: true,
     },
     {
+      value: "imposter",
+      name: "Imposter",
+      description: "Find the fake",
+      icon: "mdi:account-question",
+      familyFriendly: true,
+    },
+    {
       value: "mr-white",
       name: "Mr. White",
-      description: "Find the imposter",
+      description: "Blend in or be found",
       icon: "mdi:incognito",
       familyFriendly: true,
     },
@@ -573,11 +575,13 @@ const availableGames = computed(() => {
     },
   ];
 
-  // Filter games based on comfort level
-  if (gameStore.comfortLevel === 'family') {
+  // Filter games based on mode
+  if (isFamilyMode.value) {
+    // Family Mode: Only show family-friendly games
     return allGames.filter(game => game.familyFriendly);
   }
   
+  // Adult Mode: Show ALL games (family + adult)
   return allGames;
 });
 
@@ -630,25 +634,24 @@ const allPlayersHaveNames = computed(() => {
   return tempPlayers.value.length >= 2 && tempPlayers.value.every((p) => p.name.trim() !== "");
 });
 
-// Game recommendations based on relationship type and comfort level
+// Game recommendations based on relationship type and mode
 const recommendedGames = computed(() => {
   const relationship = gameStore.relationshipType;
-  const comfort = gameStore.comfortLevel;
   
-  if (!relationship) return [];
+  if (!relationship && !isFamilyMode.value) return [];
 
   // Family mode recommendations
-  if (comfort === 'family') {
-    return ['charades', 'mr-white', 'trivia', 'two-truths-one-lie'];
+  if (isFamilyMode.value) {
+    return ['charades', 'imposter', 'mr-white', 'trivia'];
   }
 
   // Adult game recommendations by relationship
   const recommendations = {
-    strangers: ['most-likely-to', 'would-you-rather', 'never-have-i-ever'],
-    friends: ['never-have-i-ever', 'most-likely-to', 'truth-or-dare'],
+    strangers: ['most-likely-to', 'would-you-rather', 'never-have-i-ever', 'charades'],
+    friends: ['never-have-i-ever', 'most-likely-to', 'truth-or-dare', 'imposter'],
     dating: ['truth-or-dare', 'would-you-rather', 'dice-of-desire'],
     couple: ['truth-or-dare', 'dice-of-desire', 'do-or-drink'],
-    mixed: ['most-likely-to', 'never-have-i-ever', 'would-you-rather'],
+    mixed: ['most-likely-to', 'never-have-i-ever', 'would-you-rather', 'charades'],
   };
 
   return recommendations[relationship] || [];
@@ -659,7 +662,7 @@ function isRecommended(gameValue) {
 }
 
 function getRelationshipLabel() {
-  if (gameStore.comfortLevel === 'family') {
+  if (isFamilyMode.value) {
     return 'Family Mode';
   }
   
@@ -674,12 +677,12 @@ function getRelationshipLabel() {
 }
 
 function getRecommendationText() {
-  if (gameStore.comfortLevel === 'family') {
+  if (isFamilyMode.value) {
     return 'Kid-friendly games perfect for family gatherings and all ages!';
   }
   
   const texts = {
-    strangers: 'Start with light, conversation-focused games to break the ice and get comfortable.',
+    strangers: 'Start with light, conversation-focused games to break the ice. Includes both adult and icebreaker games.',
     friends: 'Perfect mix of fun revelations and daring challenges for your group.',
     dating: 'Flirty and revealing games to deepen your connection and have fun.',
     couple: 'Intimate and adventurous games designed to spice things up.',
@@ -721,9 +724,9 @@ function nextStep() {
     // Save players to store
     gameStore.setPlayers(tempPlayers.value);
     
-    // Family Mode: Set defaults
+    // Family Mode: Set defaults (not needed for gameplay, but for compatibility)
     if (isFamilyMode.value) {
-      gameStore.setComfortLevel('family');
+      gameStore.setComfortLevel('chill');
       gameStore.setRelationshipType('mixed');
       gameStore.setGameMode('free-for-all');
     }
@@ -756,7 +759,7 @@ const startGame = async () => {
   gameStore.saveToLocalStorage();
   
   // Track game selection
-  const gameName = availableGames.find(
+  const gameName = availableGames.value.find(
     (g) => g.value === gameStore.selectedGame
   )?.name || gameStore.selectedGame;
   trackGameSelection(gameName);
@@ -785,9 +788,11 @@ onMounted(() => {
     const urlParams = new URLSearchParams(window.location.search);
     const modeParam = urlParams.get('mode');
     
-    // Set defaults for family mode
+    // Set family mode flag
     if (modeParam === 'family') {
-      gameStore.setComfortLevel('family');
+      gameStore.setFamilyMode(true);
+    } else {
+      gameStore.setFamilyMode(false);
     }
     
     // Check if coming from a direct game link

@@ -481,6 +481,7 @@ import { useTruthTracker, useDareTracker } from "~/composables/useQuestionTracke
 import { useAnalytics } from "~/composables/useAnalytics";
 import { useGameStore } from "~/stores/game";
 import { useGameLogic } from "~/composables/useGameLogic";
+import { navigateTo } from "#app";
 
 // Game Configuration
 const MAX_HESITATION_TIME = 15;

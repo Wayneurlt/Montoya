@@ -131,11 +131,12 @@ import { ref, computed, onMounted, onBeforeUnmount } from "vue";
 import { Icon } from "@iconify/vue";
 import { useGameStore } from "~/stores/game";
 import { useAnalytics } from "~/composables/useAnalytics";
+import { navigateTo } from "#app";
 
 const gameStore = useGameStore();
 const { trackPageView } = useAnalytics();
 
-const MAX_TIME = 60;
+const MAX_TIME = 120; // 2 minutes
 const timeLeft = ref(MAX_TIME);
 const timerActive = ref(false);
 const timerInterval = ref(null);
@@ -215,6 +216,11 @@ const categories = {
 const usedPrompts = ref([]);
 
 function drawPrompt() {
+  // Start timer only if not already active
+  if (!timerActive.value) {
+    startTimer();
+  }
+  
   const categoryNames = Object.keys(categories);
   const randomCategory = categoryNames[Math.floor(Math.random() * categoryNames.length)];
   const availablePrompts = categories[randomCategory].filter(p => !usedPrompts.value.includes(p));
@@ -228,8 +234,6 @@ function drawPrompt() {
   currentPrompt.value = randomPrompt;
   currentCategory.value = randomCategory;
   usedPrompts.value.push(randomPrompt);
-  
-  startTimer();
 }
 
 function startTimer() {

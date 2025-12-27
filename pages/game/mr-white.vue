@@ -27,7 +27,7 @@
           🕵️ Mr. White
         </h1>
         <p class="text-sm sm:text-base md:text-lg text-purple-200 px-2 mb-4">
-          Find the imposter who doesn't know the secret word!
+          Find the person with the different word!
         </p>
       </div>
 
@@ -38,19 +38,19 @@
           <ul class="space-y-2 text-sm sm:text-base">
             <li class="flex gap-2">
               <span class="text-cyan-400">1.</span>
-              <span>One player is secretly chosen as "Mr. White"</span>
+              <span>Everyone gets a word, but one person gets a similar word</span>
             </li>
             <li class="flex gap-2">
               <span class="text-cyan-400">2.</span>
-              <span>Everyone else sees the secret word</span>
+              <span>Tap your card to see your word (others won't see it)</span>
             </li>
             <li class="flex gap-2">
               <span class="text-cyan-400">3.</span>
-              <span>Take turns giving hints about the word</span>
+              <span>Take turns giving hints about your word</span>
             </li>
             <li class="flex gap-2">
               <span class="text-cyan-400">4.</span>
-              <span>Mr. White must blend in without knowing the word!</span>
+              <span>Find the person with the different word!</span>
             </li>
             <li class="flex gap-2">
               <span class="text-cyan-400">5.</span>
@@ -71,7 +71,7 @@
       <div v-if="gamePhase === 'reveal'" class="space-y-4 sm:space-y-5 md:space-y-6">
         <div class="text-center mb-4 sm:mb-6">
           <p class="text-lg sm:text-xl md:text-2xl text-cyan-300 mb-4 sm:mb-6">
-            Pass the device around. Each player clicks to see their role:
+            Pass the device around. Each player taps to see their word:
           </p>
         </div>
 
@@ -84,32 +84,36 @@
           </button>
         </div>
 
-        <!-- Show Role Card -->
+        <!-- Show Player Name First, Then Word on Tap -->
         <div v-else class="space-y-4 sm:space-y-5 md:space-y-6">
-          <div class="bg-gradient-to-br from-purple-600 to-pink-600 rounded-xl sm:rounded-2xl p-6 sm:p-8 md:p-10 text-center shadow-2xl">
-            <p class="text-2xl sm:text-3xl md:text-4xl font-black mb-4 sm:mb-6">
+          <div 
+            @click="wordRevealed = true"
+            class="bg-gradient-to-br from-purple-600 to-pink-600 rounded-xl sm:rounded-2xl p-6 sm:p-8 md:p-10 text-center shadow-2xl cursor-pointer hover:scale-105 transition-all duration-300 min-h-[300px] flex flex-col items-center justify-center"
+          >
+            <p v-if="!wordRevealed" class="text-2xl sm:text-3xl md:text-4xl font-black mb-4 sm:mb-6">
               {{ currentReveal.player.name }}
             </p>
-            
-            <div v-if="currentReveal.isMrWhite" class="space-y-3 sm:space-y-4">
-              <p class="text-3xl sm:text-4xl md:text-5xl mb-2 sm:mb-3">🕵️</p>
-              <p class="text-xl sm:text-2xl md:text-3xl font-bold text-red-300">You are Mr. White!</p>
-              <p class="text-base sm:text-lg md:text-xl text-white/80">You don't know the secret word. Blend in!</p>
+            <p v-if="!wordRevealed" class="text-base sm:text-lg md:text-xl text-white/80 mb-4">
+              Tap to see your word
+            </p>
+            <div v-if="!wordRevealed" class="text-4xl sm:text-5xl md:text-6xl animate-bounce">
+              👆
             </div>
             
-            <div v-else class="space-y-3 sm:space-y-4">
-              <p class="text-base sm:text-lg md:text-xl text-white/80 mb-2 sm:mb-3">Your secret word is:</p>
-              <p class="text-2xl sm:text-3xl md:text-4xl font-black text-cyan-300">{{ secretWord }}</p>
+            <div v-if="wordRevealed" class="space-y-3 sm:space-y-4">
+              <p class="text-base sm:text-lg md:text-xl text-white/80 mb-2 sm:mb-3">Your word is:</p>
+              <p class="text-2xl sm:text-3xl md:text-4xl font-black text-cyan-300">{{ getPlayerWord(currentReveal.player.id) }}</p>
               <p class="text-sm sm:text-base md:text-lg text-white/70 mt-3 sm:mt-4">Give subtle hints without being obvious!</p>
             </div>
           </div>
 
           <button
+            v-if="wordRevealed"
             @click="confirmReveal"
             class="w-full bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 py-3 sm:py-4 rounded-lg sm:rounded-xl font-bold text-base sm:text-lg transition-all flex items-center justify-center gap-2 shadow-lg"
           >
             <Icon icon="mdi:check-circle" class="w-5 h-5 sm:w-6 sm:h-6" />
-            I've Seen My Role
+            I've Seen My Word
           </button>
         </div>
       </div>
@@ -121,7 +125,7 @@
             Discussion Phase
           </p>
           <p class="text-sm sm:text-base text-white/80">
-            Take turns giving one-word hints about the secret word. Mr. White: try to blend in!
+            Take turns giving one-word hints about your word. The person with the different word must blend in!
           </p>
         </div>
 
@@ -165,6 +169,7 @@
           <p class="text-xl sm:text-2xl md:text-3xl font-black mb-2 sm:mb-3">{{ resultMessage }}</p>
           <p class="text-base sm:text-lg md:text-xl text-cyan-300">Mr. White was: {{ mrWhitePlayer?.name }}</p>
           <p class="text-sm sm:text-base md:text-lg text-white/80 mt-3 sm:mt-4">The secret word was: <span class="font-bold">{{ secretWord }}</span></p>
+          <p class="text-sm sm:text-base md:text-lg text-white/80 mt-2">Mr. White's word was: <span class="font-bold">{{ getPlayerWord(mrWhitePlayer?.id) }}</span></p>
         </div>
 
         <button
@@ -184,6 +189,7 @@ import { ref, computed, onMounted } from "vue";
 import { Icon } from "@iconify/vue";
 import { useGameStore } from "~/stores/game";
 import { useAnalytics } from "~/composables/useAnalytics";
+import { navigateTo } from "#app";
 
 const gameStore = useGameStore();
 const { trackPageView } = useAnalytics();
@@ -195,27 +201,74 @@ const revealIndex = ref(0);
 const currentReveal = ref(null);
 const resultMessage = ref("");
 const resultEmoji = ref("");
+const playerWords = ref({});
+const wordRevealed = ref(false);
 
 const players = computed(() => gameStore.players);
 
-const secretWords = [
-  "Pizza", "Beach", "Rainbow", "Music", "Book", "Movie", "Phone", "Camera",
-  "Birthday", "Holiday", "School", "Garden", "Ocean", "Mountain", "Desert",
-  "Forest", "River", "Bridge", "Castle", "Museum", "Library", "Park", "Zoo",
-  "Circus", "Theater", "Concert", "Party", "Wedding", "Picnic", "Camping"
+// Word pairs with similar characteristics
+const wordPairs = [
+  { word: "Strawberry", similar: "Apple" },
+  { word: "Cat", similar: "Dog" },
+  { word: "Pizza", similar: "Burger" },
+  { word: "Beach", similar: "Mountain" },
+  { word: "Rainbow", similar: "Sunset" },
+  { word: "Music", similar: "Dance" },
+  { word: "Book", similar: "Movie" },
+  { word: "Phone", similar: "Computer" },
+  { word: "Camera", similar: "Painting" },
+  { word: "Birthday", similar: "Wedding" },
+  { word: "Holiday", similar: "Vacation" },
+  { word: "School", similar: "University" },
+  { word: "Garden", similar: "Forest" },
+  { word: "Ocean", similar: "Lake" },
+  { word: "Desert", similar: "Beach" },
+  { word: "River", similar: "Stream" },
+  { word: "Bridge", similar: "Tunnel" },
+  { word: "Castle", similar: "Palace" },
+  { word: "Museum", similar: "Library" },
+  { word: "Park", similar: "Garden" },
+  { word: "Zoo", similar: "Farm" },
+  { word: "Circus", similar: "Theater" },
+  { word: "Concert", similar: "Festival" },
+  { word: "Party", similar: "Celebration" },
+  { word: "Picnic", similar: "Barbecue" },
+  { word: "Camping", similar: "Hiking" },
+  { word: "Car", similar: "Bike" },
+  { word: "Train", similar: "Bus" },
+  { word: "Plane", similar: "Helicopter" },
+  { word: "Boat", similar: "Ship" }
 ];
 
+function getPlayerWord(playerId) {
+  return playerWords.value[playerId] || '';
+}
+
 function startGame() {
-  // Select random word
-  secretWord.value = secretWords[Math.floor(Math.random() * secretWords.length)];
+  // Select random word pair
+  const randomPair = wordPairs[Math.floor(Math.random() * wordPairs.length)];
+  secretWord.value = randomPair.word;
   
   // Select random Mr. White
   const randomIndex = Math.floor(Math.random() * players.value.length);
   mrWhitePlayer.value = players.value[randomIndex];
   
+  // Assign words to all players
+  playerWords.value = {};
+  players.value.forEach(player => {
+    if (player.id === mrWhitePlayer.value.id) {
+      // Mr. White gets the similar word
+      playerWords.value[player.id] = randomPair.similar;
+    } else {
+      // Everyone else gets the secret word
+      playerWords.value[player.id] = randomPair.word;
+    }
+  });
+  
   gamePhase.value = 'reveal';
   revealIndex.value = 0;
   currentReveal.value = null;
+  wordRevealed.value = false;
 }
 
 function revealNext() {
@@ -225,12 +278,21 @@ function revealNext() {
       player,
       isMrWhite: player.id === mrWhitePlayer.value.id
     };
+    wordRevealed.value = false; // Reset word reveal for new player
   }
 }
 
 function confirmReveal() {
+  if (!wordRevealed.value) {
+    // If word not revealed yet, reveal it first
+    wordRevealed.value = true;
+    return;
+  }
+  
+  // Word already revealed, move to next player
   currentReveal.value = null;
   revealIndex.value++;
+  wordRevealed.value = false;
   
   if (revealIndex.value >= players.value.length) {
     gamePhase.value = 'playing';
@@ -264,6 +326,8 @@ function playAgain() {
   mrWhitePlayer.value = null;
   revealIndex.value = 0;
   currentReveal.value = null;
+  playerWords.value = {};
+  wordRevealed.value = false;
 }
 
 onMounted(() => {

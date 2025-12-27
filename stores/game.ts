@@ -3,12 +3,25 @@ import { defineStore } from 'pinia'
 export type RelationshipType = 'strangers' | 'friends' | 'dating' | 'couple' | 'mixed'
 export type ComfortLevel = 'chill' | 'spicy' | 'wild'
 export type GameMode = 'free-for-all' | 'relationship' | 'connection'
-export type GameType = 'truth-or-dare' | 'dice-of-desire' | 'do-or-drink' | 'never-have-i-ever' | 'most-likely-to' | 'would-you-rather'
+export type GameType = 
+  // Family games
+  | 'charades' 
+  | 'imposter' 
+  | 'mr-white' 
+  | 'trivia' 
+  | 'two-truths-one-lie'
+  // Adult games
+  | 'truth-or-dare' 
+  | 'dice-of-desire' 
+  | 'do-or-drink' 
+  | 'never-have-i-ever' 
+  | 'most-likely-to' 
+  | 'would-you-rather'
 
 export interface Player {
   id: string
   name: string
-  gender: 'male' | 'female' | 'other'
+  gender?: 'male' | 'female' | 'other'
   partnerId?: string
 }
 
@@ -19,6 +32,7 @@ export interface GameState {
   comfortLevel: ComfortLevel | null
   gameMode: GameMode | null
   selectedGame: GameType | null
+  isFamilyMode: boolean
   
   // Game state
   currentRound: number
@@ -44,6 +58,7 @@ export const useGameStore = defineStore('game', {
     comfortLevel: null,
     gameMode: null,
     selectedGame: null,
+    isFamilyMode: false,
     currentRound: 0,
     currentPlayerIndex: 0,
     promptHistory: [],
@@ -66,6 +81,16 @@ export const useGameStore = defineStore('game', {
     },
     
     canStartGame: (state): boolean => {
+      // For family mode, only need players and game selection
+      if (state.isFamilyMode) {
+        return (
+          state.players.length >= 2 &&
+          state.selectedGame !== null &&
+          state.players.every(p => p.name.trim() !== '')
+        )
+      }
+      
+      // For adult mode, need all settings
       return (
         state.players.length >= 2 &&
         state.relationshipType !== null &&
@@ -162,6 +187,10 @@ export const useGameStore = defineStore('game', {
       this.selectedGame = game
     },
     
+    setFamilyMode(isFamilyMode: boolean) {
+      this.isFamilyMode = isFamilyMode
+    },
+    
     // Game state actions
     nextTurn() {
       this.currentPlayerIndex = (this.currentPlayerIndex + 1) % this.players.length
@@ -235,6 +264,7 @@ export const useGameStore = defineStore('game', {
       this.comfortLevel = null
       this.gameMode = null
       this.selectedGame = null
+      this.isFamilyMode = false
       this.resetGame()
     },
     
@@ -247,6 +277,7 @@ export const useGameStore = defineStore('game', {
           comfortLevel: this.comfortLevel,
           gameMode: this.gameMode,
           selectedGame: this.selectedGame,
+          isFamilyMode: this.isFamilyMode,
           currentRound: this.currentRound,
           currentPlayerIndex: this.currentPlayerIndex,
           intensityLevel: this.intensityLevel,
@@ -266,6 +297,7 @@ export const useGameStore = defineStore('game', {
             this.comfortLevel = state.comfortLevel || null
             this.gameMode = state.gameMode || null
             this.selectedGame = state.selectedGame || null
+            this.isFamilyMode = state.isFamilyMode || false
             this.currentRound = state.currentRound || 0
             this.currentPlayerIndex = state.currentPlayerIndex || 0
             this.intensityLevel = state.intensityLevel || 1

@@ -42,11 +42,11 @@
               </li>
               <li class="flex items-center gap-2">
                 <Icon icon="mdi:check-circle" class="w-5 h-5 text-green-400 flex-shrink-0" />
-                <span>Mr. White (Imposter)</span>
+                <span>Imposter</span>
               </li>
               <li class="flex items-center gap-2">
                 <Icon icon="mdi:check-circle" class="w-5 h-5 text-green-400 flex-shrink-0" />
-                <span>Trivia & More</span>
+                <span>Mr. White</span>
               </li>
             </ul>
             <div class="mt-8 bg-green-500/30 backdrop-blur-sm px-4 py-3 rounded-xl border-2 border-green-400/40">
