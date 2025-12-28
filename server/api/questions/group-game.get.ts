@@ -3,7 +3,6 @@ import prisma from '~/lib/prisma'
 export default defineEventHandler(async (event) => {
   const query = getQuery(event)
   const gameType = query.gameType as 'NEVER_HAVE_I_EVER' | 'MOST_LIKELY_TO' | 'WOULD_YOU_RATHER'
-  const intensity = query.intensity ? parseInt(query.intensity as string) : undefined
   const limit = query.limit ? parseInt(query.limit as string) : 50
 
   if (!gameType) {
@@ -19,9 +18,7 @@ export default defineEventHandler(async (event) => {
       isActive: true  // Only get active questions
     }
 
-    if (intensity) {
-      where.intensity = { lte: intensity }
-    }
+    // Removed intensity filtering - get all questions regardless of intensity
 
     console.log(`🔍 Group Game query for ${gameType}:`, JSON.stringify(where, null, 2))
 

@@ -196,26 +196,40 @@ async function loadQuestions() {
   try {
     console.log('🔄 Loading Most Likely To questions from database...')
     const response = await $fetch('/api/questions/group-game?gameType=MOST_LIKELY_TO&limit=100')
+      .catch(error => {
+        console.error('❌ API call failed:', error)
+        throw new Error(`Failed to fetch questions: ${error.message || 'Unknown error'}`)
+      })
+    
     console.log('Most Likely To API response:', response)
+    
+    if (!response || !response.questions) {
+      console.error('❌ Invalid API response structure:', response)
+      throw new Error('Invalid API response structure')
+    }
+    
     const questions = response.questions || []
     
+    if (!Array.isArray(questions)) {
+      throw new Error('Questions is not an array')
+    }
+    
+    if (questions.length === 0) {
+      throw new Error('No questions returned from API')
+    }
+    
+    console.log(`✅ Successfully received ${questions.length} questions from API`)
+    
     // Create tracker with loaded questions
-    questionTracker = useMostLikelyToTracker(questions.map(q => q.text))
+    questionTracker = useMostLikelyToTracker(questions.map(q => q.text || q))
     questionTracker.initializeTracker();
     
     console.log(`✅ Loaded ${questions.length} Most Likely To questions`)
   } catch (error) {
     console.error('❌ Error loading Most Likely To questions:', error)
-    // Fallback questions
-    questionTracker = useMostLikelyToTracker([
-      'Who is most likely to become famous?',
-      'Who is most likely to get married first?',
-      'Who is most likely to travel the world?',
-      'Who is most likely to sleep through an alarm?',
-      'Who is most likely to win the lottery?'
-    ])
-    questionTracker.initializeTracker();
-    console.log('⚠️ Using fallback Most Likely To questions')
+    console.error('Error details:', error.message, error.stack)
+    // Don't use fallback - throw error so user knows
+    throw error
   }
 }
 
@@ -228,8 +242,13 @@ onMounted(async () => {
     gameStore.loadFromLocalStorage();
     
     // Load questions from database
-    await loadQuestions()
-    fetchAnother();
+    try {
+      await loadQuestions()
+      fetchAnother();
+    } catch (error) {
+      console.error('Failed to load questions:', error)
+      question.value = { text: 'Error loading questions. Please refresh the page or contact support.' }
+    }
   }
 });
 </script>

@@ -53,28 +53,29 @@
         </div>
       </div>
 
-      <!-- Intensity Toggle -->
+      <!-- Intensity Toggle - Improved -->
       <div class="mb-6">
-        <div class="flex bg-white/5 rounded-xl p-1 border border-white/10">
+        <div class="flex bg-white/5 rounded-xl p-1 border-2 border-white/10">
           <button
             @click="isSpicyMode = false"
-            class="flex-1 px-4 py-3 rounded-lg transition-all duration-300 text-sm font-bold"
-            :class="!isSpicyMode ? 'bg-gradient-to-r from-purple-600 to-cyan-600 text-white shadow-lg' : 'text-white/70 hover:text-white'"
+            class="flex-1 px-6 py-4 rounded-lg transition-all duration-300 text-base font-bold"
+            :class="!isSpicyMode ? 'bg-gradient-to-r from-purple-600 to-cyan-600 text-white shadow-lg scale-105' : 'text-white/70 hover:text-white hover:bg-white/5'"
           >
             😇 Normal
           </button>
           <button
             @click="isSpicyMode = true"
-            class="flex-1 px-4 py-3 rounded-lg transition-all duration-300 text-sm font-bold"
-            :class="isSpicyMode ? 'bg-gradient-to-r from-pink-600 to-purple-600 text-white shadow-lg' : 'text-white/70 hover:text-white'"
+            class="flex-1 px-6 py-4 rounded-lg transition-all duration-300 text-base font-bold"
+            :class="isSpicyMode ? 'bg-gradient-to-r from-pink-600 to-purple-600 text-white shadow-lg scale-105' : 'text-white/70 hover:text-white hover:bg-white/5'"
           >
             🌶️ Spicy
           </button>
         </div>
-        <div class="text-center mt-2 text-xs text-white/60">
+        <div class="text-center mt-3 text-sm font-medium"
+          :class="isSpicyMode ? 'text-pink-300' : 'text-purple-300'">
           {{ isSpicyMode ? '🔥 Hot and steamy questions' : '✨ Mild and playful questions' }}
-              </div>
-            </div>
+        </div>
+      </div>
             
       <!-- Loading State -->
       <div v-if="questionsLoading" class="mb-6 bg-blue-500/20 border border-blue-400/30 rounded-xl p-4 text-center">
@@ -96,24 +97,54 @@
         </div>
       </div>
 
-      <!-- Question Display Card -->
+      <!-- Question Display Card - Enhanced -->
       <div v-if="currentCard && cardFlipped" class="mb-6">
-        <div class="bg-gradient-to-br from-purple-700/50 to-pink-700/50 rounded-2xl p-6 sm:p-8 border-2 border-purple-400/30 shadow-2xl">
-          <div class="text-center">
-            <div class="inline-flex items-center gap-2 px-4 py-2 rounded-full mb-4 font-bold text-sm"
-              :class="currentCard.type === 'TRUTH' ? 'bg-blue-500/30 text-blue-200' : 'bg-pink-500/30 text-pink-200'">
-              <Icon :icon="currentCard.type === 'TRUTH' ? 'mdi:chat-question' : 'mdi:fire'" class="w-5 h-5" />
-              {{ currentCard.type === 'TRUTH' ? 'TRUTH' : 'DARE' }}
+        <div class="bg-gradient-to-br rounded-3xl p-8 md:p-12 shadow-2xl border-2 relative overflow-hidden min-h-[200px] flex items-center justify-center"
+          :class="currentCard.type === 'TRUTH' 
+            ? 'from-blue-950/60 to-cyan-950/60 border-blue-500/30' 
+            : 'from-pink-950/60 to-red-950/60 border-pink-500/30'">
+          <!-- Decorative elements -->
+          <div class="absolute top-0 right-0 w-32 h-32 rounded-bl-full"
+            :class="currentCard.type === 'TRUTH' 
+              ? 'bg-gradient-to-br from-blue-600/20 to-transparent' 
+              : 'bg-gradient-to-br from-pink-600/20 to-transparent'"></div>
+          <div class="absolute bottom-0 left-0 w-32 h-32 rounded-tr-full"
+            :class="currentCard.type === 'TRUTH' 
+              ? 'bg-gradient-to-tr from-cyan-600/20 to-transparent' 
+              : 'bg-gradient-to-tr from-red-600/20 to-transparent'"></div>
+          
+          <div class="text-center relative z-10 w-full">
+            <!-- Type Badge -->
+            <div class="mb-6 flex justify-center">
+              <div class="inline-flex items-center gap-3 px-6 py-3 rounded-full font-black text-lg shadow-lg"
+                :class="currentCard.type === 'TRUTH' 
+                  ? 'bg-gradient-to-r from-blue-600 to-cyan-600 text-white' 
+                  : 'bg-gradient-to-r from-pink-600 to-red-600 text-white'">
+                <Icon :icon="currentCard.type === 'TRUTH' ? 'mdi:chat-question' : 'mdi:fire'" class="w-6 h-6" />
+                {{ currentCard.type === 'TRUTH' ? 'TRUTH' : 'DARE' }}
+              </div>
             </div>
-            <p class="text-xl sm:text-2xl font-bold mb-4 leading-relaxed">
+            
+            <!-- Question Text -->
+            <p class="text-2xl md:text-4xl font-bold mb-6 leading-relaxed px-4 text-white drop-shadow-lg">
               {{ currentCard.text }}
             </p>
-            <div v-if="currentCard.target" class="bg-white/10 rounded-xl p-3 max-w-xs mx-auto">
-              <p class="text-sm font-medium flex items-center justify-center gap-2">
+            
+            <!-- Target (if applicable) -->
+            <div v-if="currentCard.target" class="bg-white/10 rounded-xl p-4 max-w-sm mx-auto border border-white/20">
+              <p class="text-base font-medium flex items-center justify-center gap-2 text-white">
                 <Icon icon="mdi:account-arrow-right" class="w-5 h-5" />
                 To: {{ currentCard.target.name }}
-                <span class="text-lg">{{ currentCard.target.gender === "male" ? "♂" : "♀" }}</span>
+                <span class="text-xl">{{ currentCard.target.gender === "male" ? "♂" : "♀" }}</span>
               </p>
+            </div>
+            
+            <!-- Decorative underline -->
+            <div class="mt-6 flex justify-center">
+              <div class="h-1 w-24 rounded-full"
+                :class="currentCard.type === 'TRUTH' 
+                  ? 'bg-gradient-to-r from-blue-600 via-cyan-600 to-blue-600' 
+                  : 'bg-gradient-to-r from-pink-600 via-red-600 to-pink-600'"></div>
             </div>
           </div>
         </div>
@@ -254,17 +285,18 @@ const gameMode = computed(() => gameStore.gameMode || 'free-for-all');
 const players = computed(() => gameStore.players);
 const currentPlayer = computed(() => gameStore.currentPlayer);
 
-// Question Selection Logic
+// Question Selection Logic - Use ONLY database questions, no icebreakers or adaptations
 const getRandomQuestion = (type) => {
   console.log(`🎯 getRandomQuestion called with type: ${type}, isSpicyMode: ${isSpicyMode.value}`)
   
-  if (gameLogic.shouldUseIcebreaker()) {
-    const icebreaker = gameLogic.getIcebreakerPrompt(type);
-    if (icebreaker) {
-      console.log('🧊 Returning icebreaker prompt')
-      return icebreaker;
-    }
-  }
+  // NO ICEBREAKERS - Use only database questions
+  // if (gameLogic.shouldUseIcebreaker()) {
+  //   const icebreaker = gameLogic.getIcebreakerPrompt(type);
+  //   if (icebreaker) {
+  //     console.log('🧊 Returning icebreaker prompt')
+  //     return icebreaker;
+  //   }
+  // }
   
   let tracker;
   
@@ -289,8 +321,9 @@ const getRandomQuestion = (type) => {
   
   console.log(`✅ Got question from ${type} tracker:`, question.substring(0, 50) + '...')
   
-  const intensity = isSpicyMode.value ? 4 : 2;
-  question = gameLogic.adaptPrompt(question, intensity);
+  // DON'T ADAPT QUESTIONS - Use them exactly as they are from the database
+  // const intensity = isSpicyMode.value ? 4 : 2;
+  // question = gameLogic.adaptPrompt(question, intensity);
   
   return question;
 };
@@ -401,22 +434,52 @@ async function loadQuestions() {
     console.log('🔄 Loading questions from database...')
     
     const truthResponse = await $fetch('/api/questions/truth-or-dare?type=TRUTH&limit=200')
+      .catch(error => {
+        console.error('❌ Truth API call failed:', error)
+        throw new Error(`Failed to fetch truth questions: ${error.message || 'Unknown error'}`)
+      })
+    
     console.log('✅ Truth API response:', truthResponse)
     
-    const allTruthQuestions = truthResponse?.questions || []
+    if (!truthResponse || !truthResponse.questions) {
+      console.error('❌ Invalid truth API response structure:', truthResponse)
+      throw new Error('Invalid truth API response structure')
+    }
+    
+    const allTruthQuestions = truthResponse.questions || []
     
     if (!Array.isArray(allTruthQuestions)) {
       throw new Error('Truth questions is not an array')
     }
     
+    if (allTruthQuestions.length === 0) {
+      throw new Error('No truth questions returned from API')
+    }
+    
     const dareResponse = await $fetch('/api/questions/truth-or-dare?type=DARE&limit=200')
+      .catch(error => {
+        console.error('❌ Dare API call failed:', error)
+        throw new Error(`Failed to fetch dare questions: ${error.message || 'Unknown error'}`)
+      })
+    
     console.log('✅ Dare API response:', dareResponse)
     
-    const allDareQuestions = dareResponse?.questions || []
+    if (!dareResponse || !dareResponse.questions) {
+      console.error('❌ Invalid dare API response structure:', dareResponse)
+      throw new Error('Invalid dare API response structure')
+    }
+    
+    const allDareQuestions = dareResponse.questions || []
     
     if (!Array.isArray(allDareQuestions)) {
       throw new Error('Dare questions is not an array')
     }
+    
+    if (allDareQuestions.length === 0) {
+      throw new Error('No dare questions returned from API')
+    }
+    
+    console.log(`✅ Successfully received ${allTruthQuestions.length} truth and ${allDareQuestions.length} dare questions`)
     
     const normalTruths = allTruthQuestions
       .filter(q => {
@@ -494,20 +557,17 @@ async function loadQuestions() {
       throw new Error('No questions found in database')
     }
     
-    // Check if we're using fallback questions
-    const usingFallback = normalTruths.length === 0 || normalDares.length === 0;
-    if (usingFallback) {
-      questionsError.value = `Only ${normalTruths.length + spicyTruths.length + normalDares.length + spicyDares.length} questions found. Some categories may use fallback questions.`;
+    // Use what we have - don't use fallbacks
+    if (normalTruths.length === 0 && spicyTruths.length === 0) {
+      questionsError.value = 'No truth questions found in database.';
+      throw new Error('No truth questions found')
     }
     
-    normalTruthTracker = useTruthTracker(
-      normalTruths.length > 0 ? normalTruths : ['What is your biggest secret?', 'Who do you have a crush on?'], 
-      false
-    );
-    spicyTruthTracker = useTruthTracker(
-      spicyTruths.length > 0 ? spicyTruths : ['What is your wildest fantasy?', 'What is your deepest secret?'], 
-      true
-    );
+    if (normalDares.length === 0 && spicyDares.length === 0) {
+      questionsError.value = 'No dare questions found in database.';
+      throw new Error('No dare questions found')
+    }
+    
     // Verify we have actual dare questions
     console.log(`🔍 Verifying dare questions:`)
     console.log(`- Normal dares array length: ${normalDares.length}`)
@@ -519,14 +579,17 @@ async function loadQuestions() {
       console.log(`- First spicy dare: "${spicyDares[0]}"`)
     }
     
-    normalDareTracker = useDareTracker(
-      normalDares.length > 0 ? normalDares : ['Give someone a hug', 'Do a silly dance'], 
-      false
-    );
-    spicyDareTracker = useDareTracker(
-      spicyDares.length > 0 ? spicyDares : ['Do a sexy dance', 'Kiss someone'], 
-      true
-    );
+    // Use actual questions from database - no fallbacks
+    // If one category is empty, use the other (but prefer the correct category)
+    normalTruthTracker = useTruthTracker(normalTruths.length > 0 ? normalTruths : (spicyTruths.length > 0 ? spicyTruths : []), false);
+    spicyTruthTracker = useTruthTracker(spicyTruths.length > 0 ? spicyTruths : (normalTruths.length > 0 ? normalTruths : []), true);
+    normalDareTracker = useDareTracker(normalDares.length > 0 ? normalDares : (spicyDares.length > 0 ? spicyDares : []), false);
+    spicyDareTracker = useDareTracker(spicyDares.length > 0 ? spicyDares : (normalDares.length > 0 ? normalDares : []), true);
+    
+    // Verify trackers were created
+    if (!normalTruthTracker || !spicyTruthTracker || !normalDareTracker || !spicyDareTracker) {
+      throw new Error('Failed to create question trackers')
+    }
     
     console.log(`✅ Dare trackers created:`)
     console.log(`- Normal dare tracker has ${normalDareTracker.getUsageStats.value.totalQuestions} questions`)
@@ -543,38 +606,21 @@ async function loadQuestions() {
     console.log(`- Spicy Truths: ${spicyTruthTracker.getUsageStats.value.totalQuestions}`)
     console.log(`- Normal Dares: ${normalDareTracker.getUsageStats.value.totalQuestions}`)
     console.log(`- Spicy Dares: ${spicyDareTracker.getUsageStats.value.totalQuestions}`)
+    
+    // Final verification - ensure we have at least some questions
+    if (normalTruthTracker.getUsageStats.value.totalQuestions === 0 && 
+        spicyTruthTracker.getUsageStats.value.totalQuestions === 0) {
+      throw new Error('No truth questions available in trackers')
+    }
+    if (normalDareTracker.getUsageStats.value.totalQuestions === 0 && 
+        spicyDareTracker.getUsageStats.value.totalQuestions === 0) {
+      throw new Error('No dare questions available in trackers')
+    }
   } catch (error) {
     console.error('❌ Error loading questions from database:', error)
-    questionsError.value = error.message || 'Failed to load questions from database. Using fallback questions.';
-    
-    const fallbackTruths = [
-      'What is your biggest secret?', 
-      'Who do you have a crush on?',
-      'What is something you\'ve never told anyone?',
-      'What is your most embarrassing moment?',
-      'What is your worst habit?',
-      'What is your biggest fear?',
-    ]
-    const fallbackDares = [
-      'Give someone a hug', 
-      'Do a silly dance',
-      'Sing a song',
-      'Do your best impression',
-      'Tell a joke',
-      'Do 10 push-ups',
-    ]
-    
-    normalTruthTracker = useTruthTracker(fallbackTruths, false);
-    spicyTruthTracker = useTruthTracker(fallbackTruths, true);
-    normalDareTracker = useDareTracker(fallbackDares, false);
-    spicyDareTracker = useDareTracker(fallbackDares, true);
-    
-    normalTruthTracker.initializeTracker();
-    spicyTruthTracker.initializeTracker();
-    normalDareTracker.initializeTracker();
-    spicyDareTracker.initializeTracker();
-    
-    console.log('⚠️ Using fallback questions due to API error')
+    console.error('Full error details:', error)
+    questionsError.value = error.message || 'Failed to load questions from database. Please refresh the page or contact support.';
+    // Don't use fallback - show error to user
   } finally {
     questionsLoading.value = false;
   }

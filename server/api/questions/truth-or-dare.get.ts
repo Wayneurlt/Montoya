@@ -3,7 +3,6 @@ import prisma from '~/lib/prisma'
 export default defineEventHandler(async (event) => {
   const query = getQuery(event)
   const type = query.type as 'TRUTH' | 'DARE' | undefined
-  const intensity = query.intensity ? parseInt(query.intensity as string) : undefined
   const limit = query.limit ? parseInt(query.limit as string) : 50
 
   try {
@@ -16,9 +15,7 @@ export default defineEventHandler(async (event) => {
       where.type = type
     }
 
-    if (intensity) {
-      where.intensity = { lte: intensity }
-    }
+    // Removed intensity filtering - get all questions regardless of intensity
 
     console.log('🔍 Truth or Dare query where:', JSON.stringify(where, null, 2))
 

@@ -48,69 +48,70 @@
         </div>
       </div>
 
-      <!-- Main Question Card -->
-      <div class="mb-3 sm:mb-4 md:mb-6">
-        <div class="bg-gradient-to-br from-purple-950/60 to-black/90 backdrop-blur-xl rounded-xl sm:rounded-2xl md:rounded-3xl p-3 sm:p-4 md:p-6 lg:p-8 xl:p-12 shadow-2xl border-2 border-purple-700/30 relative overflow-hidden min-h-[180px] sm:min-h-[220px] md:min-h-[250px] lg:min-h-[300px] flex items-center justify-center">
-          <!-- Decorative elements -->
-          <div class="absolute top-0 left-0 w-40 h-40 bg-gradient-to-br from-purple-600/20 to-transparent rounded-full blur-3xl"></div>
-          <div class="absolute bottom-0 right-0 w-40 h-40 bg-gradient-to-tl from-pink-600/20 to-transparent rounded-full blur-3xl"></div>
+      <!-- Main Question Card - Matching Most Likely To Style -->
+      <div class="mb-8">
+        <div class="bg-gradient-to-br from-purple-950/60 to-black/80 backdrop-blur-xl rounded-3xl p-8 md:p-12 shadow-2xl border-2 border-purple-600/30 relative overflow-hidden min-h-[280px] flex items-center justify-center">
+          <!-- Decorative corner elements -->
+          <div class="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-purple-600/20 to-transparent rounded-bl-full"></div>
+          <div class="absolute bottom-0 left-0 w-32 h-32 bg-gradient-to-tr from-pink-600/20 to-transparent rounded-tr-full"></div>
           
-          <transition name="flip" mode="out-in">
+          <transition name="slide-fade" mode="out-in">
             <div :key="`question-${question?.text ?? 'none'}`" class="text-center relative z-10 w-full">
-              <!-- Finger pointing icon -->
-              <div class="mb-2 sm:mb-3 md:mb-4 flex justify-center">
-                <div class="bg-gradient-to-br from-purple-600 to-pink-700 p-2 sm:p-3 md:p-4 lg:p-5 rounded-lg sm:rounded-xl md:rounded-2xl shadow-2xl shadow-purple-900/50 transform hover:rotate-12 transition-transform">
-                  <Icon icon="mdi:hand-pointing-right" class="w-8 h-8 sm:w-10 sm:h-10 md:w-12 md:h-12 lg:w-14 lg:h-14 animate-bounce-slow" />
+              <!-- Question Icon -->
+              <div class="mb-6 flex justify-center">
+                <div class="bg-gradient-to-br from-purple-600 to-pink-700 p-4 rounded-2xl shadow-lg shadow-purple-900/50 animate-pulse-slow">
+                  <Icon icon="mdi:hand-pointing-right" class="w-12 h-12" />
                 </div>
               </div>
               
               <!-- Never Have I Ever prefix -->
-              <div class="mb-2 sm:mb-3 md:mb-4">
-                <span class="inline-block bg-gradient-to-r from-purple-600/40 to-pink-600/40 px-2 sm:px-3 md:px-4 lg:px-6 py-1 sm:py-1.5 md:py-2 rounded-full text-xs sm:text-sm md:text-base lg:text-lg font-bold border border-purple-500/50">
+              <div class="mb-4">
+                <span class="inline-block bg-gradient-to-r from-purple-600/40 to-pink-600/40 px-4 py-2 rounded-full text-sm font-bold border border-purple-500/50">
                   Never Have I Ever...
                 </span>
               </div>
               
               <!-- Question Text -->
-              <p class="text-base sm:text-lg md:text-xl lg:text-2xl xl:text-4xl font-bold leading-relaxed px-2 sm:px-4 text-white drop-shadow-2xl">
-                {{ question?.text || 'Ready to confess your secrets?' }}
+              <p class="text-2xl md:text-4xl font-bold leading-relaxed px-4 text-white drop-shadow-lg">
+                {{ questionTextWithoutPrefix || 'Get ready to confess...' }}
               </p>
 
-              <!-- Decorative dots -->
-              <div class="mt-8 flex justify-center gap-2">
-                <div class="h-2 w-2 bg-cyan-400 rounded-full animate-ping"></div>
-                <div class="h-2 w-2 bg-blue-400 rounded-full animate-ping" style="animation-delay: 0.2s;"></div>
-                <div class="h-2 w-2 bg-purple-400 rounded-full animate-ping" style="animation-delay: 0.4s;"></div>
+              <!-- Decorative underline -->
+              <div class="mt-6 flex justify-center">
+                <div class="h-1 w-24 bg-gradient-to-r from-purple-600 via-pink-600 to-cyan-500 rounded-full"></div>
               </div>
             </div>
           </transition>
         </div>
       </div>
 
-      <!-- Action Buttons -->
-      <div class="grid grid-cols-1 sm:grid-cols-3 gap-2 sm:gap-3 md:gap-4 mb-3 sm:mb-4 md:mb-6">
+      <!-- Action Buttons - Matching Most Likely To Style -->
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
         <button 
           @click="fetchAnother" 
-          class="group bg-gradient-to-r from-purple-700 to-pink-700 hover:from-purple-600 hover:to-pink-600 px-4 sm:px-6 py-3 sm:py-4 md:py-5 rounded-xl sm:rounded-2xl font-bold text-sm sm:text-base md:text-lg flex items-center justify-center gap-2 sm:gap-3 shadow-xl hover:shadow-purple-600/50 transition-all duration-300 transform hover:scale-105 border-2 border-purple-500/30"
+          class="group bg-gradient-to-r from-purple-700 to-pink-700 hover:from-purple-600 hover:to-pink-600 px-8 py-5 rounded-2xl font-bold text-lg flex items-center justify-center gap-3 shadow-xl hover:shadow-purple-600/50 transition-all duration-300 transform hover:scale-105 border-2 border-purple-500/30"
         >
-          <Icon icon="mdi:refresh" class="w-5 h-5 sm:w-6 sm:h-6 group-hover:rotate-180 transition-transform duration-500" />
-          <span>Next</span>
-        </button>
-        
-        <button 
-          @click="markAsDone('yes')" 
-          class="group bg-gradient-to-r from-pink-700 to-purple-700 hover:from-pink-600 hover:to-purple-600 px-4 sm:px-6 py-3 sm:py-4 md:py-5 rounded-xl sm:rounded-2xl font-bold text-sm sm:text-base md:text-lg flex items-center justify-center gap-2 sm:gap-3 shadow-xl hover:shadow-pink-600/50 transition-all duration-300 transform hover:scale-105 border-2 border-pink-500/30"
-        >
-          <Icon icon="mdi:check-circle" class="w-5 h-5 sm:w-6 sm:h-6 group-hover:scale-110 transition-transform" />
-          <span>I Have!</span>
+          <Icon icon="mdi:refresh" class="w-6 h-6 group-hover:rotate-180 transition-transform duration-500" />
+          <span>Next Question</span>
         </button>
         
         <button 
           @click="applyPenalty" 
-          class="group bg-gradient-to-r from-purple-700 to-pink-700 hover:from-purple-600 hover:to-pink-600 px-4 sm:px-6 py-3 sm:py-4 md:py-5 rounded-xl sm:rounded-2xl font-bold text-sm sm:text-base md:text-lg flex items-center justify-center gap-2 sm:gap-3 shadow-xl hover:shadow-purple-600/50 transition-all duration-300 transform hover:scale-105 border-2 border-purple-500/30"
+          class="group bg-gradient-to-r from-pink-700 to-purple-700 hover:from-pink-600 hover:to-purple-600 px-8 py-5 rounded-2xl font-bold text-lg flex items-center justify-center gap-3 shadow-xl hover:shadow-pink-600/50 transition-all duration-300 transform hover:scale-105 border-2 border-pink-500/30"
         >
-          <Icon icon="mdi:glass-cocktail" class="w-5 h-5 sm:w-6 sm:h-6 group-hover:animate-bounce" />
-          <span>Penalty</span>
+          <Icon icon="mdi:glass-cocktail" class="w-6 h-6 group-hover:animate-bounce" />
+          <span>Drink Penalty</span>
+        </button>
+      </div>
+      
+      <!-- I Have Button -->
+      <div class="mb-8">
+        <button 
+          @click="markAsDone('yes')" 
+          class="w-full group bg-gradient-to-r from-green-700 to-emerald-700 hover:from-green-600 hover:to-emerald-600 px-8 py-5 rounded-2xl font-bold text-lg flex items-center justify-center gap-3 shadow-xl hover:shadow-green-600/50 transition-all duration-300 transform hover:scale-105 border-2 border-green-500/30"
+        >
+          <Icon icon="mdi:check-circle" class="w-6 h-6 group-hover:scale-110 transition-transform" />
+          <span>I Have!</span>
         </button>
       </div>
 
@@ -128,24 +129,18 @@
         </div>
       </transition>
 
-      <!-- Game Stats Grid -->
-      <div class="grid grid-cols-3 gap-1.5 sm:gap-2 md:gap-3 lg:gap-4">
-        <div class="bg-black/40 backdrop-blur-md rounded-lg sm:rounded-xl p-3 sm:p-4 border border-purple-700/20 text-center hover:bg-purple-950/30 transition-all hover:scale-105">
-          <Icon icon="mdi:comment-question" class="w-6 h-6 sm:w-7 sm:h-7 md:w-8 md:h-8 mx-auto mb-1 sm:mb-2 text-purple-500" />
-          <p class="text-xl sm:text-2xl font-bold text-white">{{ questionCount }}</p>
-          <p class="text-purple-200/60 text-[10px] sm:text-xs">Questions</p>
+      <!-- Game Stats - Matching Most Likely To Style -->
+      <div class="grid grid-cols-2 gap-4">
+        <div class="bg-black/40 backdrop-blur-md rounded-xl p-4 border border-purple-600/20 text-center hover:bg-purple-950/30 transition-all">
+          <Icon icon="mdi:star-circle" class="w-8 h-8 mx-auto mb-2 text-purple-500" />
+          <p class="text-2xl font-bold text-white">{{ questionCount }}</p>
+          <p class="text-purple-200/60 text-sm">Questions Asked</p>
         </div>
         
-        <div class="bg-black/40 backdrop-blur-md rounded-lg sm:rounded-xl p-3 sm:p-4 border border-pink-700/20 text-center hover:bg-pink-950/30 transition-all hover:scale-105">
-          <Icon icon="mdi:check-decagram" class="w-6 h-6 sm:w-7 sm:h-7 md:w-8 md:h-8 mx-auto mb-1 sm:mb-2 text-pink-500" />
-          <p class="text-xl sm:text-2xl font-bold text-white">{{ confessionCount }}</p>
-          <p class="text-pink-200/60 text-[10px] sm:text-xs">Confessions</p>
-        </div>
-        
-        <div class="bg-black/40 backdrop-blur-md rounded-lg sm:rounded-xl p-3 sm:p-4 border border-cyan-700/20 text-center hover:bg-cyan-950/30 transition-all hover:scale-105">
-          <Icon icon="mdi:glass-cocktail" class="w-6 h-6 sm:w-7 sm:h-7 md:w-8 md:h-8 mx-auto mb-1 sm:mb-2 text-cyan-500" />
-          <p class="text-xl sm:text-2xl font-bold text-white">{{ penaltyCount }}</p>
-          <p class="text-cyan-200/60 text-[10px] sm:text-xs">Drinks</p>
+        <div class="bg-black/40 backdrop-blur-md rounded-xl p-4 border border-pink-600/20 text-center hover:bg-pink-950/30 transition-all">
+          <Icon icon="mdi:glass-cocktail" class="w-8 h-8 mx-auto mb-2 text-pink-500" />
+          <p class="text-2xl font-bold text-white">{{ penaltyCount }}</p>
+          <p class="text-pink-200/60 text-sm">Penalties Given</p>
         </div>
       </div>
     </div>
@@ -180,6 +175,14 @@ const penaltyCount = ref(0);
 // Computed from store
 const roundCount = computed(() => gameStore.currentRound);
 
+// Remove "Never have I ever" prefix from question text for display
+const questionTextWithoutPrefix = computed(() => {
+  if (!question.value?.text) return ''
+  const text = question.value.text
+  // Remove "Never have I ever" or "Never Have I Ever" prefix (case insensitive)
+  return text.replace(/^never\s+have\s+i\s+ever\s+/i, '').trim() || text
+})
+
 // Initialize analytics
 const { trackPageView, updateActivity } = useAnalytics();
 
@@ -205,9 +208,9 @@ const fetchAnother = () => {
   const result = questionTracker.getNextQuestion();
   let questionText = result.question;
   
-  // Adapt question for context
-  const intensity = groupGame.getIntensityFilter();
-  questionText = groupGame.adaptQuestion(questionText, intensity);
+  // Don't adapt Never Have I Ever questions - they should stay as-is
+  // The adaptQuestion function was replacing them with Truth-style icebreakers
+  // questionText = groupGame.adaptQuestion(questionText, intensity);
   
   // Log usage stats for debugging
   const stats = questionTracker.getUsageStats.value;
@@ -262,15 +265,23 @@ async function loadQuestions() {
   try {
     console.log('🔄 Loading Never Have I Ever questions from database...')
     
-    // Get intensity filter from game context
-    const intensity = groupGame.getIntensityFilter()
-    console.log('📊 Requesting questions with intensity filter:', intensity)
+    // Removed intensity filter - get all questions
+    const response = await $fetch(`/api/questions/group-game?gameType=NEVER_HAVE_I_EVER&limit=200`)
+      .catch(error => {
+        console.error('❌ API call failed:', error)
+        console.error('Error details:', error.message, error.data, error.statusCode)
+        throw new Error(`Failed to fetch questions: ${error.message || 'Unknown error'}`)
+      })
     
-    const response = await $fetch(`/api/questions/group-game?gameType=NEVER_HAVE_I_EVER&intensity=${intensity}&limit=200`)
     console.log('✅ Never Have I Ever API response:', response)
     console.log('📦 Questions array:', response?.questions)
     
-    const questions = response?.questions || []
+    if (!response || !response.questions) {
+      console.error('❌ Invalid API response structure:', response)
+      throw new Error('Invalid API response structure')
+    }
+    
+    const questions = response.questions || []
     
     if (!Array.isArray(questions)) {
       console.error('❌ Questions is not an array:', typeof questions, questions)
@@ -278,8 +289,11 @@ async function loadQuestions() {
     }
     
     if (questions.length === 0) {
-      console.warn('⚠️ No questions returned from API')
+      console.error('❌ No questions returned from API - database may be empty!')
+      throw new Error('No questions returned from API')
     }
+    
+    console.log(`✅ Successfully received ${questions.length} questions from API`)
     
     // Extract text from questions (questions come as objects: {id, text, intensity})
     const questionTexts = questions
@@ -314,25 +328,8 @@ async function loadQuestions() {
   } catch (error) {
     console.error('❌ Error loading Never Have I Ever questions:', error)
     console.error('Error details:', error.message, error.stack)
-    // Fallback questions
-    questionTracker = useNeverHaveIEverTracker([
-      'kissed someone in public',
-      'lied to get out of trouble',
-      'pretended to be sick to skip work/school',
-      'stalked someone on social media',
-      'sent a text to the wrong person',
-      'danced in the rain',
-      'sung karaoke',
-      'tried to learn a new language',
-      'watched a movie alone in a theater',
-      'eaten food off the floor',
-      'fallen asleep in class',
-      'cried during a movie',
-      'pretended to know a song',
-      'googled yourself'
-    ])
-    questionTracker.initializeTracker();
-    console.log('⚠️ Using fallback Never Have I Ever questions')
+    // Don't use fallback - rethrow error so it can be handled in onMounted
+    throw error
   }
 }
 
@@ -348,8 +345,13 @@ onMounted(async () => {
     }
     
     // Load questions from database
-    await loadQuestions()
-    fetchAnother();
+    try {
+      await loadQuestions()
+      fetchAnother();
+    } catch (error) {
+      console.error('Failed to load questions:', error)
+      question.value = { text: 'Error loading questions. Please refresh the page or contact support.' }
+    }
   }
 });
 </script>

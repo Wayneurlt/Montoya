@@ -163,7 +163,10 @@
             <div class="text-center relative z-10">
               <p class="text-4xl font-black mb-4 drop-shadow-lg">Do or Drink</p>
               <p v-if="!currentCard" class="text-xl opacity-90 font-semibold">
-                Draw a card to begin the game
+                Click to draw a card
+              </p>
+              <p v-else-if="!cardFlipped" class="text-xl opacity-90 font-bold">
+                Click to reveal challenge
               </p>
               <p v-else class="text-xl opacity-90 font-bold">
                 Level {{ currentCard?.intensity }} Challenge
@@ -242,12 +245,13 @@
         </div>
       </div>
 
-      <!-- Action Buttons -->
-      <div class="grid grid-cols-2 gap-4 mb-6">
+      <!-- Action Buttons - Simplified -->
+      <div class="grid grid-cols-1 gap-4 mb-6">
         <button
+          v-if="!currentCard"
           @click="drawCard"
-          :disabled="isDrawing || currentCard"
-          class="group bg-gradient-to-r from-purple-700 to-pink-700 hover:from-purple-600 hover:to-pink-600 py-4 rounded-2xl font-black text-lg transition-all flex items-center justify-center gap-3 disabled:opacity-50 disabled:cursor-not-allowed shadow-xl hover:shadow-purple-600/50 border-2 border-purple-500/30 hover:scale-105"
+          :disabled="isDrawing"
+          class="group bg-gradient-to-r from-purple-700 to-pink-700 hover:from-purple-600 hover:to-pink-600 py-5 rounded-2xl font-black text-lg transition-all flex items-center justify-center gap-3 disabled:opacity-50 disabled:cursor-not-allowed shadow-xl hover:shadow-purple-600/50 border-2 border-purple-500/30 hover:scale-105"
         >
           <Icon
             v-if="isDrawing"
@@ -255,16 +259,28 @@
             class="w-6 h-6"
           />
           <Icon v-else icon="mdi:cards" class="w-6 h-6 group-hover:rotate-12 transition-transform" />
-          {{ isDrawing ? "Generating..." : "Draw Card" }}
+          {{ isDrawing ? "Drawing..." : "Draw Card" }}
         </button>
-        <button
-          @click="completeChallenge"
-          :disabled="!currentCard || !cardFlipped"
-          class="group bg-gradient-to-r from-pink-700 to-purple-700 hover:from-pink-600 hover:to-purple-600 py-4 rounded-2xl font-black text-lg transition-all flex items-center justify-center gap-3 disabled:opacity-50 disabled:cursor-not-allowed shadow-xl hover:shadow-pink-600/50 border-2 border-pink-500/30 hover:scale-105"
-        >
-          <Icon icon="mdi:check-bold" class="w-6 h-6 group-hover:scale-110 transition-transform" />
-          Completed
-        </button>
+        <div v-else-if="currentCard && !cardFlipped" class="text-center">
+          <p class="text-sm text-white/70 mb-2">Card drawn! Click the card above to reveal the challenge</p>
+        </div>
+        <div v-else class="grid grid-cols-2 gap-4">
+          <button
+            @click="completeChallenge"
+            class="group bg-gradient-to-r from-green-700 to-emerald-700 hover:from-green-600 hover:to-emerald-600 py-4 rounded-2xl font-black text-lg transition-all flex items-center justify-center gap-3 shadow-xl hover:shadow-green-600/50 border-2 border-green-500/30 hover:scale-105"
+          >
+            <Icon icon="mdi:check-bold" class="w-6 h-6 group-hover:scale-110 transition-transform" />
+            Completed
+          </button>
+          <button
+            @click="drawCard"
+            :disabled="isDrawing"
+            class="group bg-gradient-to-r from-purple-700 to-pink-700 hover:from-purple-600 hover:to-pink-600 py-4 rounded-2xl font-black text-lg transition-all flex items-center justify-center gap-3 disabled:opacity-50 disabled:cursor-not-allowed shadow-xl hover:shadow-purple-600/50 border-2 border-purple-500/30 hover:scale-105"
+          >
+            <Icon icon="mdi:refresh" class="w-6 h-6 group-hover:rotate-180 transition-transform" />
+            Next Card
+          </button>
+        </div>
       </div>
 
       <!-- Drink Button -->
@@ -506,7 +522,7 @@ const drawCard = () => {
   if (isDrawing.value || currentCard.value) return;
 
   isDrawing.value = true;
-  cardFlipped.value = false;
+  cardFlipped.value = false; // Always start face down - user must flip
 
   try {
     currentCard.value = generateChallenge();
@@ -528,14 +544,18 @@ const drawCard = () => {
 };
 
 const flipCard = () => {
-  if (currentCard.value && !isDrawing.value) {
-    cardFlipped.value = !cardFlipped.value;
-    if (cardFlipped.value) {
-      startHesitationTimer();
-    } else {
-      clearInterval(hesitationTimer.value);
-    }
+  // If no card, draw one first
+  if (!currentCard.value && !isDrawing.value) {
+    drawCard();
+    return;
   }
+  
+  // If card exists and not flipped, flip it
+  if (currentCard.value && !cardFlipped.value && !isDrawing.value) {
+    cardFlipped.value = true;
+    startHesitationTimer();
+  }
+  // Don't allow unflipping once revealed
 };
 
 const startHesitationTimer = () => {
@@ -718,13 +738,24 @@ async function loadQuestions() {
   try {
     console.log('🔄 Loading Do or Drink questions from database...')
     
-    // Use $fetch for better Nuxt integration
+    // Removed intensity filter - get all questions
     const data = await $fetch('/api/questions/do-or-drink?limit=200')
+      .catch(error => {
+        console.error('❌ API call failed:', error)
+        console.error('Error details:', error.message, error.data, error.statusCode)
+        throw new Error(`Failed to fetch questions: ${error.message || 'Unknown error'}`)
+      })
+    
     console.log('✅ Do or Drink API response:', data)
     console.log('📦 Questions array:', data?.questions)
     
+    if (!data || !data.questions) {
+      console.error('❌ Invalid API response structure:', data)
+      throw new Error('Invalid API response structure')
+    }
+    
     // Extract questions from response
-    const questions = data?.questions || []
+    const questions = data.questions || []
     
     if (!Array.isArray(questions)) {
       console.error('❌ Questions is not an array:', typeof questions, questions)
@@ -732,8 +763,11 @@ async function loadQuestions() {
     }
     
     if (questions.length === 0) {
-      console.warn('⚠️ No questions returned from API')
+      console.error('❌ No questions returned from API - database may be empty!')
+      throw new Error('No questions returned from API')
     }
+    
+    console.log(`✅ Successfully received ${questions.length} questions from API`)
     
     // Ensure questions are strings (API returns array of strings)
     const questionTexts = questions.map(q => {
@@ -770,22 +804,8 @@ async function loadQuestions() {
   } catch (error) {
     console.error('❌ Error loading Do or Drink questions:', error)
     console.error('Error details:', error.message, error.stack)
-    // Fallback questions - only text
-    console.log('🔄 Creating fallback tracker...')
-    challengeTracker = useDoOrDrinkTracker([
-      'Give someone a compliment',
-      'Do a funny dance', 
-      'Tell a joke',
-      'Sing a song',
-      'Do 10 push-ups',
-      'Tell a funny story',
-      'Do your best impression',
-      'Dance for 30 seconds',
-      'Do a cartwheel',
-      'Imitate someone in the room'
-    ])
-    challengeTracker.initializeTracker();
-    console.log('⚠️ Using fallback Do or Drink questions')
+    // Don't use fallback - rethrow error so it can be handled in onMounted
+    throw error
   }
 }
 
@@ -802,8 +822,14 @@ onMounted(async () => {
     }
     
     // Load questions from database
-    await loadQuestions()
-    console.log('🏁 Questions loading completed')
+    try {
+      await loadQuestions()
+      console.log('🏁 Questions loading completed')
+    } catch (error) {
+      console.error('Failed to load questions:', error)
+      // Show error to user - don't silently use fallback
+      alert('Failed to load questions from database. Please refresh the page or contact support.')
+    }
   } else {
     console.log('⚠️ Not in browser environment')
   }

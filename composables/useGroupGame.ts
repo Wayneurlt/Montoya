@@ -16,17 +16,12 @@ export function useGroupGame() {
 
   /**
    * Get icebreaker prompt if needed
+   * NOTE: For Never Have I Ever, we should NOT use Truth-style icebreakers
+   * Instead, we'll skip icebreakers and use actual Never Have I Ever questions
    */
   const getIcebreakerIfNeeded = (): string | null => {
-    if (gameLogic.shouldUseIcebreaker()) {
-      const prompt = gameLogic.getIcebreakerPrompt('TRUTH')
-      if (prompt) {
-        showIcebreaker.value = true
-        icebreakerPrompt.value = prompt
-        return prompt
-      }
-    }
-    showIcebreaker.value = false
+    // Disable icebreakers for Never Have I Ever - use actual questions instead
+    // Icebreakers are Truth-style questions which don't fit Never Have I Ever format
     return null
   }
 
@@ -76,6 +71,7 @@ export function useGroupGame() {
   return {
     showIcebreaker,
     icebreakerPrompt,
+    getIcebreakerIfNeeded,
     adaptQuestion,
     completeRound,
     getIntensityFilter,

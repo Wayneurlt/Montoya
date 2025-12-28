@@ -2,7 +2,6 @@ import prisma from '~/lib/prisma'
 
 export default defineEventHandler(async (event) => {
   const query = getQuery(event)
-  const intensity = query.intensity ? parseInt(query.intensity as string) : undefined
   const limit = query.limit ? parseInt(query.limit as string) : 50
 
   try {
@@ -11,9 +10,7 @@ export default defineEventHandler(async (event) => {
       type: 'DO'
     }
 
-    if (intensity) {
-      where.intensity = { lte: intensity }
-    }
+    // Removed intensity filtering - get all questions regardless of intensity
 
     console.log('🔍 Do or Drink query where:', JSON.stringify(where, null, 2))
 
@@ -39,7 +36,12 @@ export default defineEventHandler(async (event) => {
     }
 
     return {
-      questions: questions.map(q => q.text)
+      questions: questions.map(q => ({
+        id: q.id,
+        text: q.text,
+        intensity: q.intensity,
+        drinkAmount: q.drinkAmount
+      }))
     }
   } catch (error) {
     console.error('Error fetching do or drink questions:', error)
