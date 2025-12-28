@@ -16,12 +16,14 @@ export default defineEventHandler(async (event) => {
   try {
     const where: any = {
       gameType,
-      isActive: true
+      isActive: true  // Only get active questions
     }
 
     if (intensity) {
       where.intensity = { lte: intensity }
     }
+
+    console.log(`🔍 Group Game query for ${gameType}:`, JSON.stringify(where, null, 2))
 
     const questions = await prisma.groupGameQuestion.findMany({
       where,
@@ -36,6 +38,11 @@ export default defineEventHandler(async (event) => {
       take: limit
     })
 
+    console.log(`📊 Found ${questions.length} questions for ${gameType}`)
+    if (questions.length === 0) {
+      console.warn(`⚠️ No questions found in database for ${gameType}`)
+    }
+
     return {
       questions: questions.map(q => ({
         id: q.id,
@@ -49,7 +56,5 @@ export default defineEventHandler(async (event) => {
       statusCode: 500,
       statusMessage: 'Failed to fetch questions'
     })
-  } finally {
-    await prisma.$disconnect()
   }
 })

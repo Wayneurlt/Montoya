@@ -8,8 +8,8 @@ export default defineEventHandler(async (event) => {
 
   try {
     const where: any = {
-      gameType: 'TRUTH_OR_DARE',
-      isCustom: false
+      gameType: 'TRUTH_OR_DARE'
+      // Removed isCustom filter to include all questions
     }
 
     if (type) {
@@ -19,6 +19,8 @@ export default defineEventHandler(async (event) => {
     if (intensity) {
       where.intensity = { lte: intensity }
     }
+
+    console.log('🔍 Truth or Dare query where:', JSON.stringify(where, null, 2))
 
     const questions = await prisma.gameCard.findMany({
       where,
@@ -34,6 +36,8 @@ export default defineEventHandler(async (event) => {
       take: limit
     })
 
+    console.log(`📊 Found ${questions.length} questions for type: ${type || 'ALL'}`)
+
     return {
       questions: questions.map(q => ({
         id: q.id,
@@ -48,7 +52,5 @@ export default defineEventHandler(async (event) => {
       statusCode: 500,
       statusMessage: 'Failed to fetch questions'
     })
-  } finally {
-    await prisma.$disconnect()
   }
 })

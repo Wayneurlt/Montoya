@@ -213,3 +213,12 @@ model Analytics {
   @@index([eventType])
   @@index([timestamp])
 }
+
+model AgeConfirmation {
+  id          Int      @id @default(autoincrement())
+  ipAddress   String?  // Optional: track IP for analytics
+  userAgent   String?  // Optional: track browser/device
+  confirmedAt DateTime @default(now())
+  
+  @@index([confirmedAt])
+}

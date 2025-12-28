@@ -718,37 +718,71 @@ async function loadQuestions() {
   try {
     console.log('🔄 Loading Do or Drink questions from database...')
     
-    // Use standard fetch instead of $fetch to avoid potential issues
-    const response = await fetch('/api/questions/do-or-drink?limit=100')
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`)
+    // Use $fetch for better Nuxt integration
+    const data = await $fetch('/api/questions/do-or-drink?limit=200')
+    console.log('✅ Do or Drink API response:', data)
+    console.log('📦 Questions array:', data?.questions)
+    
+    // Extract questions from response
+    const questions = data?.questions || []
+    
+    if (!Array.isArray(questions)) {
+      console.error('❌ Questions is not an array:', typeof questions, questions)
+      throw new Error('Questions is not an array')
     }
     
-    const data = await response.json()
-    console.log('Do or Drink API response:', data)
-    const questions = data.questions || []
+    if (questions.length === 0) {
+      console.warn('⚠️ No questions returned from API')
+    }
     
-    console.log('Questions array:', questions)
-    console.log('Questions length:', questions.length)
-    console.log('First question:', questions[0])
+    // Ensure questions are strings (API returns array of strings)
+    const questionTexts = questions.map(q => {
+      if (typeof q === 'string') {
+        return q
+      }
+      if (q && typeof q === 'object' && q.text) {
+        return q.text
+      }
+      return String(q)
+    }).filter(q => q && q.trim().length > 0)
     
-    // Create tracker with loaded questions - questions are now just strings
-    console.log('🔧 Creating tracker with questions:', questions)
-    challengeTracker = useDoOrDrinkTracker(questions)
-    console.log('📊 Tracker created:', challengeTracker)
+    console.log('📋 Processed questions:', questionTexts)
+    console.log('📊 Questions length:', questionTexts.length)
+    if (questionTexts.length > 0) {
+      console.log('✅ First question:', questionTexts[0])
+    }
+    
+    if (questionTexts.length === 0) {
+      console.error('❌ No valid questions found after processing')
+      throw new Error('No questions found in database')
+    }
+    
+    // Create tracker with loaded questions
+    console.log('🔧 Creating tracker with questions:', questionTexts.length, 'questions')
+    challengeTracker = useDoOrDrinkTracker(questionTexts)
+    console.log('📊 Tracker created:', challengeTracker ? 'SUCCESS' : 'FAILED')
     
     challengeTracker.initializeTracker();
     console.log('✅ Tracker initialized')
+    console.log(`📈 Tracker stats: ${challengeTracker.getUsageStats.value.totalQuestions} total questions`)
     
-    console.log(`✅ Loaded ${questions.length} Do or Drink questions`)
+    console.log(`✅ Loaded ${questionTexts.length} Do or Drink questions`)
   } catch (error) {
     console.error('❌ Error loading Do or Drink questions:', error)
+    console.error('Error details:', error.message, error.stack)
     // Fallback questions - only text
     console.log('🔄 Creating fallback tracker...')
     challengeTracker = useDoOrDrinkTracker([
       'Give someone a compliment',
       'Do a funny dance', 
-      'Tell a joke'
+      'Tell a joke',
+      'Sing a song',
+      'Do 10 push-ups',
+      'Tell a funny story',
+      'Do your best impression',
+      'Dance for 30 seconds',
+      'Do a cartwheel',
+      'Imitate someone in the room'
     ])
     challengeTracker.initializeTracker();
     console.log('⚠️ Using fallback Do or Drink questions')

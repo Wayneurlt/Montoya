@@ -264,24 +264,72 @@ async function loadQuestions() {
     
     // Get intensity filter from game context
     const intensity = groupGame.getIntensityFilter()
-    const response = await $fetch(`/api/questions/group-game?gameType=NEVER_HAVE_I_EVER&intensity=${intensity}&limit=100`)
-    console.log('Never Have I Ever API response:', response)
-    const questions = response.questions || []
+    console.log('📊 Requesting questions with intensity filter:', intensity)
+    
+    const response = await $fetch(`/api/questions/group-game?gameType=NEVER_HAVE_I_EVER&intensity=${intensity}&limit=200`)
+    console.log('✅ Never Have I Ever API response:', response)
+    console.log('📦 Questions array:', response?.questions)
+    
+    const questions = response?.questions || []
+    
+    if (!Array.isArray(questions)) {
+      console.error('❌ Questions is not an array:', typeof questions, questions)
+      throw new Error('Questions is not an array')
+    }
+    
+    if (questions.length === 0) {
+      console.warn('⚠️ No questions returned from API')
+    }
+    
+    // Extract text from questions (questions come as objects: {id, text, intensity})
+    const questionTexts = questions
+      .map(q => {
+        if (typeof q === 'string') {
+          return q
+        }
+        if (q && typeof q === 'object' && q.text) {
+          return q.text
+        }
+        return String(q)
+      })
+      .filter(q => q && q.trim().length > 0)
+    
+    console.log(`✅ Extracted ${questionTexts.length} question texts`)
+    if (questionTexts.length > 0) {
+      console.log('✅ Sample question:', questionTexts[0])
+    }
+    
+    if (questionTexts.length === 0) {
+      console.error('❌ No valid questions found after processing')
+      throw new Error('No questions found in database')
+    }
     
     // Create tracker with loaded questions
-    questionTracker = useNeverHaveIEverTracker(questions.map(q => q.text))
+    console.log('🔧 Creating tracker with', questionTexts.length, 'questions')
+    questionTracker = useNeverHaveIEverTracker(questionTexts)
     questionTracker.initializeTracker();
     
-    console.log(`✅ Loaded ${questions.length} Never Have I Ever questions`)
+    console.log(`✅ Loaded ${questionTexts.length} Never Have I Ever questions`)
+    console.log(`📈 Tracker stats: ${questionTracker.getUsageStats.value.totalQuestions} total questions`)
   } catch (error) {
     console.error('❌ Error loading Never Have I Ever questions:', error)
+    console.error('Error details:', error.message, error.stack)
     // Fallback questions
     questionTracker = useNeverHaveIEverTracker([
       'kissed someone in public',
       'lied to get out of trouble',
       'pretended to be sick to skip work/school',
       'stalked someone on social media',
-      'sent a text to the wrong person'
+      'sent a text to the wrong person',
+      'danced in the rain',
+      'sung karaoke',
+      'tried to learn a new language',
+      'watched a movie alone in a theater',
+      'eaten food off the floor',
+      'fallen asleep in class',
+      'cried during a movie',
+      'pretended to know a song',
+      'googled yourself'
     ])
     questionTracker.initializeTracker();
     console.log('⚠️ Using fallback Never Have I Ever questions')

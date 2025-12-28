@@ -9,14 +9,13 @@ export default defineEventHandler(async (event) => {
     const where: any = {
       gameType: 'DO_OR_DRINK',
       type: 'DO'
-      // Removed isCustom: false filter to see all questions
     }
 
     if (intensity) {
       where.intensity = { lte: intensity }
     }
 
-    console.log('🔍 Database query where clause:', JSON.stringify(where, null, 2))
+    console.log('🔍 Do or Drink query where:', JSON.stringify(where, null, 2))
 
     const questions = await prisma.gameCard.findMany({
       where,
@@ -32,8 +31,12 @@ export default defineEventHandler(async (event) => {
       take: limit
     })
 
-    console.log('Database query result:', questions.length, 'questions found')
-    console.log('Sample question:', questions[0])
+    console.log(`📊 Found ${questions.length} Do or Drink questions`)
+    if (questions.length > 0) {
+      console.log('Sample question:', questions[0])
+    } else {
+      console.warn('⚠️ No questions found in database for DO_OR_DRINK')
+    }
 
     return {
       questions: questions.map(q => q.text)
@@ -44,7 +47,5 @@ export default defineEventHandler(async (event) => {
       statusCode: 500,
       statusMessage: 'Failed to fetch questions'
     })
-  } finally {
-    await prisma.$disconnect()
   }
 })
