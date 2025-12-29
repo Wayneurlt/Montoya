@@ -11,10 +11,16 @@
     >
       <!-- Home Button & Info -->
       <div class="flex justify-between items-center mb-6">
-        <NuxtLink to="/" class="bg-white/10 hover:bg-white/20 backdrop-blur-md px-4 py-2 rounded-xl transition-all duration-300 flex items-center gap-2 border border-white/20 hover:scale-105 shadow-lg">
-          <Icon icon="mdi:home" class="w-5 h-5" />
-          <span class="font-medium">Home</span>
-        </NuxtLink>
+        <div class="flex gap-2">
+          <NuxtLink to="/" class="bg-white/10 hover:bg-white/20 backdrop-blur-md px-4 py-2 rounded-xl transition-all duration-300 flex items-center gap-2 border border-white/20 hover:scale-105 shadow-lg">
+            <Icon icon="mdi:home" class="w-5 h-5" />
+            <span class="font-medium">Home</span>
+          </NuxtLink>
+          <NuxtLink to="/setup?step=game-selection" class="bg-white/10 hover:bg-white/20 backdrop-blur-md px-4 py-2 rounded-xl transition-all duration-300 flex items-center gap-2 border border-white/20 hover:scale-105 shadow-lg">
+            <Icon icon="mdi:arrow-left" class="w-5 h-5" />
+            <span class="font-medium">Back</span>
+          </NuxtLink>
+        </div>
         
         <div class="flex items-center gap-2">
           <span

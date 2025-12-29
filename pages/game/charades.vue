@@ -11,10 +11,16 @@
     >
       <!-- Home Button & Info -->
       <div class="flex justify-between items-center mb-4 sm:mb-5 md:mb-6 gap-2">
-        <NuxtLink to="/" class="bg-white/10 hover:bg-white/20 backdrop-blur-md px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg sm:rounded-xl transition-all duration-300 flex items-center gap-1.5 sm:gap-2 border border-white/20 hover:scale-105 shadow-lg text-sm sm:text-base">
-          <Icon icon="mdi:home" class="w-4 h-4 sm:w-5 sm:h-5" />
-          <span class="font-medium">Home</span>
-        </NuxtLink>
+        <div class="flex gap-2">
+          <NuxtLink to="/" class="bg-white/10 hover:bg-white/20 backdrop-blur-md px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg sm:rounded-xl transition-all duration-300 flex items-center gap-1.5 sm:gap-2 border border-white/20 hover:scale-105 shadow-lg text-sm sm:text-base">
+            <Icon icon="mdi:home" class="w-4 h-4 sm:w-5 sm:h-5" />
+            <span class="font-medium">Home</span>
+          </NuxtLink>
+          <NuxtLink to="/setup?step=game-selection" class="bg-white/10 hover:bg-white/20 backdrop-blur-md px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg sm:rounded-xl transition-all duration-300 flex items-center gap-1.5 sm:gap-2 border border-white/20 hover:scale-105 shadow-lg text-sm sm:text-base">
+            <Icon icon="mdi:arrow-left" class="w-4 h-4 sm:w-5 sm:h-5" />
+            <span class="font-medium">Back</span>
+          </NuxtLink>
+        </div>
         
         <div class="flex items-center gap-1.5 sm:gap-2">
           <span class="text-xs sm:text-sm px-2 sm:px-3 py-1 sm:py-1.5 rounded-full bg-green-500/20 text-green-300 border border-green-400/30 shadow-md whitespace-nowrap">

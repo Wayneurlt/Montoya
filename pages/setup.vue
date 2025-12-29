@@ -70,60 +70,8 @@
         </div>
       </div>
 
-      <!-- Step 0: Relationship Type (Adult Mode Only) -->
+      <!-- Step 0: Game Mode (Adult Mode Only) -->
       <div v-if="!isFamilyMode && currentStep === 0" class="space-y-4 md:space-y-6">
-        <div class="text-center mb-4 md:mb-6">
-          <Icon icon="mdi:heart-multiple" class="w-12 h-12 sm:w-14 sm:h-14 md:w-16 md:h-16 mx-auto mb-3 md:mb-4 text-pink-400" />
-          <h3 class="text-xl sm:text-2xl font-bold mb-2">How do you know each other?</h3>
-          <p class="text-sm sm:text-base md:text-lg text-white/80 px-2">
-            This helps us recommend the best games for your group
-          </p>
-        </div>
-
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-4">
-          <button
-            v-for="type in relationshipTypes"
-            :key="type.value"
-            @click="gameStore.setRelationshipType(type.value)"
-            :class="{
-              'bg-gradient-to-r from-purple-600 to-pink-600 scale-105 ring-4 ring-purple-400/50':
-                gameStore.relationshipType === type.value,
-              'bg-white/10 hover:bg-white/20': gameStore.relationshipType !== type.value,
-            }"
-            class="p-4 sm:p-5 md:p-6 rounded-lg sm:rounded-xl transition-all duration-300 text-left"
-          >
-            <div class="flex items-center gap-2 sm:gap-3 mb-1 sm:mb-2">
-              <Icon :icon="type.icon" class="w-6 h-6 sm:w-7 sm:h-7 md:w-8 md:h-8 flex-shrink-0" />
-              <h3 class="text-base sm:text-lg md:text-xl font-bold">{{ type.label }}</h3>
-            </div>
-            <p class="text-xs sm:text-sm text-white/70">{{ type.description }}</p>
-          </button>
-        </div>
-
-        <!-- Ice Breaker Option for Strangers -->
-        <div v-if="gameStore.relationshipType === 'strangers'" class="mt-6 bg-gradient-to-r from-cyan-500/20 to-blue-500/20 border-2 border-cyan-400/50 rounded-lg sm:rounded-xl p-4 sm:p-5">
-          <div class="flex items-start gap-3">
-            <Icon icon="mdi:lightbulb-on" class="w-6 h-6 sm:w-7 sm:h-7 text-cyan-400 flex-shrink-0 mt-1" />
-            <div>
-              <h4 class="font-bold text-base sm:text-lg mb-2 text-cyan-300">💡 Ice Breaker Mode</h4>
-              <p class="text-sm sm:text-base text-white/80 mb-3">
-                Start with lighter, conversation-friendly prompts to help everyone get comfortable before diving into the main game.
-              </p>
-              <label class="flex items-center gap-2 cursor-pointer">
-                <input
-                  type="checkbox"
-                  v-model="enableIceBreaker"
-                  class="w-5 h-5 rounded accent-purple-600"
-                />
-                <span class="text-sm sm:text-base font-medium">Enable Ice Breaker Mode</span>
-              </label>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- Step 1: Game Mode (Adult Mode Only) -->
-      <div v-if="!isFamilyMode && currentStep === 1" class="space-y-4 md:space-y-6">
         <div class="text-center mb-4 md:mb-6">
           <Icon icon="mdi:gamepad-variant" class="w-12 h-12 sm:w-14 sm:h-14 md:w-16 md:h-16 mx-auto mb-3 md:mb-4 text-cyan-400" />
           <h3 class="text-xl sm:text-2xl font-bold mb-2">Choose Your Game Mode</h3>
@@ -153,8 +101,8 @@
         </div>
       </div>
 
-      <!-- Step 2: Player Management (Adult Mode) / Step 0 (Family Mode) -->
-      <div v-if="(isFamilyMode && currentStep === 0) || (!isFamilyMode && currentStep === 2)" class="space-y-4 md:space-y-6">
+      <!-- Step 1: Player Management (Adult Mode) / Step 0 (Family Mode) -->
+      <div v-if="(isFamilyMode && currentStep === 0) || (!isFamilyMode && currentStep === 1)" class="space-y-4 md:space-y-6">
         <div class="text-center mb-4 md:mb-6">
           <Icon icon="mdi:account-multiple" class="w-12 h-12 sm:w-14 sm:h-14 md:w-16 md:h-16 mx-auto mb-3 md:mb-4 text-pink-400" />
           <h3 class="text-xl sm:text-2xl font-bold mb-2">Add Players</h3>
@@ -260,7 +208,7 @@
               </div>
             </div>
             
-            <!-- Pairing Section (Relationship Mode Only) -->
+            <!-- Pairing Section (Paired Mode Only) -->
             <div v-if="!isFamilyMode && gameStore.gameMode === 'relationship' && tempPlayers[index].name.trim() !== ''" class="mt-3 pt-3 border-t border-white/10">
               <div class="flex items-center justify-between gap-2">
                 <span class="text-xs sm:text-sm text-white/70 flex items-center gap-1">
@@ -299,7 +247,7 @@
           </div>
         </div>
         
-        <!-- Pairing Status (Relationship Mode) -->
+        <!-- Pairing Status (Paired Mode) -->
         <div v-if="!isFamilyMode && gameStore.gameMode === 'relationship' && tempPlayers.length >= 2" class="mt-4 bg-gradient-to-r from-pink-500/20 to-purple-500/20 border-2 border-pink-400/50 rounded-lg sm:rounded-xl p-3 sm:p-4">
           <div class="flex items-center gap-2 mb-2">
             <Icon icon="mdi:heart-multiple" class="w-5 h-5 text-pink-400" />
@@ -331,56 +279,19 @@
         </div>
       </div>
 
-      <!-- Step 3: Comfort Level (Adult Mode Only) -->
-      <div v-if="!isFamilyMode && currentStep === 3" class="space-y-4 md:space-y-6">
-        <div class="text-center mb-4 md:mb-6">
-          <Icon icon="mdi:fire" class="w-12 h-12 sm:w-14 sm:h-14 md:w-16 md:h-16 mx-auto mb-3 md:mb-4 text-orange-400" />
-          <p class="text-sm sm:text-base md:text-lg text-white/80 px-2">
-            How wild are you willing to get?
-          </p>
-        </div>
-
-        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 md:gap-4">
-          <button
-            v-for="level in comfortLevels"
-            :key="level.value"
-            @click="gameStore.setComfortLevel(level.value)"
-            :class="{
-              'bg-gradient-to-r from-purple-600 to-pink-600 scale-105 ring-4 ring-purple-400/50':
-                gameStore.comfortLevel === level.value,
-              'bg-white/10 hover:bg-white/20': gameStore.comfortLevel !== level.value,
-            }"
-            class="p-4 sm:p-5 md:p-6 rounded-lg sm:rounded-xl transition-all duration-300 text-center"
-          >
-            <div class="text-3xl sm:text-4xl md:text-5xl mb-2 sm:mb-3">{{ level.emoji }}</div>
-            <h3 class="text-base sm:text-lg md:text-xl font-bold mb-1 sm:mb-2">{{ level.label }}</h3>
-            <p class="text-xs sm:text-sm text-white/70">{{ level.description }}</p>
-          </button>
-        </div>
-      </div>
-
-      <!-- Step 4: Game Selection (Adult Mode) / Step 1 (Family Mode) -->
-      <div v-if="(isFamilyMode && currentStep === 1) || (!isFamilyMode && currentStep === 4)" class="space-y-4 md:space-y-6">
+      <!-- Step 2: Game Selection (Adult Mode) / Step 1 (Family Mode) -->
+      <div v-if="(isFamilyMode && currentStep === 1) || (!isFamilyMode && currentStep === 2)" class="space-y-4 md:space-y-6">
         <!-- Game Selection -->
-        <div class="mt-6 md:mt-8">
+        <div class="mt-4 md:mt-6">
           <h3 class="text-lg sm:text-xl font-semibold mb-3 md:mb-4 text-center px-2">Choose Your Game</h3>
-          
-          <!-- Recommended Games Badge -->
-          <div v-if="recommendedGames.length > 0" class="mb-4 bg-gradient-to-r from-cyan-500/20 to-blue-500/20 border border-cyan-400/50 rounded-lg px-4 py-3">
-            <div class="flex items-center gap-2 mb-2">
-              <Icon icon="mdi:star" class="w-5 h-5 text-cyan-400" />
-              <span class="font-bold text-sm sm:text-base text-cyan-300">Recommended for {{ getRelationshipLabel() }}</span>
-            </div>
-            <p class="text-xs sm:text-sm text-white/70">{{ getRecommendationText() }}</p>
-          </div>
 
           <!-- Adult Games Section (Adult Mode Only) -->
-          <div v-if="!isFamilyMode" class="mb-8">
-            <h4 class="text-base sm:text-lg font-bold mb-4 text-pink-300 flex items-center gap-2">
+          <div v-if="!isFamilyMode" class="mb-6">
+            <h4 class="text-base sm:text-lg font-bold mb-3 text-pink-300 flex items-center gap-2">
               <Icon icon="mdi:fire" class="w-5 h-5" />
               🔥 Adult Games
             </h4>
-            <div class="grid grid-cols-2 sm:grid-cols-3 gap-3 sm:gap-4">
+            <div class="grid grid-cols-2 sm:grid-cols-3 gap-2 sm:gap-3">
               <button
                 v-for="game in availableGames.filter(g => !g.familyFriendly)"
                 :key="game.value"
@@ -388,16 +299,11 @@
                 :class="{
                   'border-pink-500 bg-pink-500/20 scale-105 ring-2 ring-pink-400/50':
                     gameStore.selectedGame === game.value,
-                  'border-cyan-400 bg-cyan-500/10':
-                    isRecommended(game.value) && gameStore.selectedGame !== game.value,
                   'border-white/10 hover:border-pink-300 bg-gradient-to-br from-pink-500/10 to-purple-500/10':
-                    !isRecommended(game.value) && gameStore.selectedGame !== game.value,
+                    gameStore.selectedGame !== game.value,
                 }"
-                class="p-4 sm:p-5 border-2 rounded-xl sm:rounded-2xl transition-all flex flex-col items-center relative group hover:scale-105"
+                class="p-3 sm:p-4 border-2 rounded-xl transition-all flex flex-col items-center relative group hover:scale-105"
               >
-                <div v-if="isRecommended(game.value)" class="absolute -top-2 -right-2 bg-cyan-500 text-white text-xs px-2 py-0.5 rounded-full font-bold z-10">
-                  ⭐
-                </div>
                 <div class="w-12 h-12 sm:w-14 sm:h-14 mb-3 flex items-center justify-center text-3xl sm:text-4xl group-hover:scale-110 transition-transform">
                   <Icon :icon="game.icon" />
                 </div>
@@ -407,13 +313,13 @@
             </div>
           </div>
 
-          <!-- Family Games Section (Adult Mode) -->
+          <!-- Friendly Games Section (Adult Mode) -->
           <div v-if="!isFamilyMode" class="mb-6">
-            <h4 class="text-base sm:text-lg font-bold mb-4 text-green-300 flex items-center gap-2">
+            <h4 class="text-base sm:text-lg font-bold mb-3 text-green-300 flex items-center gap-2">
               <Icon icon="mdi:heart-multiple" class="w-5 h-5" />
-              👨‍👩‍👧‍👦 Family-Friendly Games
+              😊 Friendly Games
             </h4>
-            <div class="grid grid-cols-2 sm:grid-cols-3 gap-3 sm:gap-4">
+            <div class="grid grid-cols-2 sm:grid-cols-3 gap-2 sm:gap-3">
               <button
                 v-for="game in availableGames.filter(g => g.familyFriendly)"
                 :key="game.value"
@@ -421,16 +327,11 @@
                 :class="{
                   'border-green-500 bg-green-500/20 scale-105 ring-2 ring-green-400/50':
                     gameStore.selectedGame === game.value,
-                  'border-cyan-400 bg-cyan-500/10':
-                    isRecommended(game.value) && gameStore.selectedGame !== game.value,
                   'border-white/10 hover:border-green-300 bg-gradient-to-br from-green-500/10 to-emerald-500/10':
-                    !isRecommended(game.value) && gameStore.selectedGame !== game.value,
+                    gameStore.selectedGame !== game.value,
                 }"
                 class="p-4 sm:p-5 border-2 rounded-xl sm:rounded-2xl transition-all flex flex-col items-center relative group hover:scale-105"
               >
-                <div v-if="isRecommended(game.value)" class="absolute -top-2 -right-2 bg-cyan-500 text-white text-xs px-2 py-0.5 rounded-full font-bold z-10">
-                  ⭐
-                </div>
                 <div class="w-12 h-12 sm:w-14 sm:h-14 mb-3 flex items-center justify-center text-3xl sm:text-4xl group-hover:scale-110 transition-transform">
                   <Icon :icon="game.icon" />
                 </div>
@@ -449,16 +350,11 @@
               :class="{
                 'border-green-500 bg-green-500/20 scale-105 ring-2 ring-green-400/50':
                   gameStore.selectedGame === game.value,
-                'border-cyan-400 bg-cyan-500/10':
-                  isRecommended(game.value) && gameStore.selectedGame !== game.value,
                 'border-white/10 hover:border-green-300 bg-gradient-to-br from-green-500/10 to-emerald-500/10':
-                  !isRecommended(game.value) && gameStore.selectedGame !== game.value,
+                  gameStore.selectedGame !== game.value,
               }"
               class="p-4 sm:p-5 border-2 rounded-xl sm:rounded-2xl transition-all flex flex-col items-center relative group hover:scale-105"
             >
-              <div v-if="isRecommended(game.value)" class="absolute -top-2 -right-2 bg-cyan-500 text-white text-xs px-2 py-0.5 rounded-full font-bold z-10">
-                ⭐
-              </div>
               <div class="w-12 h-12 sm:w-14 sm:h-14 mb-3 flex items-center justify-center text-3xl sm:text-4xl group-hover:scale-110 transition-transform">
                 <Icon :icon="game.icon" />
               </div>
@@ -522,7 +418,6 @@ const tempPlayers = ref([
   { id: generateId(), name: "", gender: "male" },
   { id: generateId(), name: "", gender: "female" },
 ]);
-const enableIceBreaker = ref(false);
 
 const steps = computed(() => {
   if (isFamilyMode.value) {
@@ -538,12 +433,8 @@ const steps = computed(() => {
     ];
   }
   
-  // Adult Mode: New flow
+  // Adult Mode: Simplified flow (removed relationship type and comfort level)
   return [
-    {
-      title: "Relationship Type",
-      description: "How do you know each other?",
-    },
     {
       title: "Game Mode",
       description: "Choose your game mode",
@@ -553,63 +444,11 @@ const steps = computed(() => {
       description: "Enter player names",
     },
     {
-      title: "Comfort Level",
-      description: "How wild are you willing to get?",
-    },
-    {
       title: "Choose Game",
       description: "Pick your game",
     },
   ];
 });
-
-const relationshipTypes = [
-  {
-    value: "strangers",
-    label: "Strangers",
-    icon: "mdi:account-question",
-    description: "Just met or don't know each other well",
-  },
-  {
-    value: "friends",
-    label: "Friends",
-    icon: "mdi:account-group",
-    description: "Good friends having fun together",
-  },
-  {
-    value: "couple",
-    label: "Couple",
-    icon: "mdi:heart-multiple",
-    description: "Committed couple, comfortable with each other",
-  },
-  {
-    value: "mixed",
-    label: "Mixed Group",
-    icon: "mdi:account-multiple",
-    description: "Mix of relationships and strangers",
-  },
-];
-
-const comfortLevels = [
-  {
-    value: "chill",
-    label: "Chill",
-    emoji: "😌",
-    description: "Safe, light, public-friendly prompts",
-  },
-  {
-    value: "spicy",
-    label: "Spicy",
-    emoji: "🌶️",
-    description: "Flirty, bold, suggestive content",
-  },
-  {
-    value: "wild",
-    label: "Wild",
-    emoji: "🔥",
-    description: "Chaotic, risky, adult content",
-  },
-];
 
 const gameModes = [
   {
@@ -620,7 +459,7 @@ const gameModes = [
   },
   {
     value: "relationship",
-    label: "Relationship Mode",
+    label: "Paired Mode",
     icon: "mdi:heart",
     description: "Prompts only target paired partners",
   },
@@ -712,8 +551,8 @@ function generateId() {
 }
 
 function quickAddPlayers(count) {
-  // For relationship mode, ensure pairs of male/female
-  if (!isFamilyMode.value && gameStore.gameMode === 'relationship') {
+    // For paired mode, ensure pairs of male/female
+    if (!isFamilyMode.value && gameStore.gameMode === 'relationship') {
     tempPlayers.value = Array.from({ length: count }, (_, i) => ({
       id: generateId(),
       name: "",
@@ -813,61 +652,6 @@ const allPlayersHaveNames = computed(() => {
   return tempPlayers.value.length >= 2 && tempPlayers.value.every((p) => p.name.trim() !== "");
 });
 
-// Game recommendations based on relationship type and mode
-const recommendedGames = computed(() => {
-  const relationship = gameStore.relationshipType;
-  
-  if (!relationship && !isFamilyMode.value) return [];
-
-  // Family mode recommendations
-  if (isFamilyMode.value) {
-    return ['charades', 'imposter', 'mr-white', 'trivia'];
-  }
-
-  // Adult game recommendations by relationship
-  const recommendations = {
-    strangers: ['most-likely-to', 'would-you-rather', 'never-have-i-ever', 'charades'],
-    friends: ['never-have-i-ever', 'most-likely-to', 'truth-or-dare', 'imposter'],
-    couple: ['truth-or-dare', 'dice-of-desire', 'do-or-drink'],
-    mixed: ['most-likely-to', 'never-have-i-ever', 'would-you-rather', 'charades'],
-  };
-
-  return recommendations[relationship] || [];
-});
-
-function isRecommended(gameValue) {
-  return recommendedGames.value.includes(gameValue);
-}
-
-function getRelationshipLabel() {
-  if (isFamilyMode.value) {
-    return 'Family Mode';
-  }
-  
-  const labels = {
-    strangers: 'Strangers',
-    friends: 'Friends',
-    dating: 'Dating',
-    couple: 'Couples',
-    mixed: 'Mixed Groups',
-  };
-  return labels[gameStore.relationshipType] || 'You';
-}
-
-function getRecommendationText() {
-  if (isFamilyMode.value) {
-    return 'Kid-friendly games perfect for family gatherings and all ages!';
-  }
-  
-  const texts = {
-    strangers: 'Start with light, conversation-focused games to break the ice. Includes both adult and icebreaker games.',
-    friends: 'Perfect mix of fun revelations and daring challenges for your group.',
-    dating: 'Flirty and revealing games to deepen your connection and have fun.',
-    couple: 'Intimate and adventurous games designed to spice things up.',
-    mixed: 'Versatile games that work well for groups with mixed comfort levels.',
-  };
-  return texts[gameStore.relationshipType] || 'These games are perfect for your group!';
-}
 
 const canProceed = computed(() => {
   // Family Mode: 2 steps
@@ -879,21 +663,15 @@ const canProceed = computed(() => {
       return gameStore.selectedGame !== null;
     }
   }
-  // Adult Mode: 5 steps
+  // Adult Mode: 3 steps (removed relationship type and comfort level)
   else {
     if (currentStep.value === 0) {
-      return gameStore.relationshipType !== null;
-    }
-    if (currentStep.value === 1) {
       return gameStore.gameMode !== null;
     }
-    if (currentStep.value === 2) {
+    if (currentStep.value === 1) {
       return allPlayersHaveNames.value;
     }
-    if (currentStep.value === 3) {
-      return gameStore.comfortLevel !== null;
-    }
-    if (currentStep.value === 4) {
+    if (currentStep.value === 2) {
       return gameStore.selectedGame !== null;
     }
   }
@@ -902,14 +680,12 @@ const canProceed = computed(() => {
 
 function nextStep() {
   // Save players when moving from player step
-  if ((isFamilyMode.value && currentStep.value === 0) || (!isFamilyMode.value && currentStep.value === 2)) {
-    // For relationship mode, players are already paired manually
+  if ((isFamilyMode.value && currentStep.value === 0) || (!isFamilyMode.value && currentStep.value === 1)) {
+    // For paired mode, players are already paired manually
     gameStore.setPlayers(tempPlayers.value);
     
-    // Family Mode: Set defaults
+    // Family Mode: Set default game mode
     if (isFamilyMode.value) {
-      gameStore.setComfortLevel('chill');
-      gameStore.setRelationshipType('mixed');
       gameStore.setGameMode('free-for-all');
     }
   }
@@ -971,17 +747,29 @@ onMounted(() => {
       gameStore.setFamilyMode(false);
     }
     
-    // Check if coming from a direct game link
+    // Check if coming from a direct game link or back from game
     const gameParam = urlParams.get('game');
+    const stepParam = urlParams.get('step');
+    
     if (gameParam) {
       gameStore.setSelectedGame(gameParam);
+    }
+    
+    // If step parameter is provided, jump to that step
+    if (stepParam === 'game-selection') {
+      if (isFamilyMode.value) {
+        currentStep.value = 1;
+      } else {
+        currentStep.value = 2;
+      }
+    } else if (gameParam) {
       // Jump to last step if game is selected and setup is complete
       if (isFamilyMode.value) {
         if (gameStore.players.length >= 2) {
           currentStep.value = 1;
         }
-      } else if (gameStore.players.length >= 2 && gameStore.relationshipType && gameStore.comfortLevel) {
-        currentStep.value = 3;
+      } else if (gameStore.players.length >= 2 && gameStore.gameMode) {
+        currentStep.value = 2;
       }
     }
   }

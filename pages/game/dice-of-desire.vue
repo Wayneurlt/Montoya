@@ -35,7 +35,7 @@
               </li>
               <li>
                 <span class="font-semibold text-cyan-300"
-                  >Relationship Mode:</span
+                  >Paired Mode:</span
                 >
                 Roll only for your partner
               </li>
@@ -84,10 +84,16 @@
     <div v-else class="max-w-3xl mx-auto relative z-10">
       <!-- Header with Home Button & Game Mode -->
       <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 sm:gap-0 mb-4 sm:mb-6">
-        <NuxtLink to="/" class="bg-white/10 hover:bg-white/20 backdrop-blur-md px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg sm:rounded-xl transition-all duration-300 flex items-center gap-1.5 sm:gap-2 border border-white/20 hover:scale-105 shadow-lg text-sm sm:text-base w-full sm:w-auto justify-center sm:justify-start">
-          <Icon icon="mdi:home" class="w-4 h-4 sm:w-5 sm:h-5" />
-          <span class="font-medium">Home</span>
-        </NuxtLink>
+        <div class="flex gap-2 w-full sm:w-auto">
+          <NuxtLink to="/" class="bg-white/10 hover:bg-white/20 backdrop-blur-md px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg sm:rounded-xl transition-all duration-300 flex items-center gap-1.5 sm:gap-2 border border-white/20 hover:scale-105 shadow-lg text-sm sm:text-base flex-1 sm:flex-initial justify-center sm:justify-start">
+            <Icon icon="mdi:home" class="w-4 h-4 sm:w-5 sm:h-5" />
+            <span class="font-medium">Home</span>
+          </NuxtLink>
+          <NuxtLink to="/setup?step=game-selection" class="bg-white/10 hover:bg-white/20 backdrop-blur-md px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg sm:rounded-xl transition-all duration-300 flex items-center gap-1.5 sm:gap-2 border border-white/20 hover:scale-105 shadow-lg text-sm sm:text-base flex-1 sm:flex-initial justify-center sm:justify-start">
+            <Icon icon="mdi:arrow-left" class="w-4 h-4 sm:w-5 sm:h-5" />
+            <span class="font-medium">Back</span>
+          </NuxtLink>
+        </div>
         
         <div
           class="bg-white/10 backdrop-blur-md rounded-lg sm:rounded-xl px-3 sm:px-5 py-1.5 sm:py-2 text-xs sm:text-sm md:text-base flex items-center gap-1.5 sm:gap-2 border-2 border-white/20 shadow-lg w-full sm:w-auto justify-center sm:justify-end"
@@ -99,10 +105,10 @@
             class="w-4 h-4 sm:w-5 sm:h-5 text-pink-400"
           />
           <span class="font-bold hidden sm:inline">{{
-            gameMode === "free-for-all" ? "Free-for-All" : "Relationship"
+            gameMode === "free-for-all" ? "Free-for-All" : "Paired"
           }}</span>
           <span class="font-bold sm:hidden">{{
-            gameMode === "free-for-all" ? "FFA" : "Couple"
+            gameMode === "free-for-all" ? "FFA" : "Paired"
           }}</span>
           <span class="ml-1 px-2 sm:px-3 py-0.5 sm:py-1 rounded-full bg-pink-500/30 text-xs sm:text-sm font-bold border border-pink-400/50"
             >Lv {{ gameLevel }}</span
@@ -424,7 +430,7 @@ const targetPlayer = computed(() => {
   if (players.value.length === 0) return {};
 
   if (gameMode.value === "relationship") {
-    // In relationship mode, target is always the partner
+    // In paired mode, target is always the partner
     return (
       players.value.find((p) => p.id === currentPlayer.value.partnerId) || {}
     );

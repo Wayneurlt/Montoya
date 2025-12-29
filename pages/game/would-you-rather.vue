@@ -6,10 +6,16 @@
     <div class="max-w-5xl mx-auto relative z-10 pt-4 sm:pt-6 md:pt-8">
       <!-- Header with Home Button -->
       <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 sm:gap-0 mb-6 sm:mb-8">
-        <NuxtLink to="/" class="bg-white/10 hover:bg-white/20 backdrop-blur-md px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg sm:rounded-xl transition-all duration-300 flex items-center gap-1.5 sm:gap-2 border border-white/20 hover:scale-105 text-sm sm:text-base w-full sm:w-auto justify-center sm:justify-start">
-          <Icon icon="mdi:home" class="w-4 h-4 sm:w-5 sm:h-5" />
-          <span class="font-medium">Home</span>
-        </NuxtLink>
+        <div class="flex gap-2 w-full sm:w-auto">
+          <NuxtLink to="/" class="bg-white/10 hover:bg-white/20 backdrop-blur-md px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg sm:rounded-xl transition-all duration-300 flex items-center gap-1.5 sm:gap-2 border border-white/20 hover:scale-105 text-sm sm:text-base flex-1 sm:flex-initial justify-center sm:justify-start">
+            <Icon icon="mdi:home" class="w-4 h-4 sm:w-5 sm:h-5" />
+            <span class="font-medium">Home</span>
+          </NuxtLink>
+          <NuxtLink to="/setup?step=game-selection" class="bg-white/10 hover:bg-white/20 backdrop-blur-md px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg sm:rounded-xl transition-all duration-300 flex items-center gap-1.5 sm:gap-2 border border-white/20 hover:scale-105 text-sm sm:text-base flex-1 sm:flex-initial justify-center sm:justify-start">
+            <Icon icon="mdi:arrow-left" class="w-4 h-4 sm:w-5 sm:h-5" />
+            <span class="font-medium">Back</span>
+          </NuxtLink>
+        </div>
         
         <div class="flex items-center gap-2 w-full sm:w-auto justify-center sm:justify-end">
           <div class="bg-white/10 backdrop-blur-md px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg sm:rounded-xl border border-white/20">

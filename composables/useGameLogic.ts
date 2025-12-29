@@ -1,11 +1,7 @@
 import { computed } from 'vue'
 import { useGameStore } from '~/stores/game'
-import type { RelationshipType, ComfortLevel, GameMode } from '~/stores/game'
+import type { GameMode } from '~/stores/game'
 import {
-  shouldShowPrompt,
-  getMaxIntensityForComfortLevel,
-  getIcebreakerIntensity,
-  generateIcebreakerPrompt,
   isConnectionModePrompt,
   adaptPromptForTwoPlayer,
   shouldTriggerMirrorRound,
@@ -20,13 +16,10 @@ export function useGameLogic() {
    */
   const getPromptContext = () => {
     return {
-      relationshipType: gameStore.relationshipType!,
-      comfortLevel: gameStore.comfortLevel!,
       gameMode: gameStore.gameMode!,
       playerCount: gameStore.playerCount,
       currentRound: gameStore.currentRound,
       intensityLevel: gameStore.intensityLevel,
-      isIcebreakerPhase: gameStore.isIcebreakerPhase,
       isTwoPlayerMode: gameStore.isTwoPlayerMode,
     }
   }
@@ -39,15 +32,6 @@ export function useGameLogic() {
     promptIntensity: number
   ): string => {
     const context = getPromptContext()
-
-    // Check if we should show this prompt
-    if (!shouldShowPrompt(promptIntensity, context)) {
-      // Return a fallback prompt if intensity doesn't match
-      return generateIcebreakerPrompt(
-        gameStore.icebreakerRoundsCompleted,
-        context
-      )
-    }
 
     // Connection mode: ensure prompts are dialogue-focused
     if (context.gameMode === 'connection') {
@@ -64,40 +48,6 @@ export function useGameLogic() {
     }
 
     return prompt
-  }
-
-  /**
-   * Get icebreaker prompt if needed
-   */
-  const getIcebreakerPrompt = (type: 'TRUTH' | 'DARE'): string => {
-    if (!gameStore.shouldShowIcebreakers) {
-      return ''
-    }
-
-    const context = getPromptContext()
-    const icebreakerIntensity = getIcebreakerIntensity(
-      gameStore.icebreakerRoundsCompleted
-    )
-
-    // Generate appropriate icebreaker
-    let prompt = generateIcebreakerPrompt(
-      gameStore.icebreakerRoundsCompleted,
-      context
-    )
-
-    // For dares in connection mode, make them mutual
-    if (type === 'DARE' && context.gameMode === 'connection') {
-      prompt = `Both of you: ${prompt}`
-    }
-
-    return prompt
-  }
-
-  /**
-   * Check if we should use icebreaker
-   */
-  const shouldUseIcebreaker = (): boolean => {
-    return gameStore.shouldShowIcebreakers
   }
 
   /**
@@ -157,11 +107,6 @@ export function useGameLogic() {
    * Complete a round and advance game state
    */
   const completeRound = () => {
-    // Complete icebreaker round if in icebreaker phase
-    if (gameStore.isIcebreakerPhase) {
-      gameStore.completeIcebreakerRound()
-    }
-
     // Advance turn
     gameStore.nextTurn()
 
@@ -187,8 +132,6 @@ export function useGameLogic() {
   return {
     getPromptContext,
     adaptPrompt,
-    getIcebreakerPrompt,
-    shouldUseIcebreaker,
     getTargetPlayer,
     checkMirrorRound,
     checkGuessMode,

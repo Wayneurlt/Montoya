@@ -62,14 +62,6 @@ const saveUsedQuestions = (storageKey: string, usedSet: Set<number>) => {
   }
 }
 
-// Clear all session data (useful for new game sessions)
-export const clearAllUsedQuestions = () => {
-  if (typeof window === 'undefined') return
-  
-  Object.values(STORAGE_KEYS).forEach(key => {
-    localStorage.removeItem(key)
-  })
-}
 
 // Hook for question tracking
 export const useQuestionTracker = (questionPool: any[], storageKey: string) => {
@@ -182,31 +174,3 @@ export const useWouldYouRatherTracker = (questionPool: any[]) => {
 }
 
 // Utility function to get session statistics
-export const getSessionStats = () => {
-  if (typeof window === 'undefined') return null
-  
-  const sessionId = getSessionId()
-  const stats = {
-    sessionId,
-    games: {} as Record<string, any>
-  }
-  
-  Object.entries(STORAGE_KEYS).forEach(([game, key]) => {
-    if (key === STORAGE_KEYS.SESSION_ID) return
-    
-    try {
-      const stored = localStorage.getItem(key)
-      if (stored) {
-        const data = JSON.parse(stored)
-        stats.games[game] = {
-          usedCount: data.indices?.length || 0,
-          lastUpdated: data.timestamp
-        }
-      }
-    } catch (error) {
-      console.warn(`Failed to read stats for ${game}:`, error)
-    }
-  })
-  
-  return stats
-}

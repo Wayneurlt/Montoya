@@ -6,10 +6,16 @@
     <div class="max-w-4xl mx-auto relative z-10 pt-4 sm:pt-6 md:pt-8">
       <!-- Header with Home Button -->
       <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 sm:gap-0 mb-6 sm:mb-8">
-        <NuxtLink to="/" class="bg-white/10 hover:bg-white/20 backdrop-blur-md px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg sm:rounded-xl transition-all duration-300 flex items-center gap-1.5 sm:gap-2 border border-white/20 hover:scale-105 text-sm sm:text-base w-full sm:w-auto justify-center sm:justify-start">
-          <Icon icon="mdi:home" class="w-4 h-4 sm:w-5 sm:h-5" />
-          <span class="font-medium">Home</span>
-        </NuxtLink>
+        <div class="flex gap-2 w-full sm:w-auto">
+          <NuxtLink to="/" class="bg-white/10 hover:bg-white/20 backdrop-blur-md px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg sm:rounded-xl transition-all duration-300 flex items-center gap-1.5 sm:gap-2 border border-white/20 hover:scale-105 text-sm sm:text-base flex-1 sm:flex-initial justify-center sm:justify-start">
+            <Icon icon="mdi:home" class="w-4 h-4 sm:w-5 sm:h-5" />
+            <span class="font-medium">Home</span>
+          </NuxtLink>
+          <NuxtLink to="/setup?step=game-selection" class="bg-white/10 hover:bg-white/20 backdrop-blur-md px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg sm:rounded-xl transition-all duration-300 flex items-center gap-1.5 sm:gap-2 border border-white/20 hover:scale-105 text-sm sm:text-base flex-1 sm:flex-initial justify-center sm:justify-start">
+            <Icon icon="mdi:arrow-left" class="w-4 h-4 sm:w-5 sm:h-5" />
+            <span class="font-medium">Back</span>
+          </NuxtLink>
+        </div>
         
         <div class="flex items-center gap-2 w-full sm:w-auto justify-center sm:justify-end">
           <div class="bg-white/10 backdrop-blur-md px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg sm:rounded-xl border border-white/20">
@@ -34,17 +40,6 @@
             Never Have I Ever
           </h1>
           <p class="text-purple-200/80 text-[10px] sm:text-xs md:text-sm font-medium tracking-wide">If you have, take a drink!</p>
-        </div>
-      </div>
-
-      <!-- Icebreaker Banner -->
-      <div v-if="groupGame.showIcebreaker" class="mb-2 sm:mb-3 md:mb-4 bg-gradient-to-r from-blue-500/20 to-cyan-500/20 border-2 border-blue-400/50 rounded-lg sm:rounded-xl p-2 sm:p-3 md:p-4">
-        <div class="flex items-center gap-1.5 sm:gap-2 md:gap-3">
-          <Icon icon="mdi:ice-cream" class="w-5 h-5 sm:w-6 sm:h-6 md:w-8 md:h-8 text-cyan-400 flex-shrink-0" />
-          <div>
-            <h4 class="font-bold text-xs sm:text-sm md:text-base lg:text-lg">Icebreaker Round</h4>
-            <p class="text-[10px] sm:text-xs md:text-sm text-white/80">Starting with a light, conversation-friendly prompt</p>
-          </div>
         </div>
       </div>
 
@@ -169,7 +164,6 @@ const penaltyMessage = ref('');
 
 // Game statistics
 const questionCount = ref(0);
-const confessionCount = ref(0);
 const penaltyCount = ref(0);
 
 // Computed from store
@@ -191,14 +185,6 @@ const fetchAnother = () => {
   
   // Track user activity
   updateActivity();
-  
-  // Check for icebreaker
-  const icebreaker = groupGame.getIcebreakerIfNeeded();
-  if (icebreaker) {
-    question.value = { text: icebreaker };
-    groupGame.addToHistory(icebreaker);
-    return;
-  }
   
   if (!questionTracker) {
     question.value = { text: 'Questions are loading... Please wait.' };
@@ -223,10 +209,6 @@ const fetchAnother = () => {
 };
 
 const markAsDone = (response) => {
-  if (response === 'yes') {
-    confessionCount.value++;
-  }
-  
   // Track activity
   updateActivity();
   

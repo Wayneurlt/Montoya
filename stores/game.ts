@@ -1,7 +1,5 @@
 import { defineStore } from 'pinia'
 
-export type RelationshipType = 'strangers' | 'friends' | 'dating' | 'couple' | 'mixed'
-export type ComfortLevel = 'chill' | 'spicy' | 'wild'
 export type GameMode = 'free-for-all' | 'relationship' | 'connection'
 export type GameType = 
   // Family games
@@ -26,8 +24,6 @@ export interface Player {
 export interface GameState {
   // Setup data
   players: Player[]
-  relationshipType: RelationshipType | null
-  comfortLevel: ComfortLevel | null
   gameMode: GameMode | null
   selectedGame: GameType | null
   isFamilyMode: boolean
@@ -37,8 +33,6 @@ export interface GameState {
   currentPlayerIndex: number
   promptHistory: string[]
   skipsUsed: number
-  icebreakerRoundsCompleted: number
-  isIcebreakerPhase: boolean
   
   // Two-player specific
   isTwoPlayerMode: boolean
@@ -52,8 +46,6 @@ export interface GameState {
 export const useGameStore = defineStore('game', {
   state: (): GameState => ({
     players: [],
-    relationshipType: null,
-    comfortLevel: null,
     gameMode: null,
     selectedGame: null,
     isFamilyMode: false,
@@ -61,8 +53,6 @@ export const useGameStore = defineStore('game', {
     currentPlayerIndex: 0,
     promptHistory: [],
     skipsUsed: 0,
-    icebreakerRoundsCompleted: 0,
-    isIcebreakerPhase: true,
     isTwoPlayerMode: false,
     mirrorRoundActive: false,
     guessModeActive: false,
@@ -88,35 +78,18 @@ export const useGameStore = defineStore('game', {
         )
       }
       
-      // For adult mode, need all settings
+      // For adult mode, need players, game mode, and game selection
       return (
         state.players.length >= 2 &&
-        state.relationshipType !== null &&
-        state.comfortLevel !== null &&
         state.gameMode !== null &&
         state.selectedGame !== null &&
         state.players.every(p => p.name.trim() !== '')
       )
     },
     
-    shouldShowIcebreakers: (state): boolean => {
-      // Show icebreakers for strangers, first rounds, or connection mode
-      return (
-        state.isIcebreakerPhase &&
-        (state.relationshipType === 'strangers' ||
-         state.currentRound < 3 ||
-         state.gameMode === 'connection')
-      )
-    },
-    
     maxIntensity: (state): number => {
-      // Map comfort level to max intensity
-      switch (state.comfortLevel) {
-        case 'chill': return 2
-        case 'spicy': return 4
-        case 'wild': return 5
-        default: return 3
-      }
+      // Default to maximum intensity (wild)
+      return 5
     },
     
     targetIntensity: (state): number => {
@@ -142,7 +115,7 @@ export const useGameStore = defineStore('game', {
       this.players = players
       this.isTwoPlayerMode = players.length === 2
       
-      // Auto-enable connection mode for 2 players or strangers
+      // Auto-enable connection mode for 2 players
       if (players.length === 2 && !this.gameMode) {
         this.gameMode = 'connection'
       }
@@ -164,19 +137,6 @@ export const useGameStore = defineStore('game', {
       this.isTwoPlayerMode = this.players.length === 2
     },
     
-    setRelationshipType(type: RelationshipType) {
-      this.relationshipType = type
-      
-      // Auto-adjust game mode for strangers
-      if (type === 'strangers' && !this.gameMode) {
-        this.gameMode = 'connection'
-      }
-    },
-    
-    setComfortLevel(level: ComfortLevel) {
-      this.comfortLevel = level
-    },
-    
     setGameMode(mode: GameMode) {
       this.gameMode = mode
     },
@@ -194,10 +154,6 @@ export const useGameStore = defineStore('game', {
       this.currentPlayerIndex = (this.currentPlayerIndex + 1) % this.players.length
       if (this.currentPlayerIndex === 0) {
         this.currentRound++
-        // Check if we should exit icebreaker phase
-        if (this.isIcebreakerPhase && this.currentRound >= 3) {
-          this.isIcebreakerPhase = false
-        }
       }
     },
     
@@ -216,13 +172,6 @@ export const useGameStore = defineStore('game', {
     escalateIntensity() {
       if (this.intensityLevel < this.maxIntensity) {
         this.intensityLevel++
-      }
-    },
-    
-    completeIcebreakerRound() {
-      this.icebreakerRoundsCompleted++
-      if (this.icebreakerRoundsCompleted >= 3) {
-        this.isIcebreakerPhase = false
       }
     },
     
@@ -249,8 +198,6 @@ export const useGameStore = defineStore('game', {
       this.currentPlayerIndex = 0
       this.promptHistory = []
       this.skipsUsed = 0
-      this.icebreakerRoundsCompleted = 0
-      this.isIcebreakerPhase = true
       this.mirrorRoundActive = false
       this.guessModeActive = false
       this.intensityLevel = 1
@@ -258,8 +205,6 @@ export const useGameStore = defineStore('game', {
     
     resetSetup() {
       this.players = []
-      this.relationshipType = null
-      this.comfortLevel = null
       this.gameMode = null
       this.selectedGame = null
       this.isFamilyMode = false
@@ -271,8 +216,6 @@ export const useGameStore = defineStore('game', {
       if (typeof window !== 'undefined') {
         const state = {
           players: this.players,
-          relationshipType: this.relationshipType,
-          comfortLevel: this.comfortLevel,
           gameMode: this.gameMode,
           selectedGame: this.selectedGame,
           isFamilyMode: this.isFamilyMode,
@@ -291,8 +234,6 @@ export const useGameStore = defineStore('game', {
           try {
             const state = JSON.parse(stored)
             this.players = state.players || []
-            this.relationshipType = state.relationshipType || null
-            this.comfortLevel = state.comfortLevel || null
             this.gameMode = state.gameMode || null
             this.selectedGame = state.selectedGame || null
             this.isFamilyMode = state.isFamilyMode || false
