@@ -52,7 +52,7 @@
           <div class="absolute bottom-0 left-0 w-32 h-32 bg-gradient-to-tr from-orange-600/20 to-transparent rounded-tr-full"></div>
           
           <transition name="slide-fade" mode="out-in">
-            <div :key="`question-${question?.text ?? 'none'}`" class="text-center relative z-10 w-full">
+            <div :key="questionKey" class="text-center relative z-10 w-full">
               <!-- Question Icon -->
               <div class="mb-6 flex justify-center">
                 <div class="bg-gradient-to-br from-red-600 to-orange-700 p-4 rounded-2xl shadow-lg shadow-red-900/50 animate-pulse-slow">
@@ -74,8 +74,92 @@
         </div>
       </div>
 
-      <!-- Action Buttons -->
-      <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
+      <!-- Multiplayer Voting (if in multiplayer mode) -->
+      <div v-if="isMultiplayer && roomState && roomState.gamePhase === 'playing'" class="mb-8">
+        <div class="bg-white/10 backdrop-blur-md rounded-2xl p-6 border border-white/20">
+          <h3 class="text-xl font-bold mb-4 text-center">Who is most likely to...</h3>
+          <div class="grid grid-cols-2 sm:grid-cols-3 gap-3">
+            <button
+              v-for="player in availablePlayers"
+              :key="player.socketId"
+              @click="handleVoteForPlayer(player.socketId)"
+              :disabled="hasVoted"
+              :class="[
+                'p-4 rounded-xl border-2 transition-all',
+                selectedPlayer === player.socketId
+                  ? 'bg-red-500/30 border-red-500 ring-4 ring-red-400'
+                  : 'bg-white/5 border-white/10 hover:border-red-400/50',
+                hasVoted ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer hover:scale-105'
+              ]"
+            >
+              <div class="w-12 h-12 rounded-full bg-gradient-to-r from-red-500 to-orange-500 flex items-center justify-center mx-auto mb-2 font-bold text-xl">
+                {{ player.nickname.charAt(0).toUpperCase() }}
+              </div>
+              <div class="text-sm font-semibold text-center">{{ player.nickname }}</div>
+              <div v-if="player.isHost" class="text-xs text-purple-300 mt-1">Host</div>
+            </button>
+          </div>
+          <div v-if="hasVoted" class="mt-4 text-center text-purple-300 text-sm">
+            ✓ Vote submitted! Waiting for other players...
+          </div>
+        </div>
+      </div>
+
+      <!-- Multiplayer Results -->
+      <div v-if="isMultiplayer && roomState && roomState.gamePhase === 'results'" class="mb-8">
+        <div class="bg-white/10 backdrop-blur-md rounded-2xl p-6 border border-white/20">
+          <h3 class="text-xl font-bold mb-4 text-center">Results</h3>
+          <div class="space-y-3">
+            <div
+              v-for="(playerVotes, playerId) in voteDistribution"
+              :key="playerId"
+              :class="[
+                'rounded-xl p-4 border-2 transition-all',
+                playerId === winnerId
+                  ? 'bg-gradient-to-r from-yellow-500/30 to-orange-500/30 border-yellow-500 ring-4 ring-yellow-400'
+                  : 'bg-white/5 border-white/10'
+              ]"
+            >
+              <div class="flex items-center justify-between mb-2">
+                <div class="flex items-center gap-3">
+                  <div class="w-10 h-10 rounded-full bg-gradient-to-r from-red-500 to-orange-500 flex items-center justify-center font-bold">
+                    {{ getPlayerName(playerId)?.charAt(0).toUpperCase() }}
+                  </div>
+                  <div>
+                    <div class="font-semibold">{{ getPlayerName(playerId) }}</div>
+                    <div v-if="roomState && roomState.answerVisibility === 'public'" class="text-xs text-white/60">
+                      Voted by: {{ getVoterNames(playerId).join(', ') }}
+                    </div>
+                  </div>
+                </div>
+                <div class="text-2xl font-black">{{ playerVotes.length }}</div>
+              </div>
+              <div class="h-2 bg-white/10 rounded-full overflow-hidden">
+                <div
+                  class="h-full bg-gradient-to-r from-red-500 to-orange-500 transition-all duration-500"
+                  :style="{ width: `${(playerVotes.length / totalVotes) * 100}%` }"
+                ></div>
+              </div>
+            </div>
+          </div>
+          <div v-if="winnerId" class="mt-6 text-center">
+            <div class="text-2xl font-black bg-gradient-to-r from-yellow-400 to-orange-400 bg-clip-text text-transparent mb-2">
+              🏆 Winner: {{ getPlayerName(winnerId) }}
+            </div>
+          </div>
+          <div v-if="isHost" class="mt-4">
+            <button
+              @click="handleNextRound"
+              class="w-full bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 text-white px-6 py-3 rounded-xl font-bold transition-all"
+            >
+              Next Question
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Action Buttons (Single-Device Mode) -->
+      <div v-if="!isMultiplayer" class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
         <button 
           @click="fetchAnother" 
           class="group bg-gradient-to-r from-red-700 to-orange-700 hover:from-red-600 hover:to-orange-600 px-8 py-5 rounded-2xl font-bold text-lg flex items-center justify-center gap-3 shadow-xl hover:shadow-red-600/50 transition-all duration-300 transform hover:scale-105 border-2 border-red-500/30"
@@ -125,21 +209,28 @@
   </div>
 </template>
 
-<script setup>
-import { ref, computed, onMounted } from 'vue';
+<script setup lang="ts">
+import { ref, computed, onMounted, watch } from 'vue';
 import { Icon } from '@iconify/vue';
 import { useAnalytics } from '~/composables/useAnalytics';
 import { useGameStore } from '~/stores/game';
 // Questions are now loaded from database via API
 import { useMostLikelyToTracker } from '~/composables/useQuestionTracker';
+import { useMultiplayer } from '~/composables/useMultiplayer';
 
 const gameStore = useGameStore();
 const currentPlayer = computed(() => gameStore.currentPlayer);
 
-const question = ref(null);
+// Multiplayer integration
+const route = useRoute();
+const isMultiplayer = computed(() => route.query.multiplayer === 'true');
+const multiplayer = useMultiplayer();
+const { roomState, votes, isHost, myPlayer, submitVote, showResults, nextRound, connect } = multiplayer;
+
+const question = ref<{ text: string } | null>(null);
 
 // Initialize question tracker
-let questionTracker = null;
+let questionTracker: any = null;
 const showPenalty = ref(false);
 const penaltyMessage = ref('');
 
@@ -148,8 +239,64 @@ const roundCount = ref(0);
 const questionCount = ref(0);
 const penaltyCount = ref(0);
 
+// Multiplayer state
+const hasVoted = ref(false);
+const selectedPlayer = ref<string | null>(null);
+
 // Initialize analytics
 const { trackPageView, updateActivity } = useAnalytics();
+
+// Available players (excluding self)
+const availablePlayers = computed(() => {
+  if (!isMultiplayer.value || !myPlayer.value) return []
+  return roomState.value.players.filter(p => p.socketId !== myPlayer.value?.socketId)
+})
+
+// Vote distribution
+const voteDistribution = computed(() => {
+  const distribution: Record<string, any[]> = {}
+  votes.value.forEach(vote => {
+    const targetPlayerId = vote.vote
+    if (!distribution[targetPlayerId]) {
+      distribution[targetPlayerId] = []
+    }
+    distribution[targetPlayerId].push(vote)
+  })
+  return distribution
+})
+
+// Total votes
+const totalVotes = computed(() => {
+  return votes.value.length
+})
+
+// Winner (player with most votes)
+const winnerId = computed(() => {
+  if (totalVotes.value === 0) return null
+  let maxVotes = 0
+  let winner: string | null = null
+  Object.entries(voteDistribution.value).forEach(([playerId, playerVotes]) => {
+    if (playerVotes.length > maxVotes) {
+      maxVotes = playerVotes.length
+      winner = playerId
+    }
+  })
+  return winner
+})
+
+// Key for transition
+const questionKey = computed(() => {
+  return question.value && question.value.text ? `question-${question.value.text}` : 'question-none'
+})
+
+// Helper functions
+const getPlayerName = (socketId: string) => {
+  return roomState.value.players.find(p => p.socketId === socketId)?.nickname || 'Unknown'
+}
+
+const getVoterNames = (playerId: string) => {
+  return voteDistribution.value[playerId]?.map(v => v.nickname).filter(Boolean) || []
+}
 
 const fetchAnother = () => {
   showPenalty.value = false;
@@ -172,6 +319,62 @@ const fetchAnother = () => {
   roundCount.value++;
   questionCount.value++;
 };
+
+// Multiplayer vote for player
+const handleVoteForPlayer = (playerId: string) => {
+  if (hasVoted.value || !isMultiplayer.value) return;
+  
+  selectedPlayer.value = playerId
+  submitVote(playerId)
+  hasVoted.value = true
+  updateActivity()
+}
+
+// Handle next round (host only)
+const handleNextRound = () => {
+  if (!isHost.value || !isMultiplayer.value) return;
+  
+  const result = questionTracker?.getNextQuestion();
+  if (result) {
+    nextRound({ prompt: { text: result.question } });
+    hasVoted.value = false;
+    selectedPlayer.value = null;
+    question.value = { text: result.question };
+    questionCount.value++;
+    roundCount.value++;
+  }
+};
+
+// Watch for game state updates in multiplayer
+watch(() => roomState.value.gamePhase, (newPhase) => {
+  if (newPhase === 'playing') {
+    hasVoted.value = false;
+    selectedPlayer.value = null;
+    
+    // If host, fetch next question
+    if (isHost.value && questionTracker) {
+      const result = questionTracker.getNextQuestion();
+      question.value = { text: result.question };
+      questionCount.value++;
+      roundCount.value++;
+    } else if (roomState.value.currentPrompt) {
+      question.value = roomState.value.currentPrompt;
+    }
+  }
+});
+
+// Watch for vote updates
+watch(() => votes.value, (newVotes) => {
+  // Check if all players have voted (host can show results)
+  if (isHost.value && newVotes.length >= roomState.value.players.length) {
+    // Auto-show results after a short delay
+    setTimeout(() => {
+      if (roomState.value.gamePhase === 'playing') {
+        showResults();
+      }
+    }, 2000);
+  }
+});
 
 const applyPenalty = () => {
   const penalties = [
@@ -244,13 +447,42 @@ onMounted(async () => {
     // Track page view
     trackPageView('most-likely-to');
     
+    // Initialize multiplayer if in multiplayer mode
+    if (isMultiplayer.value) {
+      connect();
+      
+      // Check if we have room info
+      const roomInfo = localStorage.getItem('multiplayer_room');
+      if (roomInfo) {
+        try {
+          const info = JSON.parse(roomInfo);
+          console.log('Multiplayer room info:', info);
+        } catch (e) {
+          console.error('Failed to parse room info:', e);
+        }
+      }
+    }
+    
     // Load game state
     gameStore.loadFromLocalStorage();
     
     // Load questions from database
     try {
       await loadQuestions()
-      fetchAnother();
+      
+      // In multiplayer, wait for host to start game
+      if (isMultiplayer.value) {
+        if (isHost.value && roomState.value.gamePhase === 'playing') {
+          const result = questionTracker.getNextQuestion();
+          question.value = { text: result.question };
+          questionCount.value++;
+          roundCount.value++;
+        } else if (roomState.value.currentPrompt) {
+          question.value = roomState.value.currentPrompt;
+        }
+      } else {
+        fetchAnother();
+      }
     } catch (error) {
       console.error('Failed to load questions:', error)
       question.value = { text: 'Error loading questions. Please refresh the page or contact support.' }

@@ -1,12 +1,14 @@
 <template>
   <div
-    class="min-h-screen bg-gradient-to-br from-slate-950 via-purple-950 to-slate-950 text-white p-3 sm:p-4 md:p-8 relative overflow-hidden"
+    data-setup-container
+    class="fixed inset-0 bg-gradient-to-br from-slate-950 via-purple-950 to-slate-950 text-white p-3 sm:p-4 md:p-8 overflow-hidden"
+    style="height: 100vh; height: calc(var(--vh, 1vh) * 100);"
   >
     <!-- Background Icons Pattern -->
     <BackgroundIcons />
 
     <div
-      class="max-w-3xl mx-auto bg-white/10 backdrop-blur-md rounded-xl p-4 sm:p-5 md:p-8 shadow-2xl relative z-10"
+      class="max-w-3xl mx-auto bg-white/10 backdrop-blur-md rounded-xl p-4 sm:p-5 md:p-8 shadow-2xl relative z-10 h-full overflow-y-auto"
     >
       <!-- Mode Indicator -->
       <div class="mb-4 flex items-center justify-center">
@@ -133,7 +135,7 @@
         </div>
 
         <!-- Player List -->
-        <div class="space-y-2 sm:space-y-3 max-h-[50vh] sm:max-h-none overflow-y-auto pr-2">
+        <div class="space-y-2 sm:space-y-3 max-h-[400px] sm:max-h-none overflow-y-auto pr-2">
           <div
             v-for="(player, index) in tempPlayers"
             :key="player.id"
@@ -151,6 +153,12 @@
                 <input
                   v-model="tempPlayers[index].name"
                   :placeholder="`Player ${index + 1} name`"
+                  type="text"
+                  inputmode="text"
+                  autocomplete="off"
+                  autocorrect="off"
+                  autocapitalize="off"
+                  spellcheck="false"
                   class="flex-1 bg-white/20 rounded-lg p-2 sm:p-3 text-sm sm:text-base focus:ring-2 focus:ring-purple-500 placeholder-white/50 font-medium"
                   @keyup.enter="focusNextPlayer(index)"
                 />
@@ -401,7 +409,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from "vue";
+import { ref, computed, onMounted, onBeforeUnmount } from "vue";
 import { Icon } from "@iconify/vue";
 import { useGameStore } from "~/stores/game";
 import { useAnalytics } from "~/composables/useAnalytics";
@@ -772,6 +780,42 @@ onMounted(() => {
         currentStep.value = 2;
       }
     }
+
+    // Prevent viewport resize on mobile when keyboard appears
+    // Lock the initial viewport height
+    const setViewportHeight = () => {
+      const vh = window.innerHeight * 0.01;
+      document.documentElement.style.setProperty('--vh', `${vh}px`);
+    };
+    
+    setViewportHeight();
+    window.addEventListener('resize', setViewportHeight);
+    window.addEventListener('orientationchange', setViewportHeight);
+    
+    // Use Visual Viewport API if available (better mobile support)
+    let viewportHandler = null;
+    if (window.visualViewport) {
+      viewportHandler = () => {
+        // Prevent layout shifts when keyboard appears
+        const container = document.querySelector('[data-setup-container]');
+        if (container) {
+          container.style.height = `${window.visualViewport.height}px`;
+        }
+      };
+      
+      window.visualViewport.addEventListener('resize', viewportHandler);
+      window.visualViewport.addEventListener('scroll', viewportHandler);
+    }
+    
+    // Cleanup on unmount
+    onBeforeUnmount(() => {
+      window.removeEventListener('resize', setViewportHeight);
+      window.removeEventListener('orientationchange', setViewportHeight);
+      if (window.visualViewport && viewportHandler) {
+        window.visualViewport.removeEventListener('resize', viewportHandler);
+        window.visualViewport.removeEventListener('scroll', viewportHandler);
+      }
+    });
   }
 });
 </script>
@@ -792,5 +836,32 @@ onMounted(() => {
 
 input::placeholder {
   color: rgba(255, 255, 255, 0.5);
+}
+
+/* Prevent viewport expansion on mobile */
+@media (max-width: 768px) {
+  /* Ensure fixed container doesn't expand */
+  [data-setup-container] {
+    position: fixed !important;
+    top: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+    bottom: 0 !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    overflow: hidden !important;
+  }
+  
+  /* Smooth scrolling for inner content */
+  [data-setup-container] > div {
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior: contain;
+  }
+  
+  /* Prevent input focus from causing viewport expansion */
+  [data-setup-container] input:focus {
+    transform: translateZ(0);
+    -webkit-transform: translateZ(0);
+  }
 }
 </style>

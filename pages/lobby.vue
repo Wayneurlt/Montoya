@@ -1,0 +1,479 @@
+<template>
+  <div class="min-h-screen bg-gradient-to-br from-slate-950 via-purple-950 to-slate-950 text-white p-3 sm:p-4 relative overflow-hidden">
+    <!-- Background Icons Pattern -->
+    <BackgroundIcons />
+
+    <div class="max-w-4xl mx-auto relative z-10 pt-4 sm:pt-6 md:pt-8">
+      <!-- Header -->
+      <div class="flex items-center justify-between mb-6 sm:mb-8">
+        <NuxtLink to="/" class="bg-white/10 hover:bg-white/20 backdrop-blur-md px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg transition-all flex items-center gap-2 border border-white/20 hover:scale-105">
+          <Icon icon="mdi:home" class="w-5 h-5" />
+          <span class="font-medium">Home</span>
+        </NuxtLink>
+        <div v-if="safeRoomState.roomCode" class="text-center">
+          <div class="text-xs text-white/60 mb-1">Room Code</div>
+          <div class="text-3xl sm:text-4xl font-black bg-gradient-to-r from-purple-400 via-pink-500 to-cyan-400 bg-clip-text text-transparent">
+            {{ safeRoomState.roomCode }}
+          </div>
+        </div>
+      </div>
+
+      <!-- Error Message -->
+      <transition name="fade">
+        <div v-if="error" class="mb-6 bg-red-500/20 border-2 border-red-500/50 rounded-xl p-4 backdrop-blur-md">
+          <div class="flex items-center gap-2">
+            <Icon icon="mdi:alert-circle" class="w-6 h-6 text-red-400" />
+            <p class="text-red-200 font-semibold">{{ error }}</p>
+          </div>
+        </div>
+      </transition>
+
+      <!-- Lobby Phase -->
+      <div v-if="!safeRoomState.gamePhase || safeRoomState.gamePhase === 'lobby'" class="space-y-6">
+        <!-- Room Info Card -->
+        <div v-if="safeRoomState.roomCode" class="bg-white/10 backdrop-blur-md rounded-2xl p-6 border border-white/20">
+          <div class="text-center mb-6">
+            <h1 class="text-3xl sm:text-4xl font-black mb-2 bg-gradient-to-r from-purple-400 via-pink-500 to-cyan-400 bg-clip-text text-transparent">
+              {{ safeRoomState.roomName || 'Game Room' }}
+            </h1>
+            <div class="flex items-center justify-center gap-4 mt-4">
+              <div class="flex items-center gap-2">
+                <Icon icon="mdi:account-group" class="w-5 h-5 text-purple-400" />
+                <span class="text-sm">{{ playerCount }} Players</span>
+              </div>
+              <div class="flex items-center gap-2">
+                <Icon :icon="safeRoomState.answerVisibility === 'anonymous' ? 'mdi:incognito' : 'mdi:eye'" class="w-5 h-5 text-pink-400" />
+                <span class="text-sm capitalize">{{ safeRoomState.answerVisibility }} Mode</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Player List -->
+          <div class="mb-6">
+            <h3 class="text-lg font-bold mb-4 text-center">Players</h3>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div
+                v-for="player in safeRoomState.players"
+                :key="player.socketId"
+                class="bg-white/5 rounded-xl p-4 border border-white/10 flex items-center justify-between"
+                :class="{ 'ring-2 ring-purple-500': player.isHost, 'opacity-50': !player.connected }"
+              >
+                <div class="flex items-center gap-3">
+                  <div class="w-10 h-10 rounded-full bg-gradient-to-r from-purple-500 to-pink-500 flex items-center justify-center font-bold">
+                    {{ player.nickname.charAt(0).toUpperCase() }}
+                  </div>
+                  <div>
+                    <div class="font-semibold flex items-center gap-2">
+                      {{ player.nickname }}
+                      <span v-if="player.isHost" class="text-xs bg-purple-500/30 px-2 py-0.5 rounded-full">Host</span>
+                    </div>
+                    <div class="text-xs text-white/60">
+                      {{ player.connected ? 'Connected' : 'Disconnected' }}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Host Controls -->
+          <div v-if="isHost" class="space-y-4">
+            <div class="bg-purple-500/20 rounded-xl p-4 border border-purple-500/30">
+              <h3 class="font-bold mb-3 flex items-center gap-2">
+                <Icon icon="mdi:gamepad-variant" class="w-5 h-5" />
+                Select Game
+              </h3>
+              <div class="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                <button
+                  v-for="game in multiplayerGames"
+                  :key="game.value"
+                  @click="selectedGame = game.value"
+                  :class="{
+                    'ring-2 ring-pink-500 bg-pink-500/20': selectedGame === game.value,
+                    'bg-white/5 hover:bg-white/10': selectedGame !== game.value,
+                  }"
+                  class="p-3 rounded-lg border border-white/10 transition-all text-center"
+                >
+                  <div class="text-2xl mb-1">{{ game.emoji }}</div>
+                  <div class="text-xs font-semibold">{{ game.name }}</div>
+                </button>
+              </div>
+            </div>
+
+            <button
+              @click="handleStartGame"
+              :disabled="!canStartGame || !selectedGame"
+              class="w-full bg-gradient-to-r from-purple-600 via-pink-600 to-purple-600 hover:from-purple-500 hover:via-pink-500 hover:to-purple-500 text-white px-8 py-4 rounded-xl font-black text-lg shadow-2xl hover:shadow-pink-600/50 transition-all duration-300 transform hover:scale-105 border-2 border-pink-500/50 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
+            >
+              Start Game
+            </button>
+          </div>
+
+          <!-- Non-Host Waiting -->
+          <div v-else class="text-center py-8">
+            <div class="animate-pulse">
+              <Icon icon="mdi:clock-outline" class="w-16 h-16 mx-auto mb-4 text-purple-400" />
+              <p class="text-xl font-semibold">Waiting for host to start the game...</p>
+            </div>
+          </div>
+
+          <!-- Leave Button -->
+          <button
+            @click="handleLeaveRoom"
+            class="w-full mt-4 bg-red-500/20 hover:bg-red-500/30 text-red-300 px-4 py-2 rounded-lg border border-red-500/30 transition-all"
+          >
+            Leave Room
+          </button>
+        </div>
+
+        <!-- Create/Join Room Form -->
+        <div v-else class="space-y-6">
+          <div class="text-center mb-8">
+            <h1 class="text-4xl sm:text-5xl font-black mb-4 bg-gradient-to-r from-purple-400 via-pink-500 to-cyan-400 bg-clip-text text-transparent">
+              Multiplayer Mode
+            </h1>
+            <p class="text-purple-200 text-lg">Create or join a game room</p>
+          </div>
+
+          <!-- Tabs -->
+          <div class="flex gap-2 mb-6">
+            <button
+              @click="isCreating = true"
+              :class="isCreating ? 'bg-purple-600 text-white' : 'bg-white/10 text-white/70'"
+              class="flex-1 py-3 rounded-lg font-semibold transition-all"
+            >
+              Create Room
+            </button>
+            <button
+              @click="isCreating = false"
+              :class="!isCreating ? 'bg-purple-600 text-white' : 'bg-white/10 text-white/70'"
+              class="flex-1 py-3 rounded-lg font-semibold transition-all"
+            >
+              Join Room
+            </button>
+          </div>
+
+          <!-- Create Room Form -->
+          <div v-if="isCreating" class="bg-white/10 backdrop-blur-md rounded-2xl p-6 border border-white/20 space-y-4">
+            <div>
+              <label class="block text-sm font-semibold mb-2">Room Name (Optional)</label>
+              <input
+                v-model="createForm.roomName"
+                type="text"
+                placeholder="My Awesome Game"
+                class="w-full bg-white/5 border border-white/20 rounded-lg px-4 py-3 text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-purple-500"
+              />
+            </div>
+            <div>
+              <label class="block text-sm font-semibold mb-2">Answer Visibility</label>
+              <div class="space-y-2">
+                <label class="flex items-center gap-3 p-3 bg-white/5 rounded-lg border border-white/10 cursor-pointer hover:bg-white/10 transition-all">
+                  <input
+                    v-model="createForm.answerVisibility"
+                    type="radio"
+                    value="anonymous"
+                    class="w-4 h-4 text-purple-600"
+                  />
+                  <div class="flex-1">
+                    <div class="font-semibold flex items-center gap-2">
+                      <Icon icon="mdi:incognito" class="w-5 h-5" />
+                      Anonymous
+                    </div>
+                    <div class="text-xs text-white/60">Answers and votes are hidden</div>
+                  </div>
+                </label>
+                <label class="flex items-center gap-3 p-3 bg-white/5 rounded-lg border border-white/10 cursor-pointer hover:bg-white/10 transition-all">
+                  <input
+                    v-model="createForm.answerVisibility"
+                    type="radio"
+                    value="public"
+                    class="w-4 h-4 text-purple-600"
+                  />
+                  <div class="flex-1">
+                    <div class="font-semibold flex items-center gap-2">
+                      <Icon icon="mdi:eye" class="w-5 h-5" />
+                      Public
+                    </div>
+                    <div class="text-xs text-white/60">Answers and votes show player names</div>
+                  </div>
+                </label>
+              </div>
+            </div>
+            <div>
+              <label class="block text-sm font-semibold mb-2">Your Nickname</label>
+              <input
+                v-model="createForm.nickname"
+                type="text"
+                placeholder="Enter your name"
+                maxlength="20"
+                class="w-full bg-white/5 border border-white/20 rounded-lg px-4 py-3 text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-purple-500"
+              />
+            </div>
+            <button
+              @click="handleCreateRoom"
+              :disabled="!createForm.nickname.trim() || isConnecting"
+              class="w-full bg-gradient-to-r from-purple-600 via-pink-600 to-purple-600 hover:from-purple-500 hover:via-pink-500 hover:to-purple-500 text-white px-8 py-4 rounded-xl font-black text-lg shadow-2xl hover:shadow-pink-600/50 transition-all duration-300 transform hover:scale-105 border-2 border-pink-500/50 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {{ isConnecting ? 'Connecting...' : 'Create Room' }}
+            </button>
+          </div>
+
+          <!-- Join Room Form -->
+          <div v-else class="bg-white/10 backdrop-blur-md rounded-2xl p-6 border border-white/20 space-y-4">
+            <div>
+              <label class="block text-sm font-semibold mb-2">Room Code</label>
+              <input
+                v-model="joinForm.roomCode"
+                type="text"
+                placeholder="ABCD12"
+                maxlength="6"
+                class="w-full bg-white/5 border border-white/20 rounded-lg px-4 py-3 text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-purple-500 text-center text-2xl font-black tracking-widest uppercase"
+                @input="joinForm.roomCode = joinForm.roomCode.toUpperCase().replace(/[^A-Z0-9]/g, '')"
+              />
+            </div>
+            <div>
+              <label class="block text-sm font-semibold mb-2">Your Nickname</label>
+              <input
+                v-model="joinForm.nickname"
+                type="text"
+                placeholder="Enter your name"
+                maxlength="20"
+                class="w-full bg-white/5 border border-white/20 rounded-lg px-4 py-3 text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-purple-500"
+              />
+            </div>
+            <button
+              @click="handleJoinRoom"
+              :disabled="!joinForm.roomCode || joinForm.roomCode.length !== 6 || !joinForm.nickname.trim() || isConnecting"
+              class="w-full bg-gradient-to-r from-purple-600 via-pink-600 to-purple-600 hover:from-purple-500 hover:via-pink-500 hover:to-purple-500 text-white px-8 py-4 rounded-xl font-black text-lg shadow-2xl hover:shadow-pink-600/50 transition-all duration-300 transform hover:scale-105 border-2 border-pink-500/50 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {{ isConnecting ? 'Connecting...' : 'Join Room' }}
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Game Phase - Redirect to game -->
+      <div v-else-if="safeRoomState.gamePhase === 'playing' && safeRoomState.currentGame" class="text-center py-12">
+        <div class="animate-pulse">
+          <Icon icon="mdi:loading" class="w-16 h-16 mx-auto mb-4 text-purple-400 animate-spin" />
+          <p class="text-xl font-semibold">Starting game...</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</template>
+
+<script setup lang="ts">
+import { ref, computed, onMounted, watch } from 'vue'
+import { Icon } from '@iconify/vue'
+import { useMultiplayer } from '~/composables/useMultiplayer'
+import { useGameStore } from '~/stores/game'
+
+const multiplayer = useMultiplayer()
+const gameStore = useGameStore()
+
+const {
+  isConnected,
+  roomState,
+  error,
+  isHost,
+  playerCount,
+  canStartGame,
+  connect,
+  createRoom,
+  joinRoom,
+  startGame,
+  leaveRoom,
+  updateNickname,
+} = multiplayer
+
+// Form state
+const isCreating = ref(true)
+const createForm = ref({
+  roomName: '',
+  answerVisibility: 'anonymous' as 'anonymous' | 'public',
+  nickname: '',
+})
+const joinForm = ref({
+  roomCode: '',
+  nickname: '',
+})
+
+const selectedGame = ref<string | null>(null)
+const isConnecting = ref(false)
+
+// Safe room state access
+const safeRoomState = computed(() => {
+  if (!roomState || !roomState.value) {
+    return {
+      roomId: null,
+      roomCode: null,
+      roomName: undefined,
+      hostSocketId: null,
+      players: [],
+      maxPlayers: 999,
+      answerVisibility: 'anonymous' as const,
+      currentGame: null,
+      gamePhase: 'lobby' as const,
+      currentPrompt: null,
+    }
+  }
+  return roomState.value
+})
+
+// Multiplayer games (excluding single-device only games)
+const multiplayerGames = [
+  { value: 'truth-or-dare', name: 'Truth or Dare', emoji: '🎭' },
+  { value: 'dice-of-desire', name: 'Dice of Desire', emoji: '🎲' },
+  { value: 'do-or-drink', name: 'Do or Drink', emoji: '🍺' },
+  { value: 'never-have-i-ever', name: 'Never Have I Ever', emoji: '🙅' },
+  { value: 'most-likely-to', name: 'Most Likely To', emoji: '🤷' },
+  { value: 'would-you-rather', name: 'Would You Rather', emoji: '🤔' },
+]
+
+const handleCreateRoom = async () => {
+  if (!createForm.value.nickname.trim() || isConnecting.value) return
+  
+  isConnecting.value = true
+  error.value = null
+  
+  try {
+    // Connect first
+    const socket = connect()
+    if (!socket) {
+      error.value = 'Failed to initialize connection'
+      isConnecting.value = false
+      return
+    }
+    
+    // Wait for connection to be established (max 3 seconds)
+    let attempts = 0
+    while (!isConnected.value && attempts < 15) {
+      await new Promise(resolve => setTimeout(resolve, 200))
+      attempts++
+    }
+    
+    if (!isConnected.value) {
+      error.value = 'Connection timeout. Please refresh and try again.'
+      isConnecting.value = false
+      return
+    }
+    
+    // Create room
+    createRoom({
+      roomName: createForm.value.roomName || undefined,
+      answerVisibility: createForm.value.answerVisibility,
+    })
+    
+    // Update nickname after room is created
+    setTimeout(() => {
+      updateNickname(createForm.value.nickname)
+      isConnecting.value = false
+    }, 500)
+  } catch (err) {
+    console.error('Error creating room:', err)
+    error.value = 'Failed to create room. Please try again.'
+    isConnecting.value = false
+  }
+}
+
+const handleJoinRoom = async () => {
+  if (!joinForm.value.roomCode || joinForm.value.roomCode.length !== 6) return
+  if (!joinForm.value.nickname.trim() || isConnecting.value) return
+  
+  isConnecting.value = true
+  error.value = null
+  
+  try {
+    // Connect first
+    const socket = connect()
+    if (!socket) {
+      error.value = 'Failed to initialize connection'
+      isConnecting.value = false
+      return
+    }
+    
+    // Wait for connection to be established (max 3 seconds)
+    let attempts = 0
+    while (!isConnected.value && attempts < 15) {
+      await new Promise(resolve => setTimeout(resolve, 200))
+      attempts++
+    }
+    
+    if (!isConnected.value) {
+      error.value = 'Connection timeout. Please refresh and try again.'
+      isConnecting.value = false
+      return
+    }
+    
+    // Join room
+    joinRoom(joinForm.value.roomCode, joinForm.value.nickname)
+    isConnecting.value = false
+  } catch (err) {
+    console.error('Error joining room:', err)
+    error.value = 'Failed to join room. Please try again.'
+    isConnecting.value = false
+  }
+}
+
+const handleStartGame = () => {
+  if (!selectedGame.value || !canStartGame.value) return
+  
+  // Set game in store
+  gameStore.setSelectedGame(selectedGame.value as any)
+  
+  // Store room info for game pages
+  if (roomState.value.roomCode) {
+    localStorage.setItem('multiplayer_room', JSON.stringify({
+      roomCode: roomState.value.roomCode,
+      isHost: isHost.value,
+      answerVisibility: roomState.value.answerVisibility,
+    }))
+  }
+  
+  // Start game
+  startGame(selectedGame.value)
+  
+  // Navigate to game
+  navigateTo(`/game/${selectedGame.value}?multiplayer=true`)
+}
+
+const handleLeaveRoom = () => {
+  leaveRoom()
+  navigateTo('/')
+}
+
+// Watch for game phase changes
+watch(() => roomState.value.gamePhase, (newPhase) => {
+  if (newPhase === 'playing' && roomState.value.currentGame) {
+    // Store room info
+    if (roomState.value.roomCode) {
+      localStorage.setItem('multiplayer_room', JSON.stringify({
+        roomCode: roomState.value.roomCode,
+        isHost: isHost.value,
+        answerVisibility: roomState.value.answerVisibility,
+      }))
+    }
+    
+    // Navigate to game
+    navigateTo(`/game/${roomState.value.currentGame}?multiplayer=true`)
+  }
+})
+
+onMounted(() => {
+  connect()
+})
+</script>
+
+<style scoped>
+.fade-enter-active,
+.fade-leave-active {
+  transition: opacity 0.3s;
+}
+
+.fade-enter-from,
+.fade-leave-to {
+  opacity: 0;
+}
+</style>
+

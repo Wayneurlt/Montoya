@@ -60,9 +60,12 @@
               <div v-if="parsedQuestion" class="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-8">
                 <!-- Option A -->
                 <div 
-                  @click="selectOption('A')"
-                  class="group cursor-pointer bg-gradient-to-br from-red-800/30 to-red-950/20 hover:from-red-800/40 hover:to-red-950/30 backdrop-blur-md rounded-2xl p-6 border-2 border-red-600/40 hover:border-red-500/70 transition-all duration-300 transform hover:scale-105 hover:-rotate-2 min-h-[200px] flex flex-col justify-center"
-                  :class="{ 'ring-4 ring-red-500 scale-105': selectedOption === 'A' }"
+                  @click="handleSelectOption('A')"
+                  :class="[
+                    'group cursor-pointer bg-gradient-to-br from-red-800/30 to-red-950/20 hover:from-red-800/40 hover:to-red-950/30 backdrop-blur-md rounded-2xl p-6 border-2 border-red-600/40 hover:border-red-500/70 transition-all duration-300 transform hover:scale-105 hover:-rotate-2 min-h-[200px] flex flex-col justify-center',
+                    { 'ring-4 ring-red-500 scale-105': selectedOption === 'A' },
+                    { 'opacity-50 cursor-not-allowed': isMultiplayer && hasVoted }
+                  ]"
                 >
                   <div class="text-center">
                     <div class="mb-4">
@@ -81,9 +84,12 @@
 
                 <!-- Option B -->
                 <div 
-                  @click="selectOption('B')"
-                  class="group cursor-pointer bg-gradient-to-br from-orange-800/30 to-orange-950/20 hover:from-orange-800/40 hover:to-orange-950/30 backdrop-blur-md rounded-2xl p-6 border-2 border-orange-600/40 hover:border-orange-500/70 transition-all duration-300 transform hover:scale-105 hover:rotate-2 min-h-[200px] flex flex-col justify-center"
-                  :class="{ 'ring-4 ring-orange-500 scale-105': selectedOption === 'B' }"
+                  @click="handleSelectOption('B')"
+                  :class="[
+                    'group cursor-pointer bg-gradient-to-br from-orange-800/30 to-orange-950/20 hover:from-orange-800/40 hover:to-orange-950/30 backdrop-blur-md rounded-2xl p-6 border-2 border-orange-600/40 hover:border-orange-500/70 transition-all duration-300 transform hover:scale-105 hover:rotate-2 min-h-[200px] flex flex-col justify-center',
+                    { 'ring-4 ring-orange-500 scale-105': selectedOption === 'B' },
+                    { 'opacity-50 cursor-not-allowed': isMultiplayer && hasVoted }
+                  ]"
                 >
                   <div class="text-center">
                     <div class="mb-4">
@@ -117,8 +123,49 @@
         </div>
       </div>
 
+      <!-- Multiplayer Results -->
+      <div v-if="isMultiplayer && roomState && roomState.gamePhase === 'results'" class="mb-8">
+        <div class="bg-white/10 backdrop-blur-md rounded-2xl p-6 border border-white/20">
+          <h3 class="text-xl font-bold mb-4 text-center">Results</h3>
+          <div class="grid grid-cols-2 gap-4">
+            <div class="bg-red-500/20 rounded-xl p-4 border border-red-500/30">
+              <div class="text-3xl font-black text-red-400 mb-2">{{ optionACount }}</div>
+              <div class="text-sm text-red-300 mb-3">Option A</div>
+              <div class="h-2 bg-red-900/30 rounded-full overflow-hidden">
+                <div class="h-full bg-red-500 transition-all duration-500" :style="{ width: `${optionAPercentage}%` }"></div>
+              </div>
+              <div v-if="roomState && roomState.answerVisibility === 'public'" class="mt-3 space-y-1">
+                <div v-for="vote in optionAVotes" :key="vote.socketId" class="text-xs text-red-200">
+                  • {{ vote.nickname }}
+                </div>
+              </div>
+            </div>
+            <div class="bg-orange-500/20 rounded-xl p-4 border border-orange-500/30">
+              <div class="text-3xl font-black text-orange-400 mb-2">{{ optionBCount }}</div>
+              <div class="text-sm text-orange-300 mb-3">Option B</div>
+              <div class="h-2 bg-orange-900/30 rounded-full overflow-hidden">
+                <div class="h-full bg-orange-500 transition-all duration-500" :style="{ width: `${optionBPercentage}%` }"></div>
+              </div>
+              <div v-if="roomState && roomState.answerVisibility === 'public'" class="mt-3 space-y-1">
+                <div v-for="vote in optionBVotes" :key="vote.socketId" class="text-xs text-orange-200">
+                  • {{ vote.nickname }}
+                </div>
+              </div>
+            </div>
+          </div>
+          <div v-if="isHost" class="mt-4">
+            <button
+              @click="handleNextRound"
+              class="w-full bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 text-white px-6 py-3 rounded-xl font-bold transition-all"
+            >
+              Next Question
+            </button>
+          </div>
+        </div>
+      </div>
+
       <!-- Action Buttons -->
-      <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
+      <div v-if="!isMultiplayer || !roomState || roomState.gamePhase !== 'playing'" class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
         <button 
           @click="fetchAnother" 
           class="group bg-gradient-to-r from-red-700 to-orange-700 hover:from-red-600 hover:to-orange-600 px-8 py-5 rounded-2xl font-bold text-lg flex items-center justify-center gap-3 shadow-xl hover:shadow-red-600/50 transition-all duration-300 transform hover:scale-105 border-2 border-red-500/30"
@@ -134,6 +181,11 @@
           <Icon icon="mdi:glass-cocktail" class="w-6 h-6 group-hover:animate-bounce" />
           <span>Can't Decide? Drink!</span>
         </button>
+      </div>
+
+      <!-- Multiplayer Vote Status -->
+      <div v-if="isMultiplayer && hasVoted && roomState && roomState.gamePhase === 'playing'" class="mb-8 text-center text-purple-300 text-sm">
+        ✓ Vote submitted! Waiting for other players...
       </div>
 
       <!-- Penalty Display -->
@@ -174,16 +226,23 @@
   </div>
 </template>
 
-<script setup>
-import { ref, computed, onMounted } from 'vue';
+<script setup lang="ts">
+import { ref, computed, onMounted, watch } from 'vue';
 import { Icon } from '@iconify/vue';
 import { useAnalytics } from '~/composables/useAnalytics';
 import { useGameStore } from '~/stores/game';
 // Questions are now loaded from database via API
 import { useWouldYouRatherTracker } from '~/composables/useQuestionTracker';
+import { useMultiplayer } from '~/composables/useMultiplayer';
 
 const gameStore = useGameStore();
 const currentPlayer = computed(() => gameStore.currentPlayer);
+
+// Multiplayer integration
+const route = useRoute();
+const isMultiplayer = computed(() => route.query.multiplayer === 'true');
+const multiplayer = useMultiplayer();
+const { roomState, votes, isHost, submitVote, showResults, nextRound, connect } = multiplayer;
 
 const question = ref(null);
 
@@ -192,6 +251,7 @@ let questionTracker = null;
 const showPenalty = ref(false);
 const penaltyMessage = ref('');
 const selectedOption = ref(null);
+const hasVoted = ref(false);
 
 // Game statistics
 const roundCount = ref(0);
@@ -201,6 +261,35 @@ const penaltyCount = ref(0);
 
 // Initialize analytics
 const { trackPageView, updateActivity } = useAnalytics();
+
+// Multiplayer vote counts
+const optionACount = computed(() => {
+  return votes.value.filter(v => v.vote === 'A').length;
+});
+
+const optionBCount = computed(() => {
+  return votes.value.filter(v => v.vote === 'B').length;
+});
+
+const totalVotes = computed(() => {
+  return votes.value.length;
+});
+
+const optionAPercentage = computed(() => {
+  return totalVotes.value > 0 ? Math.round((optionACount.value / totalVotes.value) * 100) : 0;
+});
+
+const optionBPercentage = computed(() => {
+  return totalVotes.value > 0 ? Math.round((optionBCount.value / totalVotes.value) * 100) : 0;
+});
+
+const optionAVotes = computed(() => {
+  return votes.value.filter(v => v.vote === 'A' && v.nickname);
+});
+
+const optionBVotes = computed(() => {
+  return votes.value.filter(v => v.vote === 'B' && v.nickname);
+});
 
 // Parse question to extract two options
 const parsedQuestion = computed(() => {
@@ -239,6 +328,70 @@ const selectOption = (option) => {
     fetchAnother();
   }, 1000);
 };
+
+// Multiplayer option selection
+const handleSelectOption = (option: 'A' | 'B') => {
+  if (hasVoted.value && isMultiplayer.value) return;
+  
+  selectedOption.value = option;
+  choicesMade.value++;
+  updateActivity();
+  
+  if (isMultiplayer.value) {
+    submitVote(option);
+    hasVoted.value = true;
+  } else {
+    setTimeout(() => {
+      fetchAnother();
+    }, 1000);
+  }
+};
+
+// Handle next round (host only)
+const handleNextRound = () => {
+  if (!isHost.value || !isMultiplayer.value) return;
+  
+  const result = questionTracker?.getNextQuestion();
+  if (result) {
+    nextRound({ prompt: { text: result.question } });
+    hasVoted.value = false;
+    selectedOption.value = null;
+    question.value = { text: result.question };
+    questionCount.value++;
+    roundCount.value++;
+  }
+};
+
+// Watch for game state updates in multiplayer
+watch(() => roomState.value.gamePhase, (newPhase) => {
+  if (newPhase === 'playing') {
+    hasVoted.value = false;
+    selectedOption.value = null;
+    
+    // If host, fetch next question
+    if (isHost.value && questionTracker) {
+      const result = questionTracker.getNextQuestion();
+      question.value = { text: result.question };
+      questionCount.value++;
+      roundCount.value++;
+    } else if (roomState.value.currentPrompt) {
+      question.value = roomState.value.currentPrompt;
+    }
+  }
+});
+
+// Watch for vote updates
+watch(() => votes.value, (newVotes) => {
+  // Check if all players have voted (host can show results)
+  if (isHost.value && newVotes.length >= roomState.value.players.length) {
+    // Auto-show results after a short delay
+    setTimeout(() => {
+      if (roomState.value.gamePhase === 'playing') {
+        showResults();
+      }
+    }, 2000);
+  }
+});
 
 const fetchAnother = () => {
   showPenalty.value = false;
@@ -320,12 +473,41 @@ onMounted(async () => {
     // Track page view
     trackPageView('would-you-rather');
     
+    // Initialize multiplayer if in multiplayer mode
+    if (isMultiplayer.value) {
+      connect();
+      
+      // Check if we have room info
+      const roomInfo = localStorage.getItem('multiplayer_room');
+      if (roomInfo) {
+        try {
+          const info = JSON.parse(roomInfo);
+          console.log('Multiplayer room info:', info);
+        } catch (e) {
+          console.error('Failed to parse room info:', e);
+        }
+      }
+    }
+    
     // Load game state
     gameStore.loadFromLocalStorage();
     
     // Load questions from database
     await loadQuestions()
-    fetchAnother();
+    
+    // In multiplayer, wait for host to start game
+    if (isMultiplayer.value) {
+      if (isHost.value && roomState.value.gamePhase === 'playing') {
+        const result = questionTracker.getNextQuestion();
+        question.value = { text: result.question };
+        questionCount.value++;
+        roundCount.value++;
+      } else if (roomState.value.currentPrompt) {
+        question.value = roomState.value.currentPrompt;
+      }
+    } else {
+      fetchAnother();
+    }
   }
 });
 </script>

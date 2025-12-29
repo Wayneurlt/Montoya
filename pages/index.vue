@@ -78,6 +78,17 @@
           <span class="relative z-10">ENTER THE DANGER ZONE</span>
           <div class="absolute inset-0 bg-gradient-to-r from-pink-500 to-purple-500 rounded-full blur-xl opacity-50 group-hover:opacity-75 transition-opacity"></div>
         </button>
+        <NuxtLink
+          to="/lobby"
+          class="group relative bg-gradient-to-r from-cyan-600 via-blue-600 to-purple-600 hover:from-cyan-500 hover:via-blue-500 hover:to-purple-500 text-white px-6 sm:px-8 md:px-12 py-3 sm:py-4 md:py-5 rounded-full text-sm sm:text-base md:text-lg lg:text-xl font-black shadow-2xl hover:shadow-cyan-600/50 transition-all duration-300 transform hover:scale-105 border-2 sm:border-3 md:border-4 border-cyan-500/50 w-full max-w-md flex items-center justify-center gap-2"
+        >
+          <Icon icon="mdi:account-group" class="w-6 h-6 sm:w-7 sm:h-7 md:w-8 md:h-8" />
+          <span class="relative z-10 flex flex-col items-center">
+            <span>MULTIPLAYER MODE</span>
+            <span class="text-xs sm:text-sm font-normal opacity-90">Use Multiple Devices</span>
+          </span>
+          <div class="absolute inset-0 bg-gradient-to-r from-cyan-500 to-blue-500 rounded-full blur-xl opacity-50 group-hover:opacity-75 transition-opacity"></div>
+        </NuxtLink>
       </div>
 
       <!-- Feature Pills -->

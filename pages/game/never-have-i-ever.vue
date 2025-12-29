@@ -51,7 +51,7 @@
           <div class="absolute bottom-0 left-0 w-32 h-32 bg-gradient-to-tr from-pink-600/20 to-transparent rounded-tr-full"></div>
           
           <transition name="slide-fade" mode="out-in">
-            <div :key="`question-${question?.text ?? 'none'}`" class="text-center relative z-10 w-full">
+            <div :key="questionKey" class="text-center relative z-10 w-full">
               <!-- Question Icon -->
               <div class="mb-6 flex justify-center">
                 <div class="bg-gradient-to-br from-purple-600 to-pink-700 p-4 rounded-2xl shadow-lg shadow-purple-900/50 animate-pulse-slow">
@@ -99,8 +99,70 @@
         </button>
       </div>
       
-      <!-- I Have Button -->
-      <div class="mb-8">
+      <!-- Multiplayer Voting (if in multiplayer mode) -->
+      <div v-if="isMultiplayer && roomState && roomState.gamePhase === 'playing'" class="mb-8 space-y-4">
+        <div class="grid grid-cols-2 gap-4">
+          <button 
+            @click="handleSubmitVote('have')" 
+            :disabled="hasVoted"
+            class="group bg-gradient-to-r from-green-700 to-emerald-700 hover:from-green-600 hover:to-emerald-600 disabled:opacity-50 disabled:cursor-not-allowed px-8 py-5 rounded-2xl font-bold text-lg flex items-center justify-center gap-3 shadow-xl hover:shadow-green-600/50 transition-all duration-300 transform hover:scale-105 border-2 border-green-500/30"
+            :class="{ 'ring-4 ring-green-400': myVote === 'have' }"
+          >
+            <Icon icon="mdi:check-circle" class="w-6 h-6 group-hover:scale-110 transition-transform" />
+            <span>I Have</span>
+          </button>
+          <button 
+            @click="handleSubmitVote('haveNot')" 
+            :disabled="hasVoted"
+            class="group bg-gradient-to-r from-red-700 to-rose-700 hover:from-red-600 hover:to-rose-600 disabled:opacity-50 disabled:cursor-not-allowed px-8 py-5 rounded-2xl font-bold text-lg flex items-center justify-center gap-3 shadow-xl hover:shadow-red-600/50 transition-all duration-300 transform hover:scale-105 border-2 border-red-500/30"
+            :class="{ 'ring-4 ring-red-400': myVote === 'haveNot' }"
+          >
+            <Icon icon="mdi:close-circle" class="w-6 h-6 group-hover:scale-110 transition-transform" />
+            <span>I Have Not</span>
+          </button>
+        </div>
+        <div v-if="hasVoted" class="text-center text-purple-300 text-sm">
+          ✓ Vote submitted! Waiting for other players...
+        </div>
+      </div>
+
+      <!-- Results Display (Multiplayer) -->
+      <div v-if="isMultiplayer && roomState && roomState.gamePhase === 'results'" class="mb-8">
+        <div class="bg-white/10 backdrop-blur-md rounded-2xl p-6 border border-white/20">
+          <h3 class="text-xl font-bold mb-4 text-center">Results</h3>
+          <div class="grid grid-cols-2 gap-4">
+            <div class="bg-green-500/20 rounded-xl p-4 border border-green-500/30">
+              <div class="text-3xl font-black text-green-400 mb-2">{{ haveCount }}</div>
+              <div class="text-sm text-green-300 mb-3">I Have</div>
+              <div v-if="roomState && roomState.answerVisibility === 'public'" class="space-y-1">
+                <div v-for="vote in haveVotes" :key="vote.socketId" class="text-xs text-green-200">
+                  • {{ vote.nickname }}
+                </div>
+              </div>
+            </div>
+            <div class="bg-red-500/20 rounded-xl p-4 border border-red-500/30">
+              <div class="text-3xl font-black text-red-400 mb-2">{{ haveNotCount }}</div>
+              <div class="text-sm text-red-300 mb-3">I Have Not</div>
+              <div v-if="roomState && roomState.answerVisibility === 'public'" class="space-y-1">
+                <div v-for="vote in haveNotVotes" :key="vote.socketId" class="text-xs text-red-200">
+                  • {{ vote.nickname }}
+                </div>
+              </div>
+            </div>
+          </div>
+          <div v-if="isHost" class="mt-4">
+            <button
+              @click="handleNextRound"
+              class="w-full bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 text-white px-6 py-3 rounded-xl font-bold transition-all"
+            >
+              Next Question
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Single-Device I Have Button -->
+      <div v-if="!isMultiplayer" class="mb-8">
         <button 
           @click="markAsDone('yes')" 
           class="w-full group bg-gradient-to-r from-green-700 to-emerald-700 hover:from-green-600 hover:to-emerald-600 px-8 py-5 rounded-2xl font-bold text-lg flex items-center justify-center gap-3 shadow-xl hover:shadow-green-600/50 transition-all duration-300 transform hover:scale-105 border-2 border-green-500/30"
@@ -142,20 +204,27 @@
   </div>
 </template>
 
-<script setup>
-import { ref, onMounted, computed } from 'vue';
+<script setup lang="ts">
+import { ref, onMounted, computed, watch } from 'vue';
 import { Icon } from '@iconify/vue';
 import { useAnalytics } from '~/composables/useAnalytics';
 // Questions are now loaded from database via API
 import { useNeverHaveIEverTracker } from '~/composables/useQuestionTracker';
 import { useGameStore } from '~/stores/game';
 import { useGroupGame } from '~/composables/useGroupGame';
+import { useMultiplayer } from '~/composables/useMultiplayer';
 
 const question = ref(null);
 
 // Game Store Integration
 const gameStore = useGameStore();
 const groupGame = useGroupGame();
+
+// Multiplayer integration
+const route = useRoute();
+const isMultiplayer = computed(() => route.query.multiplayer === 'true');
+const multiplayer = useMultiplayer();
+const { roomState, votes, isHost, submitVote, showResults, nextRound, connect } = multiplayer;
 
 // Initialize question tracker (will be populated from database)
 let questionTracker = null;
@@ -166,15 +235,41 @@ const penaltyMessage = ref('');
 const questionCount = ref(0);
 const penaltyCount = ref(0);
 
+// Multiplayer state
+const hasVoted = ref(false);
+const myVote = ref<string | null>(null);
+
 // Computed from store
 const roundCount = computed(() => gameStore.currentRound);
 
+// Multiplayer vote counts
+const haveCount = computed(() => {
+  return votes.value.filter(v => v.vote === 'have').length;
+});
+
+const haveNotCount = computed(() => {
+  return votes.value.filter(v => v.vote === 'haveNot').length;
+});
+
+const haveVotes = computed(() => {
+  return votes.value.filter(v => v.vote === 'have' && v.nickname);
+});
+
+const haveNotVotes = computed(() => {
+  return votes.value.filter(v => v.vote === 'haveNot' && v.nickname);
+});
+
 // Remove "Never have I ever" prefix from question text for display
 const questionTextWithoutPrefix = computed(() => {
-  if (!question.value?.text) return ''
+  if (!question.value || !question.value.text) return ''
   const text = question.value.text
   // Remove "Never have I ever" or "Never Have I Ever" prefix (case insensitive)
   return text.replace(/^never\s+have\s+i\s+ever\s+/i, '').trim() || text
+})
+
+// Key for transition
+const questionKey = computed(() => {
+  return question.value && question.value.text ? `question-${question.value.text}` : 'question-none'
 })
 
 // Initialize analytics
@@ -217,6 +312,60 @@ const markAsDone = (response) => {
     fetchAnother();
   }, 500);
 };
+
+// Multiplayer vote submission
+const handleSubmitVote = (vote: 'have' | 'haveNot') => {
+  if (hasVoted.value || !isMultiplayer.value) return;
+  
+  submitVote(vote);
+  hasVoted.value = true;
+  myVote.value = vote;
+  updateActivity();
+};
+
+// Handle next round (host only)
+const handleNextRound = () => {
+  if (!isHost.value || !isMultiplayer.value) return;
+  
+  const result = questionTracker?.getNextQuestion();
+  if (result) {
+    nextRound({ prompt: { text: result.question } });
+    hasVoted.value = false;
+    myVote.value = null;
+    question.value = { text: result.question };
+    questionCount.value++;
+  }
+};
+
+// Watch for game state updates in multiplayer
+watch(() => roomState.value.gamePhase, (newPhase) => {
+  if (newPhase === 'playing') {
+    hasVoted.value = false;
+    myVote.value = null;
+    
+    // If host, fetch next question
+    if (isHost.value && questionTracker) {
+      const result = questionTracker.getNextQuestion();
+      question.value = { text: result.question };
+      questionCount.value++;
+    } else if (roomState.value.currentPrompt) {
+      question.value = roomState.value.currentPrompt;
+    }
+  }
+});
+
+// Watch for vote updates
+watch(() => votes.value, (newVotes) => {
+  // Check if all players have voted (host can show results)
+  if (isHost.value && newVotes.length >= roomState.value.players.length) {
+    // Auto-show results after a short delay
+    setTimeout(() => {
+      if (roomState.value.gamePhase === 'playing') {
+        showResults();
+      }
+    }, 2000);
+  }
+});
 
 const applyPenalty = () => {
   const penalties = [
@@ -320,6 +469,22 @@ onMounted(async () => {
     // Track page view
     trackPageView('never-have-i-ever');
     
+    // Initialize multiplayer if in multiplayer mode
+    if (isMultiplayer.value) {
+      connect();
+      
+      // Check if we have room info
+      const roomInfo = localStorage.getItem('multiplayer_room');
+      if (roomInfo) {
+        try {
+          const info = JSON.parse(roomInfo);
+          console.log('Multiplayer room info:', info);
+        } catch (e) {
+          console.error('Failed to parse room info:', e);
+        }
+      }
+    }
+    
     // Load game state
     gameStore.loadFromLocalStorage();
     if (!gameStore.selectedGame) {
@@ -329,7 +494,19 @@ onMounted(async () => {
     // Load questions from database
     try {
       await loadQuestions()
-      fetchAnother();
+      
+      // In multiplayer, wait for host to start game
+      if (isMultiplayer.value) {
+        if (isHost.value && roomState.value.gamePhase === 'playing') {
+          const result = questionTracker.getNextQuestion();
+          question.value = { text: result.question };
+          questionCount.value++;
+        } else if (roomState.value.currentPrompt) {
+          question.value = roomState.value.currentPrompt;
+        }
+      } else {
+        fetchAnother();
+      }
     } catch (error) {
       console.error('Failed to load questions:', error)
       question.value = { text: 'Error loading questions. Please refresh the page or contact support.' }
