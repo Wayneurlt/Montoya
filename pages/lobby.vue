@@ -76,27 +76,9 @@
             </div>
           </div>
 
-          <!-- Debug Info (temporary - remove after fixing) -->
-          <div v-if="safeRoomState.roomCode" class="mb-4 p-3 bg-blue-500/20 rounded-lg text-xs space-y-1">
-            <div><strong>Debug Info:</strong></div>
-            <div>isHost: {{ isHost }}</div>
-            <div>isConnected: {{ isConnected }}</div>
-            <div>playerCount: {{ playerCount }}</div>
-            <div>roomCode: {{ safeRoomState.roomCode }}</div>
-            <div>hostSocketId: {{ safeRoomState.hostSocketId }}</div>
-            <div>gamePhase: {{ safeRoomState.gamePhase }}</div>
-            <div>error: {{ error }}</div>
-          </div>
 
           <!-- Host Controls - Always show if room exists, but disable if not host -->
           <div class="space-y-4">
-            <div v-if="!isHost" class="bg-yellow-500/20 border-2 border-yellow-500/50 rounded-xl p-4 mb-4">
-              <div class="flex items-center gap-2 text-yellow-300">
-                <Icon icon="mdi:information" class="w-5 h-5" />
-                <span class="font-semibold">Only the host can start the game</span>
-              </div>
-            </div>
-            
             <div class="bg-purple-500/20 rounded-xl p-4 border border-purple-500/30">
               <h3 class="font-bold mb-3 flex items-center gap-2">
                 <Icon icon="mdi:gamepad-variant" class="w-5 h-5" />

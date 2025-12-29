@@ -136,6 +136,14 @@ watch(() => roomState.value?.currentGame, (currentGame) => {
   }
 })
 
+// Watch for game ended event (host left) - redirect to lobby
+watch(() => roomState.value?.gamePhase, (phase) => {
+  if (phase === 'lobby' && roomState.value?.currentGame === null) {
+    // Game was ended by host leaving, redirect to lobby
+    router.push('/lobby')
+  }
+})
+
 // Note: error is readonly from composable, so we can't set it directly
 // The composable will handle error display
 

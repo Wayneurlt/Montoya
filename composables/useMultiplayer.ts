@@ -49,7 +49,14 @@ const roomState = ref<RoomState>({
 
 const votes = ref<VoteData[]>([])
 const error = ref<string | null>(null)
-const isHost = ref(false)
+const isHost = computed(() => {
+  // Get socket from the connect function's closure
+  const currentSocket = socket
+  if (!currentSocket || !currentSocket.id || !roomState.value.hostSocketId) {
+    return false
+  }
+  return roomState.value.hostSocketId === currentSocket.id
+})
 
 // Computed properties
 const playerCount = computed(() => roomState.value.players.length)
@@ -116,13 +123,11 @@ export const useMultiplayer = () => {
       roomState.value.maxPlayers = data.maxPlayers
       roomState.value.answerVisibility = data.answerVisibility
       roomState.value.hostSocketId = data.hostSocketId
-      isHost.value = data.hostSocketId === socket?.id
       console.log('🏠 Room created:', data.roomCode, 'hostSocketId:', data.hostSocketId, 'mySocketId:', socket?.id, 'isHost:', isHost.value)
     })
 
     socket.on('room:sync', (data: RoomState) => {
       roomState.value = data
-      isHost.value = roomState.value.hostSocketId === socket?.id
       console.log('🔄 Room synced:', data.roomCode)
       console.log('👑 Host check:', {
         hostSocketId: roomState.value.hostSocketId,
@@ -166,6 +171,19 @@ export const useMultiplayer = () => {
       console.error('❌ Room error:', data.message)
     })
 
+    socket.on('game:ended', (data: { message: string }) => {
+      console.log('🎮 Game ended:', data.message)
+      // Reset game state
+      roomState.value.gamePhase = 'lobby'
+      roomState.value.currentGame = null
+      roomState.value.currentPrompt = null
+      votes.value = []
+      // Navigate to lobby
+      if (typeof window !== 'undefined') {
+        navigateTo('/lobby')
+      }
+    })
+
     return socket
   }
 
@@ -188,7 +206,6 @@ export const useMultiplayer = () => {
         currentPrompt: null,
       }
       votes.value = []
-      isHost.value = false
       error.value = null
     }
   }
@@ -262,6 +279,13 @@ export const useMultiplayer = () => {
     }
   }
 
+  // End game and return to lobby (keeps players in room)
+  const endGame = () => {
+    if (socket && socket.connected && isHost.value) {
+      socket.emit('game:end')
+    }
+  }
+
   // Leave room
   const leaveRoom = () => {
     if (socket && socket.connected) {
@@ -276,7 +300,7 @@ export const useMultiplayer = () => {
     roomState: readonly(roomState),
     votes: readonly(votes),
     error: readonly(error),
-    isHost: readonly(isHost),
+    isHost,
     myPlayer: readonly(myPlayer),
     
     // Computed
@@ -293,6 +317,7 @@ export const useMultiplayer = () => {
     submitVote,
     showResults,
     nextRound,
+    endGame,
     leaveRoom,
   }
 }

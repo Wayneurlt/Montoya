@@ -128,6 +128,8 @@ export default defineNitroPlugin((nitroApp) => {
       roomName?: string
       maxPlayers?: number
       answerVisibility: 'anonymous' | 'public'
+      nickname?: string
+      gender?: 'male' | 'female' | 'other'
     }) => {
       try {
         const roomCode = generateRoomCode()
@@ -152,8 +154,8 @@ export default defineNitroPlugin((nitroApp) => {
         // Add host as first player
         room.players.set(socket.id, {
           socketId: socket.id,
-          nickname: 'Host', // Will be updated when they set their name
-          gender: undefined, // Will be updated when they set their name
+          nickname: data.nickname || 'Host', // Use provided nickname
+          gender: data.gender || undefined, // Use provided gender
           isHost: true,
           connected: true,
         })
@@ -347,8 +349,9 @@ export default defineNitroPlugin((nitroApp) => {
           return
         }
 
+        // Silently ignore duplicate votes - don't emit error, just return
         if (player.hasVoted) {
-          socket.emit('room:error', { message: 'Already voted' })
+          console.log(`🗳️ Duplicate vote attempt from ${player.nickname} in room ${room.roomCode} - ignoring`)
           return
         }
 
@@ -383,6 +386,70 @@ export default defineNitroPlugin((nitroApp) => {
       } catch (error) {
         console.error('❌ Error submitting vote:', error)
         socket.emit('room:error', { message: 'Failed to submit vote' })
+      }
+    })
+
+    // End game and return to lobby (host only - keeps players in room)
+    socket.on('game:end', () => {
+      try {
+        const room = findRoomBySocketId(socket.id)
+        if (!room) {
+          socket.emit('room:error', { message: 'Not in a room' })
+          return
+        }
+
+        const player = room.players.get(socket.id)
+        if (!player || !player.isHost) {
+          socket.emit('room:error', { message: 'Only host can end game' })
+          return
+        }
+
+        // Reset game state but keep players in room
+        room.currentGame = null
+        room.gamePhase = 'lobby'
+        room.currentPrompt = null
+        room.votes.clear()
+        room.lastUpdated = Date.now()
+
+        // Reset all player votes
+        room.players.forEach(p => {
+          p.hasVoted = false
+          p.vote = undefined
+        })
+
+        console.log(`🎮 Game ended in room ${room.roomCode}, returning to lobby`)
+
+        // Broadcast game ended event to all players
+        if (io) {
+          io.to(room.roomId).emit('game:ended', {
+            message: 'Game ended. Returning to lobby.',
+          })
+          
+          // Also sync room state
+          const playersList = Array.from(room.players.values()).map(p => ({
+            socketId: p.socketId,
+            nickname: p.nickname,
+            gender: p.gender,
+            isHost: p.isHost,
+            connected: p.connected,
+          }))
+
+          io.to(room.roomId).emit('room:sync', {
+            roomId: room.roomId,
+            roomCode: room.roomCode,
+            roomName: room.roomName,
+            maxPlayers: room.maxPlayers,
+            answerVisibility: room.answerVisibility,
+            hostSocketId: room.hostSocketId,
+            players: playersList,
+            currentGame: room.currentGame,
+            gamePhase: room.gamePhase,
+            currentPrompt: room.currentPrompt,
+          })
+        }
+      } catch (error) {
+        console.error('❌ Error ending game:', error)
+        socket.emit('room:error', { message: 'Failed to end game' })
       }
     })
 
@@ -466,7 +533,7 @@ export default defineNitroPlugin((nitroApp) => {
       }
     })
 
-    // Leave room
+    // Leave room - if host leaves, end game and notify all players
     socket.on('room:leave', () => {
       try {
         const room = findRoomBySocketId(socket.id)
@@ -484,11 +551,24 @@ export default defineNitroPlugin((nitroApp) => {
 
         console.log(`👋 Player left room ${room.roomCode}`)
 
-        // Migrate host if needed
+        // If host leaves, end game and return all players to lobby
         if (wasHost) {
+          room.gamePhase = 'lobby'
+          room.currentGame = null
+          room.currentPrompt = null
+          room.votes.clear()
+          
+          // Migrate host if there are other players
           const newHost = migrateHost(room)
           if (newHost) {
             console.log(`👑 New host: ${newHost.nickname} in room ${room.roomCode}`)
+          }
+          
+          // Notify all players that game ended and return to lobby
+          if (io) {
+            io.to(room.roomId).emit('game:ended', {
+              message: 'Host left the game. Returning to lobby.',
+            })
           }
         }
 
@@ -502,6 +582,7 @@ export default defineNitroPlugin((nitroApp) => {
         const playersList = Array.from(room.players.values()).map(p => ({
           socketId: p.socketId,
           nickname: p.nickname,
+          gender: p.gender,
           isHost: p.isHost,
           connected: p.connected,
         }))

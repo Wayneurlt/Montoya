@@ -12,6 +12,15 @@
           {{ roomState.roomCode }}
         </div>
       </div>
+      <div v-if="isHost" class="flex">
+        <button
+          @click="handleChangeGame"
+          class="bg-yellow-500/20 hover:bg-yellow-500/30 backdrop-blur-md px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg transition-all flex items-center gap-2 border border-yellow-500/30 hover:scale-105"
+        >
+          <Icon icon="mdi:gamepad-variant" class="w-5 h-5" />
+          <span class="font-medium hidden sm:inline">Change Game</span>
+        </button>
+      </div>
     </div>
 
     <!-- Game Title -->
@@ -23,15 +32,15 @@
     </div>
 
     <!-- Playing Phase: Show Question and Voting -->
-    <div v-if="roomState.gamePhase === 'playing' && roomState.currentPrompt" class="space-y-6">
-      <!-- Parse question into two options -->
-      <div v-if="parsedOptions" class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+    <div v-if="roomState.gamePhase === 'playing' && roomState.currentPrompt && parsedOptions" class="space-y-6">
+      <!-- Two Options as Tappable Cards -->
+      <div class="relative grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
         <!-- Option A -->
         <button
           @click="submitVote('Option A')"
           :disabled="isSubmitting || hasVoted"
           :class="[
-            'group cursor-pointer bg-gradient-to-br from-red-800/30 to-red-950/20 hover:from-red-800/40 hover:to-red-950/30 backdrop-blur-md rounded-2xl p-6 border-2 border-red-600/40 hover:border-red-500/70 transition-all duration-300 transform hover:scale-105 min-h-[200px] flex flex-col justify-center',
+            'group cursor-pointer bg-gradient-to-br from-red-800/30 to-red-950/20 hover:from-red-800/40 hover:to-red-950/30 backdrop-blur-md rounded-2xl p-8 border-2 border-red-600/40 hover:border-red-500/70 transition-all duration-300 transform hover:scale-105 min-h-[250px] flex flex-col justify-center relative',
             { 'ring-4 ring-red-500 scale-105': myVote === 'Option A' },
             { 'opacity-50 cursor-not-allowed': hasVoted && myVote !== 'Option A' }
           ]"
@@ -63,7 +72,7 @@
           @click="submitVote('Option B')"
           :disabled="isSubmitting || hasVoted"
           :class="[
-            'group cursor-pointer bg-gradient-to-br from-orange-800/30 to-orange-950/20 hover:from-orange-800/40 hover:to-orange-950/30 backdrop-blur-md rounded-2xl p-6 border-2 border-orange-600/40 hover:border-orange-500/70 transition-all duration-300 transform hover:scale-105 min-h-[200px] flex flex-col justify-center',
+            'group cursor-pointer bg-gradient-to-br from-orange-800/30 to-orange-950/20 hover:from-orange-800/40 hover:to-orange-950/30 backdrop-blur-md rounded-2xl p-8 border-2 border-orange-600/40 hover:border-orange-500/70 transition-all duration-300 transform hover:scale-105 min-h-[250px] flex flex-col justify-center relative',
             { 'ring-4 ring-orange-500 scale-105': myVote === 'Option B' },
             { 'opacity-50 cursor-not-allowed': hasVoted && myVote !== 'Option B' }
           ]"
@@ -90,29 +99,59 @@
         <p class="text-xl font-semibold">You've voted! Waiting for others...</p>
       </div>
 
-      <!-- Live Vote Count -->
+      <!-- Live Vote Count - Real-time Animation -->
       <div v-if="votes.length > 0" class="bg-white/10 backdrop-blur-md rounded-xl p-4 border border-white/20">
         <h3 class="font-bold mb-3">Live Results</h3>
         <div class="space-y-3">
+          <!-- Option A -->
           <div>
             <div class="flex items-center justify-between mb-2">
               <span class="font-semibold">Option A:</span>
-              <span class="text-red-400">{{ optionACount }} votes ({{ optionAPercentage }}%)</span>
+              <span class="text-red-400 font-bold">{{ optionACount }} votes ({{ optionAPercentage }}%)</span>
             </div>
-            <div class="w-full bg-white/10 rounded-full h-4">
-              <div class="bg-red-500 h-4 rounded-full transition-all" :style="{ width: optionAPercentage + '%' }"></div>
+            <div class="w-full bg-white/10 rounded-full h-4 overflow-hidden">
+              <div 
+                class="bg-red-500 h-4 rounded-full transition-all duration-500 ease-out"
+                :style="{ width: optionAPercentage + '%' }"
+              ></div>
+            </div>
+            <!-- Public: Show who picked -->
+            <div v-if="roomState.answerVisibility === 'public' && optionAVotes.length > 0" class="mt-2 space-y-1">
+              <div
+                v-for="vote in optionAVotes"
+                :key="vote.socketId || Math.random()"
+                class="text-sm text-white/80 animate-fade-in"
+              >
+                {{ vote.nickname || 'Player' }}
+              </div>
             </div>
           </div>
+          
+          <!-- Option B -->
           <div>
             <div class="flex items-center justify-between mb-2">
               <span class="font-semibold">Option B:</span>
-              <span class="text-orange-400">{{ optionBCount }} votes ({{ optionBPercentage }}%)</span>
+              <span class="text-orange-400 font-bold">{{ optionBCount }} votes ({{ optionBPercentage }}%)</span>
             </div>
-            <div class="w-full bg-white/10 rounded-full h-4">
-              <div class="bg-orange-500 h-4 rounded-full transition-all" :style="{ width: optionBPercentage + '%' }"></div>
+            <div class="w-full bg-white/10 rounded-full h-4 overflow-hidden">
+              <div 
+                class="bg-orange-500 h-4 rounded-full transition-all duration-500 ease-out"
+                :style="{ width: optionBPercentage + '%' }"
+              ></div>
+            </div>
+            <!-- Public: Show who picked -->
+            <div v-if="roomState.answerVisibility === 'public' && optionBVotes.length > 0" class="mt-2 space-y-1">
+              <div
+                v-for="vote in optionBVotes"
+                :key="vote.socketId || Math.random()"
+                class="text-sm text-white/80 animate-fade-in"
+              >
+                {{ vote.nickname || 'Player' }}
+              </div>
             </div>
           </div>
-          <div class="mt-2 text-sm text-white/60">
+          
+          <div class="text-sm text-white/60 text-center">
             {{ votes.length }} / {{ roomState.players.length }} players voted
           </div>
         </div>
@@ -136,6 +175,7 @@
         <h2 class="text-2xl font-bold mb-4 text-center">Results</h2>
         
         <div class="space-y-4">
+          <!-- Option A -->
           <div class="bg-red-500/20 border-2 border-red-500/50 rounded-xl p-4">
             <div class="flex items-center justify-between mb-2">
               <span class="font-bold text-lg">Option A</span>
@@ -144,7 +184,8 @@
             <div class="w-full bg-white/10 rounded-full h-4 mb-2">
               <div class="bg-red-500 h-4 rounded-full" :style="{ width: optionAPercentage + '%' }"></div>
             </div>
-            <div v-if="roomState.answerVisibility === 'public'" class="mt-2 space-y-1">
+            <!-- Public: Show who picked -->
+            <div v-if="roomState.answerVisibility === 'public' && optionAVotes.length > 0" class="mt-2 space-y-1">
               <div
                 v-for="vote in optionAVotes"
                 :key="vote.socketId || Math.random()"
@@ -155,6 +196,7 @@
             </div>
           </div>
 
+          <!-- Option B -->
           <div class="bg-orange-500/20 border-2 border-orange-500/50 rounded-xl p-4">
             <div class="flex items-center justify-between mb-2">
               <span class="font-bold text-lg">Option B</span>
@@ -163,7 +205,8 @@
             <div class="w-full bg-white/10 rounded-full h-4 mb-2">
               <div class="bg-orange-500 h-4 rounded-full" :style="{ width: optionBPercentage + '%' }"></div>
             </div>
-            <div v-if="roomState.answerVisibility === 'public'" class="mt-2 space-y-1">
+            <!-- Public: Show who picked -->
+            <div v-if="roomState.answerVisibility === 'public' && optionBVotes.length > 0" class="mt-2 space-y-1">
               <div
                 v-for="vote in optionBVotes"
                 :key="vote.socketId || Math.random()"
@@ -186,6 +229,27 @@
           <Icon icon="mdi:arrow-right" class="w-5 h-5 inline mr-2" />
           {{ isLoading ? 'Loading...' : 'Next Question' }}
         </button>
+      </div>
+    </div>
+
+    <!-- Game Started but No Question Yet -->
+    <div v-else-if="roomState.gamePhase === 'playing' && !roomState.currentPrompt" class="space-y-6">
+      <div class="bg-white/10 backdrop-blur-md rounded-2xl p-8 border border-white/20 text-center">
+        <Icon icon="mdi:thought-bubble" class="w-16 h-16 mx-auto mb-4 text-purple-400" />
+        <p class="text-xl font-semibold mb-4">Game Started!</p>
+        <p class="text-white/60 mb-6">Waiting for host to load the first question...</p>
+        
+        <!-- Host: Load First Question -->
+        <div v-if="isHost" class="bg-purple-500/20 rounded-xl p-6 border border-purple-500/30">
+          <button
+            @click="getNextQuestion"
+            :disabled="isLoading"
+            class="w-full bg-gradient-to-r from-purple-600 via-pink-600 to-purple-600 hover:from-purple-500 hover:via-pink-500 hover:to-purple-500 text-white px-6 py-3 rounded-xl font-black shadow-xl transition-all transform hover:scale-105 disabled:opacity-50"
+          >
+            <Icon icon="mdi:arrow-right" class="w-5 h-5 inline mr-2" />
+            {{ isLoading ? 'Loading...' : 'Load First Question' }}
+          </button>
+        </div>
       </div>
     </div>
 
@@ -219,8 +283,9 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch } from 'vue'
+import { ref, computed, watch, onMounted } from 'vue'
 import { Icon } from '@iconify/vue'
+import { useRouter } from 'vue-router'
 
 interface Props {
   roomState: any
@@ -229,16 +294,28 @@ interface Props {
 }
 
 const props = defineProps<Props>()
+const router = useRouter()
+
+// Use the multiplayer composable directly for reactivity
+const multiplayer = props.multiplayer
+const roomState = computed(() => multiplayer.roomState.value)
+const isHost = computed(() => multiplayer.isHost.value)
+
+const handleChangeGame = () => {
+  if (!isHost.value) return
+  multiplayer.endGame()
+  router.push('/lobby')
+}
 
 const isLoading = ref(false)
 const isSubmitting = ref(false)
 const hasVoted = ref(false)
 const myVote = ref<string | null>(null)
 
-const votes = computed(() => props.multiplayer.votes.value || [])
+const votes = computed(() => multiplayer.votes.value || [])
 
 const parsedOptions = computed(() => {
-  const prompt = props.roomState.currentPrompt
+  const prompt = roomState.value.currentPrompt
   if (!prompt) return null
   
   const text = prompt.text || prompt
@@ -274,12 +351,12 @@ const optionBVotes = computed(() => {
 const optionACount = computed(() => optionAVotes.value.length)
 const optionBCount = computed(() => optionBVotes.value.length)
 
-const totalVotes = computed(() => votes.value.length || 1)
+const totalVotes = computed(() => Math.max(votes.value.length, 1))
 const optionAPercentage = computed(() => Math.round((optionACount.value / totalVotes.value) * 100))
 const optionBPercentage = computed(() => Math.round((optionBCount.value / totalVotes.value) * 100))
 
 // Watch for vote updates
-watch(() => [props.multiplayer.votes.value, props.multiplayer.myPlayer.value], ([newVotes, myPlayer]) => {
+watch(() => [multiplayer.votes.value, multiplayer.myPlayer.value], ([newVotes, myPlayer]) => {
   if (myPlayer && newVotes) {
     const myVoteData = newVotes.find((v: any) => v.socketId === myPlayer.socketId)
     if (myVoteData) {
@@ -293,17 +370,17 @@ watch(() => [props.multiplayer.votes.value, props.multiplayer.myPlayer.value], (
 }, { immediate: true })
 
 // Reset vote status when new question starts
-watch(() => props.roomState.currentPrompt, () => {
+watch(() => roomState.value.currentPrompt, () => {
   hasVoted.value = false
   myVote.value = null
 })
 
-const submitVote = async (vote: string) => {
+const submitVote = async (vote: 'Option A' | 'Option B') => {
   if (isSubmitting.value || hasVoted.value) return
   isSubmitting.value = true
 
   try {
-    props.multiplayer.submitVote(vote)
+    multiplayer.submitVote(vote)
     hasVoted.value = true
     myVote.value = vote
   } catch (error) {
@@ -314,27 +391,41 @@ const submitVote = async (vote: string) => {
 }
 
 const showResults = () => {
-  if (!props.isHost) return
-  props.multiplayer.showResults()
+  if (!isHost.value) return
+  multiplayer.showResults()
+}
+
+// Question tracker
+let questionTracker: any = null
+
+// Load questions from database
+async function loadQuestions() {
+  try {
+    const response = await $fetch('/api/questions/group-game?gameType=WOULD_YOU_RATHER&limit=200')
+    const questions = response.questions || []
+    const questionTexts = questions.map((q: any) => q.text || String(q))
+    
+    const { useWouldYouRatherTracker } = await import('~/composables/useQuestionTracker')
+    questionTracker = useWouldYouRatherTracker(questionTexts)
+  } catch (error) {
+    console.error('Error loading questions:', error)
+  }
 }
 
 const getNextQuestion = async () => {
-  if (isLoading.value || !props.isHost) return
+  if (isLoading.value || !isHost.value) return
   isLoading.value = true
 
   try {
-    const response = await $fetch('/api/group-questions/next', {
-      method: 'POST',
-      body: {
-        gameType: 'WOULD_YOU_RATHER',
+    if (!questionTracker) {
+      await loadQuestions()
+    }
+    
+    if (questionTracker) {
+      const result = questionTracker.getNextQuestion()
+      multiplayer.nextRound({
+        text: result.question,
         intensity: 2,
-      }
-    })
-
-    if (response) {
-      props.multiplayer.nextRound({
-        text: response.text,
-        intensity: response.intensity,
       })
     }
   } catch (error) {
@@ -343,11 +434,24 @@ const getNextQuestion = async () => {
     isLoading.value = false
   }
 }
+
+onMounted(() => {
+  loadQuestions()
+})
 </script>
 
 <style scoped>
-.relative {
-  position: relative;
+@keyframes fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+.animate-fade-in {
+  animation: fade-in 0.3s ease-out;
 }
 </style>
-

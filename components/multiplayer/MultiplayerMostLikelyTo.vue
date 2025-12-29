@@ -12,6 +12,15 @@
           {{ roomState.roomCode }}
         </div>
       </div>
+      <div v-if="isHost" class="flex">
+        <button
+          @click="handleChangeGame"
+          class="bg-yellow-500/20 hover:bg-yellow-500/30 backdrop-blur-md px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg transition-all flex items-center gap-2 border border-yellow-500/30 hover:scale-105"
+        >
+          <Icon icon="mdi:gamepad-variant" class="w-5 h-5" />
+          <span class="font-medium hidden sm:inline">Change Game</span>
+        </button>
+      </div>
     </div>
 
     <!-- Game Title -->
@@ -30,13 +39,10 @@
           <p class="text-2xl sm:text-3xl md:text-4xl font-bold mb-4 leading-relaxed">
             {{ roomState.currentPrompt?.text || roomState.currentPrompt }}
           </p>
-          <div v-if="roomState.currentPrompt.intensity" class="text-sm text-white/60">
-            Intensity: {{ roomState.currentPrompt.intensity }}/3
-          </div>
         </div>
       </div>
 
-      <!-- Voting Options (if not voted yet) -->
+      <!-- Voting Options (if not voted yet) - Players cannot vote for themselves -->
       <div v-if="!hasVoted" class="bg-white/10 backdrop-blur-md rounded-xl p-6 border border-white/20">
         <h3 class="font-bold mb-4 text-center">Who is most likely to?</h3>
         <div class="grid grid-cols-2 sm:grid-cols-3 gap-3">
@@ -50,7 +56,10 @@
             <div class="w-12 h-12 rounded-full bg-gradient-to-r from-purple-500 to-pink-500 flex items-center justify-center font-bold mx-auto mb-2">
               {{ player.nickname.charAt(0).toUpperCase() }}
             </div>
-            <div class="text-sm font-semibold">{{ player.nickname }}</div>
+            <div class="text-sm font-semibold flex items-center justify-center gap-1">
+              {{ player.nickname }}
+              <span v-if="player.isHost" class="text-xs text-purple-400">👑</span>
+            </div>
           </button>
         </div>
       </div>
@@ -72,9 +81,9 @@
             class="flex items-center justify-between"
           >
             <span class="font-semibold">{{ player.nickname }}:</span>
-            <span class="text-purple-400">{{ getVoteCount(player.socketId) }} votes</span>
+            <span class="text-purple-400 font-bold animate-pulse">{{ getVoteCount(player.socketId) }} votes</span>
           </div>
-          <div class="mt-2 text-sm text-white/60">
+          <div class="mt-2 text-sm text-white/60 text-center">
             {{ votes.length }} / {{ roomState.players.length }} players voted
           </div>
         </div>
@@ -92,29 +101,39 @@
       </div>
     </div>
 
-    <!-- Results Phase -->
+    <!-- Results Phase - Reveal with Animation -->
     <div v-else-if="roomState.gamePhase === 'results'" class="space-y-6">
       <div class="bg-white/10 backdrop-blur-md rounded-2xl p-6 border border-white/20">
         <h2 class="text-2xl font-bold mb-4 text-center">Results</h2>
         
-        <!-- Winner Highlight -->
-        <div v-if="winner" class="bg-gradient-to-r from-yellow-500/30 to-orange-500/30 border-4 border-yellow-500/50 rounded-xl p-6 mb-4 text-center animate-pulse">
-          <Icon icon="mdi:trophy" class="w-16 h-16 mx-auto mb-2 text-yellow-400" />
-          <p class="text-3xl font-black mb-2">{{ winner.nickname }}</p>
-          <p class="text-xl text-yellow-300">Wins with {{ winner.votes }} votes!</p>
+        <!-- Winner Highlight with Confetti Effect -->
+        <div v-if="winner" class="bg-gradient-to-r from-yellow-500/30 to-orange-500/30 border-4 border-yellow-500/50 rounded-xl p-6 mb-4 text-center animate-pulse relative overflow-hidden">
+          <!-- Confetti Effect -->
+          <div class="absolute inset-0 overflow-hidden pointer-events-none">
+            <div class="confetti confetti-1">🎉</div>
+            <div class="confetti confetti-2">✨</div>
+            <div class="confetti confetti-3">🎊</div>
+            <div class="confetti confetti-4">🌟</div>
+            <div class="confetti confetti-5">💫</div>
+          </div>
+          <Icon icon="mdi:trophy" class="w-16 h-16 mx-auto mb-2 text-yellow-400 relative z-10" />
+          <p class="text-3xl font-black mb-2 relative z-10">{{ winner.nickname }}</p>
+          <p class="text-xl text-yellow-300 relative z-10">Wins with {{ winner.votes }} votes!</p>
         </div>
         
-        <!-- All Results -->
+        <!-- All Results with Vote Distribution Animation -->
         <div class="space-y-3">
           <div
-            v-for="player in sortedPlayers"
+            v-for="(player, index) in sortedPlayers"
             :key="player.socketId"
             :class="[
-              'rounded-xl p-4',
+              'rounded-xl p-4 transition-all duration-500',
               player.socketId === winner?.socketId 
-                ? 'bg-yellow-500/20 border-2 border-yellow-500/50' 
+                ? 'bg-yellow-500/20 border-2 border-yellow-500/50 shadow-lg shadow-yellow-500/30' 
                 : 'bg-white/5 border border-white/10'
             ]"
+            :style="{ animationDelay: index * 100 + 'ms' }"
+            class="animate-slide-up"
           >
             <div class="flex items-center justify-between mb-2">
               <div class="flex items-center gap-3">
@@ -122,14 +141,15 @@
                   {{ player.nickname.charAt(0).toUpperCase() }}
                 </div>
                 <span class="font-bold text-lg">{{ player.nickname }}</span>
+                <span v-if="player.isHost" class="text-xs text-purple-400">👑</span>
               </div>
               <span class="text-2xl font-black text-purple-400">{{ player.votes }} votes</span>
             </div>
             
-            <!-- Vote Bar -->
-            <div class="w-full bg-white/10 rounded-full h-3 mb-2">
+            <!-- Vote Bar with Animation -->
+            <div class="w-full bg-white/10 rounded-full h-3 mb-2 overflow-hidden">
               <div 
-                class="bg-gradient-to-r from-purple-500 to-pink-500 h-3 rounded-full transition-all"
+                class="bg-gradient-to-r from-purple-500 to-pink-500 h-3 rounded-full transition-all duration-1000 ease-out"
                 :style="{ width: (player.votes / totalVotes) * 100 + '%' }"
               ></div>
             </div>
@@ -138,6 +158,7 @@
             <div v-if="roomState.answerVisibility === 'public' && player.voters.length > 0" class="mt-2 text-sm text-white/60">
               Voted by: {{ player.voters.map((v: any) => v.nickname || 'Player').join(', ') }}
             </div>
+            <!-- Anonymous: only show vote count (already shown above) -->
           </div>
         </div>
       </div>
@@ -152,6 +173,27 @@
           <Icon icon="mdi:arrow-right" class="w-5 h-5 inline mr-2" />
           {{ isLoading ? 'Loading...' : 'Next Question' }}
         </button>
+      </div>
+    </div>
+
+    <!-- Game Started but No Question Yet -->
+    <div v-else-if="roomState.gamePhase === 'playing' && !roomState.currentPrompt" class="space-y-6">
+      <div class="bg-white/10 backdrop-blur-md rounded-2xl p-8 border border-white/20 text-center">
+        <Icon icon="mdi:thought-bubble" class="w-16 h-16 mx-auto mb-4 text-purple-400" />
+        <p class="text-xl font-semibold mb-4">Game Started!</p>
+        <p class="text-white/60 mb-6">Waiting for host to load the first question...</p>
+        
+        <!-- Host: Load First Question -->
+        <div v-if="isHost" class="bg-purple-500/20 rounded-xl p-6 border border-purple-500/30">
+          <button
+            @click="getNextQuestion"
+            :disabled="isLoading"
+            class="w-full bg-gradient-to-r from-purple-600 via-pink-600 to-purple-600 hover:from-purple-500 hover:via-pink-500 hover:to-purple-500 text-white px-6 py-3 rounded-xl font-black shadow-xl transition-all transform hover:scale-105 disabled:opacity-50"
+          >
+            <Icon icon="mdi:arrow-right" class="w-5 h-5 inline mr-2" />
+            {{ isLoading ? 'Loading...' : 'Load First Question' }}
+          </button>
+        </div>
       </div>
     </div>
 
@@ -185,8 +227,9 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch } from 'vue'
+import { ref, computed, watch, onMounted } from 'vue'
 import { Icon } from '@iconify/vue'
+import { useRouter } from 'vue-router'
 
 interface Props {
   roomState: any
@@ -195,6 +238,18 @@ interface Props {
 }
 
 const props = defineProps<Props>()
+const router = useRouter()
+
+// Use the multiplayer composable directly for reactivity
+const multiplayer = props.multiplayer
+const roomState = computed(() => multiplayer.roomState.value)
+const isHost = computed(() => multiplayer.isHost.value)
+
+const handleChangeGame = () => {
+  if (!isHost.value) return
+  multiplayer.endGame()
+  router.push('/lobby')
+}
 
 const isLoading = ref(false)
 const isSubmitting = ref(false)
@@ -202,14 +257,14 @@ const hasVoted = ref(false)
 const myVote = ref<string | null>(null)
 const votedForPlayer = ref<any>(null)
 
-const votes = computed(() => props.multiplayer.votes.value || [])
+const votes = computed(() => multiplayer.votes.value || [])
 
-// Get other players (exclude self)
+// Get other players (exclude self) - Players cannot vote for themselves
 const otherPlayers = computed(() => {
-  const myPlayer = props.multiplayer.myPlayer.value
-  if (!myPlayer) return props.roomState.players
+  const myPlayer = multiplayer.myPlayer.value
+  if (!myPlayer) return roomState.value.players
   
-  return props.roomState.players.filter((p: any) => p.socketId !== myPlayer.socketId)
+  return roomState.value.players.filter((p: any) => p.socketId !== myPlayer.socketId)
 })
 
 // Get vote count for a player
@@ -219,12 +274,13 @@ const getVoteCount = (socketId: string) => {
 
 // Calculate results
 const sortedPlayers = computed(() => {
-  return props.roomState.players.map((player: any) => {
+  return roomState.value.players.map((player: any) => {
     const playerVotes = votes.value.filter((v: any) => v.vote === player.socketId)
     return {
       ...player,
       votes: playerVotes.length,
-      voters: props.roomState.answerVisibility === 'public' 
+      // Public: show who voted, Anonymous: empty array
+      voters: roomState.value.answerVisibility === 'public' 
         ? playerVotes.map((v: any) => ({ nickname: v.nickname, socketId: v.socketId }))
         : []
     }
@@ -241,14 +297,14 @@ const totalVotes = computed(() => {
 })
 
 // Watch for vote updates
-watch(() => [props.multiplayer.votes.value, props.multiplayer.myPlayer.value], ([newVotes, myPlayer]) => {
+watch(() => [multiplayer.votes.value, multiplayer.myPlayer.value], ([newVotes, myPlayer]) => {
   if (myPlayer && newVotes) {
     const myVoteData = newVotes.find((v: any) => v.socketId === myPlayer.socketId)
     if (myVoteData) {
       hasVoted.value = true
       myVote.value = myVoteData.vote
       // Find the player we voted for
-      votedForPlayer.value = props.roomState.players.find((p: any) => p.socketId === myVoteData.vote)
+      votedForPlayer.value = roomState.value.players.find((p: any) => p.socketId === myVoteData.vote)
     } else {
       hasVoted.value = false
       myVote.value = null
@@ -258,7 +314,7 @@ watch(() => [props.multiplayer.votes.value, props.multiplayer.myPlayer.value], (
 }, { immediate: true })
 
 // Reset vote status when new question starts
-watch(() => props.roomState.currentPrompt, () => {
+watch(() => roomState.value.currentPrompt, () => {
   hasVoted.value = false
   myVote.value = null
   votedForPlayer.value = null
@@ -269,10 +325,10 @@ const submitVote = async (playerSocketId: string) => {
   isSubmitting.value = true
 
   try {
-    props.multiplayer.submitVote(playerSocketId)
+    multiplayer.submitVote(playerSocketId)
     hasVoted.value = true
     myVote.value = playerSocketId
-    votedForPlayer.value = props.roomState.players.find((p: any) => p.socketId === playerSocketId)
+    votedForPlayer.value = roomState.value.players.find((p: any) => p.socketId === playerSocketId)
   } catch (error) {
     console.error('Error submitting vote:', error)
   } finally {
@@ -281,27 +337,41 @@ const submitVote = async (playerSocketId: string) => {
 }
 
 const showResults = () => {
-  if (!props.isHost) return
-  props.multiplayer.showResults()
+  if (!isHost.value) return
+  multiplayer.showResults()
+}
+
+// Question tracker
+let questionTracker: any = null
+
+// Load questions from database
+async function loadQuestions() {
+  try {
+    const response = await $fetch('/api/questions/group-game?gameType=MOST_LIKELY_TO&limit=200')
+    const questions = response.questions || []
+    const questionTexts = questions.map((q: any) => q.text || String(q))
+    
+    const { useMostLikelyToTracker } = await import('~/composables/useQuestionTracker')
+    questionTracker = useMostLikelyToTracker(questionTexts)
+  } catch (error) {
+    console.error('Error loading questions:', error)
+  }
 }
 
 const getNextQuestion = async () => {
-  if (isLoading.value || !props.isHost) return
+  if (isLoading.value || !isHost.value) return
   isLoading.value = true
 
   try {
-    const response = await $fetch('/api/group-questions/next', {
-      method: 'POST',
-      body: {
-        gameType: 'MOST_LIKELY_TO',
+    if (!questionTracker) {
+      await loadQuestions()
+    }
+    
+    if (questionTracker) {
+      const result = questionTracker.getNextQuestion()
+      multiplayer.nextRound({
+        text: result.question,
         intensity: 2,
-      }
-    })
-
-    if (response) {
-      props.multiplayer.nextRound({
-        text: response.text,
-        intensity: response.intensity,
       })
     }
   } catch (error) {
@@ -310,5 +380,68 @@ const getNextQuestion = async () => {
     isLoading.value = false
   }
 }
+
+onMounted(() => {
+  loadQuestions()
+})
 </script>
 
+<style scoped>
+@keyframes slide-up {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+.animate-slide-up {
+  animation: slide-up 0.5s ease-out forwards;
+  opacity: 0;
+}
+
+@keyframes confetti-fall {
+  0% {
+    transform: translateY(-100vh) rotate(0deg);
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(100vh) rotate(720deg);
+    opacity: 0;
+  }
+}
+
+.confetti {
+  position: absolute;
+  font-size: 1.5rem;
+  animation: confetti-fall 3s linear infinite;
+  pointer-events: none;
+}
+
+.confetti-1 {
+  left: 10%;
+  animation-delay: 0s;
+}
+
+.confetti-2 {
+  left: 30%;
+  animation-delay: 0.5s;
+}
+
+.confetti-3 {
+  left: 50%;
+  animation-delay: 1s;
+}
+
+.confetti-4 {
+  left: 70%;
+  animation-delay: 1.5s;
+}
+
+.confetti-5 {
+  left: 90%;
+  animation-delay: 2s;
+}
+</style>

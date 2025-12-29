@@ -12,14 +12,34 @@
           {{ roomState.roomCode }}
         </div>
       </div>
+      <div v-if="isHost" class="flex">
+        <button
+          @click="handleChangeGame"
+          class="bg-yellow-500/20 hover:bg-yellow-500/30 backdrop-blur-md px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg transition-all flex items-center gap-2 border border-yellow-500/30 hover:scale-105"
+        >
+          <Icon icon="mdi:gamepad-variant" class="w-5 h-5" />
+          <span class="font-medium hidden sm:inline">Change Game</span>
+        </button>
+      </div>
     </div>
 
     <!-- Game Title -->
     <div class="text-center mb-8">
       <h1 class="text-4xl sm:text-5xl md:text-6xl font-black mb-4 bg-clip-text text-transparent bg-gradient-to-r from-purple-400 via-pink-500 to-cyan-400 drop-shadow-2xl">
-        Truth or Dare
+        💬 Truth or Dare
       </h1>
-      <p class="text-purple-200/80 text-sm font-medium">Host controls the game flow</p>
+      <p class="text-purple-200/80 text-sm font-medium">{{ roomState.answerVisibility === 'anonymous' ? 'Anonymous Mode' : 'Public Mode' }}</p>
+    </div>
+
+    <!-- Current Player Display -->
+    <div v-if="currentPlayer" class="bg-white/5 rounded-xl p-4 mb-6 border border-white/10">
+      <div class="text-center">
+        <div class="text-sm text-white/60 mb-1">Current Turn</div>
+        <div class="text-xl font-bold flex items-center justify-center gap-2">
+          <span>{{ currentPlayer.nickname }}</span>
+          <span v-if="currentPlayer.gender" class="text-2xl">{{ currentPlayer.gender === 'male' ? '♂' : currentPlayer.gender === 'female' ? '♀' : '⚧' }}</span>
+        </div>
+      </div>
     </div>
 
     <!-- Intensity Toggle (Host Only) -->
@@ -56,21 +76,8 @@
 
     <!-- Current Card Display -->
     <div v-if="roomState.currentPrompt && cardFlipped" class="mb-6">
-      <div class="bg-gradient-to-br rounded-3xl p-8 md:p-12 shadow-2xl border-2 relative overflow-hidden min-h-[200px] flex items-center justify-center"
-        :class="roomState.currentPrompt.type === 'TRUTH' 
-          ? 'from-blue-950/60 to-cyan-950/60 border-blue-500/30' 
-          : 'from-pink-950/60 to-red-950/60 border-pink-500/30'">
-        <!-- Decorative elements -->
-        <div class="absolute top-0 right-0 w-32 h-32 rounded-bl-full"
-          :class="roomState.currentPrompt.type === 'TRUTH' 
-            ? 'bg-gradient-to-br from-blue-600/20 to-transparent' 
-            : 'bg-gradient-to-br from-pink-600/20 to-transparent'"></div>
-        <div class="absolute bottom-0 left-0 w-32 h-32 rounded-tr-full"
-          :class="roomState.currentPrompt.type === 'TRUTH' 
-            ? 'bg-gradient-to-tr from-cyan-600/20 to-transparent' 
-            : 'bg-gradient-to-tr from-red-600/20 to-transparent'"></div>
-        
-        <div class="text-center relative z-10 w-full">
+      <div class="bg-white/10 backdrop-blur-md rounded-2xl p-6 sm:p-8 md:p-10 border border-white/20 shadow-2xl">
+        <div class="text-center">
           <!-- Type Badge -->
           <div class="mb-6 flex justify-center">
             <div class="inline-flex items-center gap-3 px-6 py-3 rounded-full font-black text-lg shadow-lg"
@@ -83,18 +90,37 @@
           </div>
           
           <!-- Question Text -->
-          <p class="text-2xl md:text-4xl font-bold mb-6 leading-relaxed px-4 text-white drop-shadow-lg">
+          <p class="text-2xl sm:text-3xl md:text-4xl font-bold mb-6 leading-relaxed px-4">
             {{ roomState.currentPrompt.text }}
           </p>
           
-          <!-- Decorative underline -->
-          <div class="mt-6 flex justify-center">
-            <div class="h-1 w-24 rounded-full"
-              :class="roomState.currentPrompt.type === 'TRUTH' 
-                ? 'bg-gradient-to-r from-blue-600 via-cyan-600 to-blue-600' 
-                : 'bg-gradient-to-r from-pink-600 via-red-600 to-pink-600'"></div>
+          <!-- Target Player (for Dares) -->
+          <div v-if="roomState.currentPrompt.target" class="bg-white/5 rounded-xl p-4 max-w-sm mx-auto mb-4 border border-white/10">
+            <p class="text-base font-medium flex items-center justify-center gap-2">
+              <Icon icon="mdi:account-arrow-right" class="w-5 h-5" />
+              To: {{ roomState.currentPrompt.target.nickname }}
+              <span v-if="roomState.currentPrompt.target.gender" class="text-xl">{{ roomState.currentPrompt.target.gender === 'male' ? '♂' : roomState.currentPrompt.target.gender === 'female' ? '♀' : '⚧' }}</span>
+            </p>
           </div>
         </div>
+      </div>
+
+      <!-- Action Buttons (All Players) -->
+      <div v-if="roomState.currentPrompt && cardFlipped" class="grid grid-cols-2 gap-4 mb-6">
+        <button
+          @click="completeChallenge"
+          class="group bg-gradient-to-r from-green-700 to-emerald-700 hover:from-green-600 hover:to-emerald-600 py-4 rounded-2xl font-black text-lg transition-all flex items-center justify-center gap-3 shadow-xl hover:shadow-green-600/50 border-2 border-green-500/30 hover:scale-105"
+        >
+          <Icon icon="mdi:check-bold" class="w-6 h-6 group-hover:scale-110 transition-transform" />
+          Completed
+        </button>
+        <button
+          @click="failChallenge"
+          class="group bg-gradient-to-r from-red-700 to-pink-700 hover:from-red-600 hover:to-pink-600 py-4 rounded-2xl font-black text-lg transition-all flex items-center justify-center gap-3 shadow-xl hover:shadow-red-600/50 border-2 border-red-500/30 hover:scale-105"
+        >
+          <Icon icon="mdi:close-thick" class="w-6 h-6 group-hover:scale-110 transition-transform" />
+          Failed
+        </button>
       </div>
     </div>
 
@@ -165,8 +191,9 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, computed, onMounted, watch } from 'vue'
 import { Icon } from '@iconify/vue'
+import { useRouter } from 'vue-router'
 
 interface Props {
   roomState: any
@@ -175,6 +202,16 @@ interface Props {
 }
 
 const props = defineProps<Props>()
+const router = useRouter()
+
+// Use the multiplayer composable's isHost directly for reactivity
+const isHost = computed(() => props.multiplayer.isHost.value)
+
+const handleChangeGame = () => {
+  if (!isHost.value) return
+  props.multiplayer.endGame()
+  router.push('/lobby')
+}
 
 const isSpicyMode = ref(false)
 const isDrawing = ref(false)
@@ -265,6 +302,36 @@ const getRandomQuestion = (type: 'TRUTH' | 'DARE') => {
   return result.question
 }
 
+// Get current player from prompt or select one
+const currentPlayer = computed(() => {
+  // If prompt has a player assigned, use that
+  if (props.roomState.currentPrompt?.player) {
+    return props.roomState.currentPrompt.player
+  }
+  
+  // Otherwise, select a random player
+  if (!props.roomState.players || props.roomState.players.length === 0) return null
+  
+  const players = props.roomState.players
+  const randomIndex = Math.floor(Math.random() * players.length)
+  return players[randomIndex]
+})
+
+// Get random target player (for Dares)
+const getRandomTarget = () => {
+  const players = props.roomState.players
+  if (!players || players.length <= 1) return null
+  
+  // Get a random player that's not the current player
+  const current = currentPlayer.value
+  const otherPlayers = players.filter((p: any) => p.socketId !== current?.socketId)
+  
+  if (otherPlayers.length === 0) return null
+  
+  const randomIndex = Math.floor(Math.random() * otherPlayers.length)
+  return otherPlayers[randomIndex]
+}
+
 // Draw card
 const drawCard = async (type: 'TRUTH' | 'DARE') => {
   if (isDrawing.value || !props.isHost) return
@@ -273,11 +340,28 @@ const drawCard = async (type: 'TRUTH' | 'DARE') => {
   cardFlipped.value = false
   
   const content = getRandomQuestion(type)
+  const player = currentPlayer.value
   
-  // Update game state
+  // For Dares, optionally assign a target player
+  let target = null
+  if (type === 'DARE' && props.roomState.players.length > 1) {
+    target = getRandomTarget()
+  }
+  
+  // Update game state with player assignment
   props.multiplayer.nextRound({
     type: type,
     text: content,
+    player: player ? {
+      socketId: player.socketId,
+      nickname: player.nickname,
+      gender: player.gender,
+    } : null,
+    target: target ? {
+      socketId: target.socketId,
+      nickname: target.nickname,
+      gender: target.gender,
+    } : null,
   })
   
   // Flip card after delay
@@ -293,11 +377,30 @@ const drawRandomCard = async () => {
   await drawCard(type)
 }
 
+// Complete challenge - move to next player
+const completeChallenge = () => {
+  if (!props.roomState.currentPrompt) return
+  
+  // Clear current prompt to move to next turn
+  props.multiplayer.nextRound(null)
+  cardFlipped.value = false
+}
+
+// Fail challenge - move to next player
+const failChallenge = () => {
+  if (!props.roomState.currentPrompt) return
+  
+  // Clear current prompt to move to next turn
+  props.multiplayer.nextRound(null)
+  cardFlipped.value = false
+}
+
 // Watch for prompt changes to flip card
-import { watch } from 'vue'
 watch(() => props.roomState.currentPrompt, (newPrompt) => {
   if (newPrompt) {
     cardFlipped.value = true
+  } else {
+    cardFlipped.value = false
   }
 })
 
