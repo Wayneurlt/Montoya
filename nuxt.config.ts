@@ -41,6 +41,7 @@ export default defineNuxtConfig({
     // Keys inside 'public' are available on the client-side
     public: {
       geminiApiKey: process.env.GEMINI_API_KEY,
+      socketUrl: process.env.NUXT_PUBLIC_SOCKET_URL,
     },
     // --- END OF NEW CONFIGURATION ---
   },
@@ -72,8 +73,5 @@ export default defineNuxtConfig({
         duration: 5000,
       },
     },
-  },
-  nitro: {
-    preset: 'node-server',
   },
 });
