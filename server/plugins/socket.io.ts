@@ -248,6 +248,7 @@ export default defineNitroPlugin((nitroApp) => {
           roomName: room.roomName,
           maxPlayers: room.maxPlayers,
           answerVisibility: room.answerVisibility,
+          hostSocketId: room.hostSocketId,
         })
       } catch (error) {
         console.error('❌ Error creating room:', error)
@@ -306,6 +307,7 @@ export default defineNitroPlugin((nitroApp) => {
           roomName: room.roomName,
           maxPlayers: room.maxPlayers,
           answerVisibility: room.answerVisibility,
+          hostSocketId: room.hostSocketId,
           players: playersList,
           currentGame: room.currentGame,
           gamePhase: room.gamePhase,
@@ -568,6 +570,7 @@ export default defineNitroPlugin((nitroApp) => {
           roomName: room.roomName,
           maxPlayers: room.maxPlayers,
           answerVisibility: room.answerVisibility,
+          hostSocketId: room.hostSocketId,
           players: playersList,
           currentGame: room.currentGame,
           gamePhase: room.gamePhase,
@@ -627,6 +630,7 @@ export default defineNitroPlugin((nitroApp) => {
           roomName: room.roomName,
           maxPlayers: room.maxPlayers,
           answerVisibility: room.answerVisibility,
+          hostSocketId: room.hostSocketId,
           players: playersList,
           currentGame: room.currentGame,
           gamePhase: room.gamePhase,

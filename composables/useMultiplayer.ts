@@ -107,21 +107,28 @@ export const useMultiplayer = () => {
       roomName?: string
       maxPlayers: number
       answerVisibility: 'anonymous' | 'public'
+      hostSocketId: string
     }) => {
       roomState.value.roomId = data.roomId
       roomState.value.roomCode = data.roomCode
       roomState.value.roomName = data.roomName
       roomState.value.maxPlayers = data.maxPlayers
       roomState.value.answerVisibility = data.answerVisibility
-      isHost.value = true
-      roomState.value.hostSocketId = socket?.id || null
-      console.log('🏠 Room created:', data.roomCode)
+      roomState.value.hostSocketId = data.hostSocketId
+      isHost.value = data.hostSocketId === socket?.id
+      console.log('🏠 Room created:', data.roomCode, 'hostSocketId:', data.hostSocketId, 'mySocketId:', socket?.id, 'isHost:', isHost.value)
     })
 
     socket.on('room:sync', (data: RoomState) => {
       roomState.value = data
       isHost.value = roomState.value.hostSocketId === socket?.id
       console.log('🔄 Room synced:', data.roomCode)
+      console.log('👑 Host check:', {
+        hostSocketId: roomState.value.hostSocketId,
+        mySocketId: socket?.id,
+        isHost: isHost.value,
+        players: data.players
+      })
     })
 
     socket.on('game:state:update', (data: {

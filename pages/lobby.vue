@@ -76,8 +76,27 @@
             </div>
           </div>
 
-          <!-- Host Controls -->
-          <div v-if="isHost" class="space-y-4">
+          <!-- Debug Info (temporary - remove after fixing) -->
+          <div v-if="safeRoomState.roomCode" class="mb-4 p-3 bg-blue-500/20 rounded-lg text-xs space-y-1">
+            <div><strong>Debug Info:</strong></div>
+            <div>isHost: {{ isHost }}</div>
+            <div>isConnected: {{ isConnected }}</div>
+            <div>playerCount: {{ playerCount }}</div>
+            <div>roomCode: {{ safeRoomState.roomCode }}</div>
+            <div>hostSocketId: {{ safeRoomState.hostSocketId }}</div>
+            <div>gamePhase: {{ safeRoomState.gamePhase }}</div>
+            <div>error: {{ error }}</div>
+          </div>
+
+          <!-- Host Controls - Always show if room exists, but disable if not host -->
+          <div class="space-y-4">
+            <div v-if="!isHost" class="bg-yellow-500/20 border-2 border-yellow-500/50 rounded-xl p-4 mb-4">
+              <div class="flex items-center gap-2 text-yellow-300">
+                <Icon icon="mdi:information" class="w-5 h-5" />
+                <span class="font-semibold">Only the host can start the game</span>
+              </div>
+            </div>
+            
             <div class="bg-purple-500/20 rounded-xl p-4 border border-purple-500/30">
               <h3 class="font-bold mb-3 flex items-center gap-2">
                 <Icon icon="mdi:gamepad-variant" class="w-5 h-5" />
@@ -88,9 +107,11 @@
                   v-for="game in multiplayerGames"
                   :key="game.value"
                   @click="selectedGame = game.value"
+                  :disabled="!isHost"
                   :class="{
                     'ring-2 ring-pink-500 bg-pink-500/20': selectedGame === game.value,
                     'bg-white/5 hover:bg-white/10': selectedGame !== game.value,
+                    'opacity-50 cursor-not-allowed': !isHost,
                   }"
                   class="p-3 rounded-lg border border-white/10 transition-all text-center"
                 >
@@ -100,20 +121,34 @@
               </div>
             </div>
 
-            <button
-              @click="handleStartGame"
-              :disabled="!canStartGame || !selectedGame"
-              class="w-full bg-gradient-to-r from-purple-600 via-pink-600 to-purple-600 hover:from-purple-500 hover:via-pink-500 hover:to-purple-500 text-white px-8 py-4 rounded-xl font-black text-lg shadow-2xl hover:shadow-pink-600/50 transition-all duration-300 transform hover:scale-105 border-2 border-pink-500/50 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
-            >
-              Start Game
-            </button>
-          </div>
-
-          <!-- Non-Host Waiting -->
-          <div v-else class="text-center py-8">
-            <div class="animate-pulse">
-              <Icon icon="mdi:clock-outline" class="w-16 h-16 mx-auto mb-4 text-purple-400" />
-              <p class="text-xl font-semibold">Waiting for host to start the game...</p>
+            <!-- Start Game Button -->
+            <div class="space-y-2">
+              <button
+                @click="handleStartGame"
+                :disabled="!canStartGame || !selectedGame || !isHost"
+                class="w-full bg-gradient-to-r from-purple-600 via-pink-600 to-purple-600 hover:from-purple-500 hover:via-pink-500 hover:to-purple-500 text-white px-8 py-4 rounded-xl font-black text-lg shadow-2xl hover:shadow-pink-600/50 transition-all duration-300 transform hover:scale-105 border-2 border-pink-500/50 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 flex items-center justify-center gap-2"
+              >
+                <Icon icon="mdi:play-circle" class="w-6 h-6" />
+                <span>Start Game</span>
+              </button>
+              
+              <!-- Helper messages -->
+              <div v-if="!isHost" class="text-center text-sm text-yellow-400">
+                <Icon icon="mdi:information" class="w-4 h-4 inline mr-1" />
+                Only the host can start the game
+              </div>
+              <div v-else-if="!selectedGame" class="text-center text-sm text-yellow-400">
+                <Icon icon="mdi:information" class="w-4 h-4 inline mr-1" />
+                Please select a game first
+              </div>
+              <div v-else-if="playerCount < 2" class="text-center text-sm text-yellow-400">
+                <Icon icon="mdi:information" class="w-4 h-4 inline mr-1" />
+                Need at least 2 players to start ({{ playerCount }}/2)
+              </div>
+              <div v-else-if="!canStartGame" class="text-center text-sm text-yellow-400">
+                <Icon icon="mdi:information" class="w-4 h-4 inline mr-1" />
+                Waiting for more players...
+              </div>
             </div>
           </div>
 
