@@ -82,8 +82,9 @@ export const useMultiplayer = () => {
       return null
     }
 
-    // Get server URL from environment or use current origin
-    const serverUrl = process.env.NUXT_PUBLIC_SOCKET_URL || window.location.origin
+    // Get server URL from runtime config or use current origin
+    const config = useRuntimeConfig()
+    const serverUrl = config.public.socketUrl || window.location.origin
 
     socket = io(serverUrl, {
       transports: ['websocket', 'polling'],

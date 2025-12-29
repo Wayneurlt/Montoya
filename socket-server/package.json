@@ -1,0 +1,17 @@
+{
+  "name": "montoya-socket-server",
+  "version": "1.0.0",
+  "description": "Standalone Socket.IO server for Montoya multiplayer features",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js",
+    "dev": "node index.js"
+  },
+  "keywords": ["socket.io", "websocket", "multiplayer"],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "socket.io": "^4.7.5"
+  }
+}
+
