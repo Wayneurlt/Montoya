@@ -70,19 +70,25 @@ export const useAnalytics = () => {
       lastActivity: Date.now()
     }
 
-    // Try to get location (optional)
+    // Try to get location (optional) - using server-side proxy to avoid CORS
     try {
-      const response = await fetch('https://ipapi.co/json/')
+      const response = await fetch('/api/analytics/location', {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      })
       if (response.ok) {
         const location = await response.json()
-        if (analyticsData.value) {
+        if (analyticsData.value && location.country) {
           analyticsData.value.location = {
-            country: location.country_name,
+            country: location.country,
             city: location.city
           }
         }
       }
     } catch (error) {
+      // Location detection is optional, fail silently
       console.log('Location detection disabled:', error)
     }
 
