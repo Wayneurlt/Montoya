@@ -5,6 +5,7 @@ import { io, Socket } from 'socket.io-client'
 export interface RoomPlayer {
   socketId: string
   nickname: string
+  gender?: 'male' | 'female' | 'other'
   isHost: boolean
   connected: boolean
 }
@@ -212,7 +213,7 @@ export const useMultiplayer = () => {
   }
 
   // Join room
-  const joinRoom = (roomCode: string, nickname: string) => {
+  const joinRoom = (roomCode: string, nickname: string, gender?: 'male' | 'female' | 'other') => {
     if (!socket || !socket.connected) {
       connect()
     }
@@ -221,14 +222,15 @@ export const useMultiplayer = () => {
       socket.emit('room:join', {
         roomCode: roomCode.toUpperCase(),
         nickname,
+        gender,
       })
     }
   }
 
-  // Update nickname
-  const updateNickname = (nickname: string) => {
+  // Update nickname and gender
+  const updateNickname = (nickname: string, gender?: 'male' | 'female' | 'other') => {
     if (socket && socket.connected) {
-      socket.emit('player:update', { nickname })
+      socket.emit('player:update', { nickname, gender })
     }
   }
 

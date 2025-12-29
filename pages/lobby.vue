@@ -244,6 +244,38 @@
                 class="w-full bg-white/5 border border-white/20 rounded-lg px-4 py-3 text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-purple-500"
               />
             </div>
+            <div>
+              <label class="block text-sm font-semibold mb-2">Gender</label>
+              <div class="grid grid-cols-3 gap-2">
+                <button
+                  @click="createForm.gender = 'male'"
+                  :class="createForm.gender === 'male' 
+                    ? 'bg-blue-500/30 border-2 border-blue-500 text-white' 
+                    : 'bg-white/5 border border-white/20 text-white/70 hover:bg-white/10'"
+                  class="p-3 rounded-lg transition-all font-semibold"
+                >
+                  ♂ Male
+                </button>
+                <button
+                  @click="createForm.gender = 'female'"
+                  :class="createForm.gender === 'female' 
+                    ? 'bg-pink-500/30 border-2 border-pink-500 text-white' 
+                    : 'bg-white/5 border border-white/20 text-white/70 hover:bg-white/10'"
+                  class="p-3 rounded-lg transition-all font-semibold"
+                >
+                  ♀ Female
+                </button>
+                <button
+                  @click="createForm.gender = 'other'"
+                  :class="createForm.gender === 'other' 
+                    ? 'bg-purple-500/30 border-2 border-purple-500 text-white' 
+                    : 'bg-white/5 border border-white/20 text-white/70 hover:bg-white/10'"
+                  class="p-3 rounded-lg transition-all font-semibold"
+                >
+                  ⚧ Other
+                </button>
+              </div>
+            </div>
             <button
               @click="handleCreateRoom"
               :disabled="!createForm.nickname.trim() || isConnecting"
@@ -275,6 +307,38 @@
                 maxlength="20"
                 class="w-full bg-white/5 border border-white/20 rounded-lg px-4 py-3 text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-purple-500"
               />
+            </div>
+            <div>
+              <label class="block text-sm font-semibold mb-2">Gender</label>
+              <div class="grid grid-cols-3 gap-2">
+                <button
+                  @click="joinForm.gender = 'male'"
+                  :class="joinForm.gender === 'male' 
+                    ? 'bg-blue-500/30 border-2 border-blue-500 text-white' 
+                    : 'bg-white/5 border border-white/20 text-white/70 hover:bg-white/10'"
+                  class="p-3 rounded-lg transition-all font-semibold"
+                >
+                  ♂ Male
+                </button>
+                <button
+                  @click="joinForm.gender = 'female'"
+                  :class="joinForm.gender === 'female' 
+                    ? 'bg-pink-500/30 border-2 border-pink-500 text-white' 
+                    : 'bg-white/5 border border-white/20 text-white/70 hover:bg-white/10'"
+                  class="p-3 rounded-lg transition-all font-semibold"
+                >
+                  ♀ Female
+                </button>
+                <button
+                  @click="joinForm.gender = 'other'"
+                  :class="joinForm.gender === 'other' 
+                    ? 'bg-purple-500/30 border-2 border-purple-500 text-white' 
+                    : 'bg-white/5 border border-white/20 text-white/70 hover:bg-white/10'"
+                  class="p-3 rounded-lg transition-all font-semibold"
+                >
+                  ⚧ Other
+                </button>
+              </div>
             </div>
             <button
               @click="handleJoinRoom"
@@ -328,10 +392,12 @@ const createForm = ref({
   roomName: '',
   answerVisibility: 'anonymous' as 'anonymous' | 'public',
   nickname: '',
+  gender: 'male' as 'male' | 'female' | 'other',
 })
 const joinForm = ref({
   roomCode: '',
   nickname: '',
+  gender: 'male' as 'male' | 'female' | 'other',
 })
 
 const selectedGame = ref<string | null>(null)
@@ -400,9 +466,9 @@ const handleCreateRoom = async () => {
       answerVisibility: createForm.value.answerVisibility,
     })
     
-    // Update nickname after room is created
+    // Update nickname and gender after room is created
     setTimeout(() => {
-      updateNickname(createForm.value.nickname)
+      updateNickname(createForm.value.nickname, createForm.value.gender)
       isConnecting.value = false
     }, 500)
   } catch (err) {
@@ -442,8 +508,13 @@ const handleJoinRoom = async () => {
     }
     
     // Join room
-    joinRoom(joinForm.value.roomCode, joinForm.value.nickname)
-    isConnecting.value = false
+    joinRoom(joinForm.value.roomCode, joinForm.value.nickname, joinForm.value.gender)
+    
+    // Update nickname and gender after joining (in case joinRoom doesn't accept gender)
+    setTimeout(() => {
+      updateNickname(joinForm.value.nickname, joinForm.value.gender)
+      isConnecting.value = false
+    }, 500)
   } catch (err) {
     console.error('Error joining room:', err)
     error.value = 'Failed to join room. Please try again.'
@@ -469,8 +540,8 @@ const handleStartGame = () => {
   // Start game
   startGame(selectedGame.value)
   
-  // Navigate to game
-  navigateTo(`/game/${selectedGame.value}?multiplayer=true`)
+  // Navigate to multiplayer game
+  navigateTo(`/multiplayer/${selectedGame.value}`)
 }
 
 const handleLeaveRoom = () => {
@@ -490,8 +561,8 @@ watch(() => roomState.value.gamePhase, (newPhase) => {
       }))
     }
     
-    // Navigate to game
-    navigateTo(`/game/${roomState.value.currentGame}?multiplayer=true`)
+    // Navigate to multiplayer game
+    navigateTo(`/multiplayer/${roomState.value.currentGame}`)
   }
 })
 

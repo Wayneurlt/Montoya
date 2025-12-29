@@ -5,6 +5,7 @@ import type { Server as HTTPServer } from 'http'
 interface RoomPlayer {
   socketId: string
   nickname: string
+  gender?: 'male' | 'female' | 'other'
   isHost: boolean
   connected: boolean
   hasVoted?: boolean
@@ -93,88 +94,7 @@ let io: Server | null = null
 export default defineNitroPlugin((nitroApp) => {
   console.log('🔧 Socket.IO plugin loading...')
   
-  // Use the request hook to get the server from the first request
-  // This fires on every request and is the most reliable method in Nuxt 3
-  nitroApp.hooks.hook('request', (event) => {
-    if (!io && event.node?.req) {
-      const nodeReq = event.node.req
-      if (nodeReq.socket && nodeReq.socket.server) {
-        const httpServer = nodeReq.socket.server as HTTPServer
-        console.log('✅ Found HTTP server via request hook, initializing Socket.IO...')
-        initializeSocketIO(httpServer)
-      }
-    }
-  })
-
-  // Also try the ready hook as a fallback
-  nitroApp.hooks.hook('ready', async () => {
-    console.log('🚀 Nitro app ready, checking for HTTP server...')
-    console.log('🔍 Debugging nitroApp structure:', {
-      hasNodeServer: !!(nitroApp as any).nodeServer,
-      h3AppKeys: Object.keys(nitroApp.h3App),
-      stackLength: nitroApp.h3App.stack?.length || 0,
-    })
-    
-    // Try to get the server from nitroApp
-    let httpServer: HTTPServer | null = null
-
-    // Method 1: Try accessing through nitroApp internals
-    if ((nitroApp as any).nodeServer) {
-      httpServer = (nitroApp as any).nodeServer as HTTPServer
-      console.log('✅ Found server via nitroApp.nodeServer')
-      initializeSocketIO(httpServer)
-      return
-    }
-    
-    // Method 2: Try h3App stack
-    for (const layer of nitroApp.h3App.stack) {
-      if (layer && (layer as any).handle && typeof (layer as any).handle.listen === 'function') {
-        httpServer = (layer as any).handle as HTTPServer
-        console.log('✅ Found server via h3App.stack')
-        initializeSocketIO(httpServer)
-        return
-      }
-    }
-
-    // Method 3: Try accessing through h3App directly
-    if ((nitroApp.h3App as any).nodeServer) {
-      httpServer = (nitroApp.h3App as any).nodeServer as HTTPServer
-      console.log('✅ Found server via h3App.nodeServer')
-      initializeSocketIO(httpServer)
-      return
-    }
-
-    // Method 4: Try to get from global
-    if ((globalThis as any).__httpServer) {
-      httpServer = (globalThis as any).__httpServer as HTTPServer
-      console.log('✅ Found server via globalThis')
-      initializeSocketIO(httpServer)
-      return
-    }
-
-    // Method 5: Try accessing through h3App listener
-    if ((nitroApp.h3App as any).listener) {
-      const listener = (nitroApp.h3App as any).listener
-      if (listener && typeof listener.listen === 'function') {
-        httpServer = listener as HTTPServer
-        console.log('✅ Found server via h3App.listener')
-        initializeSocketIO(httpServer)
-        return
-      }
-    }
-
-    // Method 6: Try accessing through h3App router
-    if ((nitroApp.h3App as any).router && (nitroApp.h3App as any).router.nodeServer) {
-      httpServer = (nitroApp.h3App as any).router.nodeServer as HTTPServer
-      console.log('✅ Found server via h3App.router.nodeServer')
-      initializeSocketIO(httpServer)
-      return
-    }
-
-    console.warn('⚠️ HTTP server not found in ready hook, will initialize on first request via request hook')
-    console.log('📝 Socket.IO will be initialized when the first request arrives')
-  })
-
+  // Define initializeSocketIO function first
   function initializeSocketIO(httpServer: HTTPServer) {
     if (io) {
       console.log('⚠️ Socket.IO already initialized')
@@ -233,6 +153,7 @@ export default defineNitroPlugin((nitroApp) => {
         room.players.set(socket.id, {
           socketId: socket.id,
           nickname: 'Host', // Will be updated when they set their name
+          gender: undefined, // Will be updated when they set their name
           isHost: true,
           connected: true,
         })
@@ -257,7 +178,7 @@ export default defineNitroPlugin((nitroApp) => {
     })
 
     // Join room
-    socket.on('room:join', (data: { roomCode: string; nickname: string }) => {
+    socket.on('room:join', (data: { roomCode: string; nickname: string; gender?: 'male' | 'female' | 'other' }) => {
       try {
         const room = getRoom(data.roomCode)
         if (!room) {
@@ -284,6 +205,7 @@ export default defineNitroPlugin((nitroApp) => {
         room.players.set(socket.id, {
           socketId: socket.id,
           nickname: finalNickname,
+          gender: data.gender,
           isHost: false,
           connected: true,
         })
@@ -297,11 +219,13 @@ export default defineNitroPlugin((nitroApp) => {
         const playersList = Array.from(room.players.values()).map(p => ({
           socketId: p.socketId,
           nickname: p.nickname,
+          gender: p.gender,
           isHost: p.isHost,
           connected: p.connected,
         }))
 
-        io.to(room.roomId).emit('room:sync', {
+        if (io) {
+          io.to(room.roomId).emit('room:sync', {
           roomId: room.roomId,
           roomCode: room.roomCode,
           roomName: room.roomName,
@@ -313,14 +237,15 @@ export default defineNitroPlugin((nitroApp) => {
           gamePhase: room.gamePhase,
           currentPrompt: room.currentPrompt,
         })
+        }
       } catch (error) {
         console.error('❌ Error joining room:', error)
         socket.emit('room:error', { message: 'Failed to join room' })
       }
     })
 
-    // Update player nickname
-    socket.on('player:update', (data: { nickname: string }) => {
+    // Update player nickname and gender
+    socket.on('player:update', (data: { nickname: string; gender?: 'male' | 'female' | 'other' }) => {
       try {
         const room = findRoomBySocketId(socket.id)
         if (!room) {
@@ -331,27 +256,34 @@ export default defineNitroPlugin((nitroApp) => {
         const player = room.players.get(socket.id)
         if (player) {
           player.nickname = data.nickname
+          if (data.gender) {
+            player.gender = data.gender
+          }
           room.lastUpdated = Date.now()
 
           // Broadcast update
           const playersList = Array.from(room.players.values()).map(p => ({
             socketId: p.socketId,
             nickname: p.nickname,
+            gender: p.gender,
             isHost: p.isHost,
             connected: p.connected,
           }))
 
-          io.to(room.roomId).emit('room:sync', {
-            roomId: room.roomId,
-            roomCode: room.roomCode,
-            roomName: room.roomName,
-            maxPlayers: room.maxPlayers,
-            answerVisibility: room.answerVisibility,
-            players: playersList,
-            currentGame: room.currentGame,
-            gamePhase: room.gamePhase,
-            currentPrompt: room.currentPrompt,
-          })
+          if (io) {
+            io.to(room.roomId).emit('room:sync', {
+              roomId: room.roomId,
+              roomCode: room.roomCode,
+              roomName: room.roomName,
+              maxPlayers: room.maxPlayers,
+              answerVisibility: room.answerVisibility,
+              hostSocketId: room.hostSocketId,
+              players: playersList,
+              currentGame: room.currentGame,
+              gamePhase: room.gamePhase,
+              currentPrompt: room.currentPrompt,
+            })
+          }
         }
       } catch (error) {
         console.error('❌ Error updating player:', error)
@@ -387,11 +319,13 @@ export default defineNitroPlugin((nitroApp) => {
 
         console.log(`🎮 Game started in room ${room.roomCode}: ${data.gameType}`)
 
-        io.to(room.roomId).emit('game:state:update', {
-          currentGame: room.currentGame,
-          gamePhase: room.gamePhase,
-          currentPrompt: room.currentPrompt,
-        })
+        if (io) {
+          io.to(room.roomId).emit('game:state:update', {
+            currentGame: room.currentGame,
+            gamePhase: room.gamePhase,
+            currentPrompt: room.currentPrompt,
+          })
+        }
       } catch (error) {
         console.error('❌ Error starting game:', error)
         socket.emit('room:error', { message: 'Failed to start game' })
@@ -439,11 +373,13 @@ export default defineNitroPlugin((nitroApp) => {
           }
         })
 
-        io.to(room.roomId).emit('game:vote:update', {
-          votes: votesData,
-          totalVotes: room.votes.size,
-          totalPlayers: room.players.size,
-        })
+        if (io) {
+          io.to(room.roomId).emit('game:vote:update', {
+            votes: votesData,
+            totalVotes: room.votes.size,
+            totalPlayers: room.players.size,
+          })
+        }
       } catch (error) {
         console.error('❌ Error submitting vote:', error)
         socket.emit('room:error', { message: 'Failed to submit vote' })
@@ -477,10 +413,12 @@ export default defineNitroPlugin((nitroApp) => {
           }
         })
 
-        io.to(room.roomId).emit('game:results', {
-          results,
-          answerVisibility: room.answerVisibility,
-        })
+        if (io) {
+          io.to(room.roomId).emit('game:results', {
+            results,
+            answerVisibility: room.answerVisibility,
+          })
+        }
       } catch (error) {
         console.error('❌ Error showing results:', error)
         socket.emit('room:error', { message: 'Failed to show results' })
@@ -513,11 +451,15 @@ export default defineNitroPlugin((nitroApp) => {
           p.vote = undefined
         })
 
-        io.to(room.roomId).emit('game:state:update', {
-          currentGame: room.currentGame,
-          gamePhase: room.gamePhase,
-          currentPrompt: room.currentPrompt,
-        })
+        console.log(`🔄 Next round in room ${room.roomCode}, prompt:`, room.currentPrompt)
+
+        if (io) {
+          io.to(room.roomId).emit('game:state:update', {
+            currentGame: room.currentGame,
+            gamePhase: room.gamePhase,
+            currentPrompt: room.currentPrompt,
+          })
+        }
       } catch (error) {
         console.error('❌ Error advancing game:', error)
         socket.emit('room:error', { message: 'Failed to advance game' })
@@ -564,7 +506,8 @@ export default defineNitroPlugin((nitroApp) => {
           connected: p.connected,
         }))
 
-        io.to(room.roomId).emit('room:sync', {
+        if (io) {
+          io.to(room.roomId).emit('room:sync', {
           roomId: room.roomId,
           roomCode: room.roomCode,
           roomName: room.roomName,
@@ -576,6 +519,7 @@ export default defineNitroPlugin((nitroApp) => {
           gamePhase: room.gamePhase,
           currentPrompt: room.currentPrompt,
         })
+        }
       } catch (error) {
         console.error('❌ Error leaving room:', error)
       }
@@ -624,18 +568,20 @@ export default defineNitroPlugin((nitroApp) => {
           connected: p.connected,
         }))
 
-        io.to(room.roomId).emit('room:sync', {
-          roomId: room.roomId,
-          roomCode: room.roomCode,
-          roomName: room.roomName,
-          maxPlayers: room.maxPlayers,
-          answerVisibility: room.answerVisibility,
-          hostSocketId: room.hostSocketId,
-          players: playersList,
-          currentGame: room.currentGame,
-          gamePhase: room.gamePhase,
-          currentPrompt: room.currentPrompt,
-        })
+        if (io) {
+          io.to(room.roomId).emit('room:sync', {
+            roomId: room.roomId,
+            roomCode: room.roomCode,
+            roomName: room.roomName,
+            maxPlayers: room.maxPlayers,
+            answerVisibility: room.answerVisibility,
+            hostSocketId: room.hostSocketId,
+            players: playersList,
+            currentGame: room.currentGame,
+            gamePhase: room.gamePhase,
+            currentPrompt: room.currentPrompt,
+          })
+        }
       } catch (error) {
         console.error('❌ Error handling disconnect:', error)
       }
@@ -644,6 +590,72 @@ export default defineNitroPlugin((nitroApp) => {
     console.log('✅ Socket.IO server initialized and ready for connections')
     }) // Close io.on('connection') callback
   } // Close initializeSocketIO function
+  
+  // Initialize Socket.IO on first request - most reliable method
+  nitroApp.hooks.hook('request', (event) => {
+    if (!io && event?.node?.req) {
+      const nodeReq = event.node.req
+      // Access server through the request's socket
+      const server = (nodeReq as any).socket?.server || (nodeReq as any).connection?.server
+      if (server && typeof server.listen === 'function') {
+        const httpServer = server as HTTPServer
+        console.log('✅ Found HTTP server via request hook, initializing Socket.IO...')
+        initializeSocketIO(httpServer)
+      }
+    }
+  })
+  
+  // Also try ready hook (using type assertion)
+  const hooks = nitroApp.hooks as any
+  if (hooks.hook) {
+    hooks.hook('ready', async () => {
+      console.log('🚀 Nitro app ready, checking for HTTP server...')
+      
+      let httpServer: HTTPServer | null = null
+
+      if ((nitroApp as any).nodeServer) {
+        httpServer = (nitroApp as any).nodeServer as HTTPServer
+        console.log('✅ Found server via nitroApp.nodeServer')
+        initializeSocketIO(httpServer)
+        return
+      }
+      
+      for (const layer of nitroApp.h3App.stack) {
+        if (layer && (layer as any).handle && typeof (layer as any).handle.listen === 'function') {
+          httpServer = (layer as any).handle as HTTPServer
+          console.log('✅ Found server via h3App.stack')
+          initializeSocketIO(httpServer)
+          return
+        }
+      }
+
+      if ((nitroApp.h3App as any).nodeServer) {
+        httpServer = (nitroApp.h3App as any).nodeServer as HTTPServer
+        console.log('✅ Found server via h3App.nodeServer')
+        initializeSocketIO(httpServer)
+        return
+      }
+
+      if ((globalThis as any).__httpServer) {
+        httpServer = (globalThis as any).__httpServer as HTTPServer
+        console.log('✅ Found server via globalThis')
+        initializeSocketIO(httpServer)
+        return
+      }
+
+      if ((nitroApp.h3App as any).listener) {
+        const listener = (nitroApp.h3App as any).listener
+        if (listener && typeof listener.listen === 'function') {
+          httpServer = listener as HTTPServer
+          console.log('✅ Found server via h3App.listener')
+          initializeSocketIO(httpServer)
+          return
+        }
+      }
+
+      console.warn('⚠️ HTTP server not found in ready hook, will initialize on first request')
+    })
+  }
   
   console.log('🔧 Socket.IO plugin registered (waiting for server ready)')
 })
