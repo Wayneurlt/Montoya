@@ -4,7 +4,6 @@
   >
     <!-- Background Icons Pattern -->
     <BackgroundIcons />
-
     <div class="max-w-5xl w-full text-center relative z-10 py-4 sm:py-6 md:py-8 lg:py-10">
       <!-- Game Title -->
       <div class="mb-4 sm:mb-6 md:mb-8 transform hover:scale-105 transition-transform duration-300">
