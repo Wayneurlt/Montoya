@@ -8,9 +8,21 @@
       </NuxtLink>
       <div class="text-center">
         <div class="text-xs text-white/60 mb-1">Room Code</div>
-        <div class="text-2xl sm:text-3xl font-black bg-gradient-to-r from-purple-400 via-pink-500 to-cyan-400 bg-clip-text text-transparent">
-          {{ roomState.roomCode }}
-        </div>
+        <button
+          @click="copyRoomCode"
+          class="group relative cursor-pointer transition-all hover:scale-105"
+          :title="copied ? 'Copied!' : 'Click to copy'"
+        >
+          <div class="text-2xl sm:text-3xl font-black bg-gradient-to-r from-purple-400 via-pink-500 to-cyan-400 bg-clip-text text-transparent flex items-center justify-center gap-2">
+            {{ roomState.roomCode }}
+            <Icon icon="mdi:content-copy" class="w-4 h-4 sm:w-5 sm:h-5 text-purple-400 opacity-70 group-hover:opacity-100 transition-opacity" />
+          </div>
+          <transition name="fade">
+            <div v-if="copied" class="absolute -bottom-8 left-1/2 transform -translate-x-1/2 bg-green-500 text-white px-3 py-1 rounded-lg text-xs whitespace-nowrap">
+              Copied!
+            </div>
+          </transition>
+        </button>
       </div>
       <div v-if="isHost" class="flex">
         <button
@@ -305,16 +317,31 @@ const currentRoll = ref({ body: "", action: "" })
 const currentResult = ref("")
 const history = ref<any[]>([])
 
-// Get current player from prompt or select one
+// Get current player - only use synced state, no random fallback
 const currentPlayer = computed(() => {
+  // Only use the player from the synced prompt to ensure all devices show the same player
   if (props.roomState.currentPrompt?.player) {
     return props.roomState.currentPrompt.player
   }
-  if (!props.roomState.players || props.roomState.players.length === 0) return null
-  const players = props.roomState.players
-  const randomIndex = Math.floor(Math.random() * players.length)
-  return players[randomIndex]
+  
+  // Return null if no player is assigned yet (don't use random fallback)
+  return null
 })
+
+const copied = ref(false)
+
+const copyRoomCode = async () => {
+  if (!props.roomState.roomCode) return
+  try {
+    await navigator.clipboard.writeText(props.roomState.roomCode)
+    copied.value = true
+    setTimeout(() => {
+      copied.value = false
+    }, 2000)
+  } catch (err) {
+    console.error('Failed to copy:', err)
+  }
+}
 
 // Get target player (opposite gender if available)
 const targetPlayer = computed(() => {
@@ -512,5 +539,15 @@ onBeforeUnmount(() => {
 }
 .animate-spin {
   animation: spin 0.8s linear infinite;
+}
+
+.fade-enter-active,
+.fade-leave-active {
+  transition: opacity 0.3s;
+}
+
+.fade-enter-from,
+.fade-leave-to {
+  opacity: 0;
 }
 </style>

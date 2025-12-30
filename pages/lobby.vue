@@ -12,18 +12,30 @@
         </NuxtLink>
         <div v-if="safeRoomState.roomCode" class="text-center">
           <div class="text-xs text-white/60 mb-1">Room Code</div>
-          <div class="text-3xl sm:text-4xl font-black bg-gradient-to-r from-purple-400 via-pink-500 to-cyan-400 bg-clip-text text-transparent">
-            {{ safeRoomState.roomCode }}
-          </div>
+          <button
+            @click="copyRoomCode"
+            class="group relative cursor-pointer transition-all hover:scale-105"
+            :title="copied ? 'Copied!' : 'Click to copy'"
+          >
+            <div class="text-3xl sm:text-4xl font-black bg-gradient-to-r from-purple-400 via-pink-500 to-cyan-400 bg-clip-text text-transparent flex items-center justify-center gap-2">
+              {{ safeRoomState.roomCode }}
+              <Icon icon="mdi:content-copy" class="w-5 h-5 sm:w-6 sm:h-6 text-purple-400 opacity-70 group-hover:opacity-100 transition-opacity" />
+            </div>
+            <transition name="fade">
+              <div v-if="copied" class="absolute -bottom-8 left-1/2 transform -translate-x-1/2 bg-green-500 text-white px-3 py-1 rounded-lg text-xs whitespace-nowrap">
+                Copied!
+              </div>
+            </transition>
+          </button>
         </div>
       </div>
 
       <!-- Error Message -->
       <transition name="fade">
-        <div v-if="error" class="mb-6 bg-red-500/20 border-2 border-red-500/50 rounded-xl p-4 backdrop-blur-md">
+        <div v-if="displayError" class="mb-6 bg-red-500/20 border-2 border-red-500/50 rounded-xl p-4 backdrop-blur-md">
           <div class="flex items-center gap-2">
             <Icon icon="mdi:alert-circle" class="w-6 h-6 text-red-400" />
-            <p class="text-red-200 font-semibold">{{ error }}</p>
+            <p class="text-red-200 font-semibold">{{ displayError }}</p>
           </div>
         </div>
       </transition>
@@ -384,6 +396,24 @@ const joinForm = ref({
 
 const selectedGame = ref<string | null>(null)
 const isConnecting = ref(false)
+const copied = ref(false)
+const localError = ref<string | null>(null)
+
+// Use local error instead of readonly error from composable
+const displayError = computed(() => localError.value || error.value)
+
+const copyRoomCode = async () => {
+  if (!safeRoomState.value.roomCode) return
+  try {
+    await navigator.clipboard.writeText(safeRoomState.value.roomCode)
+    copied.value = true
+    setTimeout(() => {
+      copied.value = false
+    }, 2000)
+  } catch (err) {
+    console.error('Failed to copy:', err)
+  }
+}
 
 // Safe room state access
 const safeRoomState = computed(() => {
@@ -418,13 +448,13 @@ const handleCreateRoom = async () => {
   if (!createForm.value.nickname.trim() || isConnecting.value) return
   
   isConnecting.value = true
-  error.value = null
+  localError.value = null
   
   try {
     // Connect first
     const socket = connect()
     if (!socket) {
-      error.value = 'Failed to initialize connection'
+      localError.value = 'Failed to initialize connection'
       isConnecting.value = false
       return
     }
@@ -437,7 +467,7 @@ const handleCreateRoom = async () => {
     }
     
     if (!isConnected.value) {
-      error.value = 'Connection timeout. Please refresh and try again.'
+      localError.value = 'Connection timeout. Please refresh and try again.'
       isConnecting.value = false
       return
     }
@@ -455,7 +485,7 @@ const handleCreateRoom = async () => {
     }, 500)
   } catch (err) {
     console.error('Error creating room:', err)
-    error.value = 'Failed to create room. Please try again.'
+    localError.value = 'Failed to create room. Please try again.'
     isConnecting.value = false
   }
 }
@@ -465,13 +495,13 @@ const handleJoinRoom = async () => {
   if (!joinForm.value.nickname.trim() || isConnecting.value) return
   
   isConnecting.value = true
-  error.value = null
+  localError.value = null
   
   try {
     // Connect first
     const socket = connect()
     if (!socket) {
-      error.value = 'Failed to initialize connection'
+      localError.value = 'Failed to initialize connection'
       isConnecting.value = false
       return
     }
@@ -484,7 +514,7 @@ const handleJoinRoom = async () => {
     }
     
     if (!isConnected.value) {
-      error.value = 'Connection timeout. Please refresh and try again.'
+      localError.value = 'Connection timeout. Please refresh and try again.'
       isConnecting.value = false
       return
     }
@@ -499,7 +529,7 @@ const handleJoinRoom = async () => {
     }, 500)
   } catch (err) {
     console.error('Error joining room:', err)
-    error.value = 'Failed to join room. Please try again.'
+    localError.value = 'Failed to join room. Please try again.'
     isConnecting.value = false
   }
 }

@@ -850,18 +850,37 @@ input::placeholder {
     width: 100% !important;
     max-width: 100% !important;
     overflow: hidden !important;
+    background: linear-gradient(to bottom right, #0f172a, #581c87, #0f172a) !important;
   }
   
   /* Smooth scrolling for inner content */
   [data-setup-container] > div {
     -webkit-overflow-scrolling: touch;
     overscroll-behavior: contain;
+    height: 100% !important;
+    max-height: 100vh !important;
+    overflow-y: auto !important;
+    overflow-x: hidden !important;
   }
   
   /* Prevent input focus from causing viewport expansion */
   [data-setup-container] input:focus {
     transform: translateZ(0);
     -webkit-transform: translateZ(0);
+  }
+  
+  /* Prevent black space when keyboard appears */
+  @supports (height: 100dvh) {
+    [data-setup-container] {
+      height: 100dvh !important;
+    }
+  }
+  
+  /* Ensure background covers entire viewport */
+  html, body {
+    overflow: hidden !important;
+    height: 100% !important;
+    height: 100dvh !important;
   }
 }
 </style>

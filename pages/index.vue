@@ -75,7 +75,10 @@
           @click="showAgeModal = true"
           class="group relative bg-gradient-to-r from-purple-600 via-pink-600 to-purple-600 hover:from-purple-500 hover:via-pink-500 hover:to-purple-500 text-white px-6 sm:px-8 md:px-12 py-3 sm:py-4 md:py-5 rounded-full text-sm sm:text-base md:text-lg lg:text-xl xl:text-2xl font-black shadow-2xl hover:shadow-pink-600/50 transition-all duration-300 transform hover:scale-110 animate-pulse-slow border-2 sm:border-3 md:border-4 border-pink-500/50 w-full max-w-md"
         >
-          <span class="relative z-10">ENTER THE DANGER ZONE</span>
+          <span class="relative z-10 flex flex-col items-center gap-1">
+            <span>🎮 JOIN USING ONE DEVICE</span>
+            <span class="text-xs sm:text-sm font-normal opacity-90">Pass & Play Mode</span>
+          </span>
           <div class="absolute inset-0 bg-gradient-to-r from-pink-500 to-purple-500 rounded-full blur-xl opacity-50 group-hover:opacity-75 transition-opacity"></div>
         </button>
         <NuxtLink
@@ -84,8 +87,8 @@
         >
           <Icon icon="mdi:account-group" class="w-6 h-6 sm:w-7 sm:h-7 md:w-8 md:h-8" />
           <span class="relative z-10 flex flex-col items-center">
-            <span>MULTIPLAYER MODE</span>
-            <span class="text-xs sm:text-sm font-normal opacity-90">Use Multiple Devices</span>
+            <span>📱 JOIN USING MULTIPLE DEVICES</span>
+            <span class="text-xs sm:text-sm font-normal opacity-90">Everyone Uses Their Phone</span>
           </span>
           <div class="absolute inset-0 bg-gradient-to-r from-cyan-500 to-blue-500 rounded-full blur-xl opacity-50 group-hover:opacity-75 transition-opacity"></div>
         </NuxtLink>

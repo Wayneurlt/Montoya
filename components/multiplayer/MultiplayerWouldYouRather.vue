@@ -8,9 +8,21 @@
       </NuxtLink>
       <div class="text-center">
         <div class="text-xs text-white/60 mb-1">Room Code</div>
-        <div class="text-2xl sm:text-3xl font-black bg-gradient-to-r from-purple-400 via-pink-500 to-cyan-400 bg-clip-text text-transparent">
-          {{ roomState.roomCode }}
-        </div>
+        <button
+          @click="copyRoomCode"
+          class="group relative cursor-pointer transition-all hover:scale-105"
+          :title="copied ? 'Copied!' : 'Click to copy'"
+        >
+          <div class="text-2xl sm:text-3xl font-black bg-gradient-to-r from-purple-400 via-pink-500 to-cyan-400 bg-clip-text text-transparent flex items-center justify-center gap-2">
+            {{ roomState.roomCode }}
+            <Icon icon="mdi:content-copy" class="w-4 h-4 sm:w-5 sm:h-5 text-purple-400 opacity-70 group-hover:opacity-100 transition-opacity" />
+          </div>
+          <transition name="fade">
+            <div v-if="copied" class="absolute -bottom-8 left-1/2 transform -translate-x-1/2 bg-green-500 text-white px-3 py-1 rounded-lg text-xs whitespace-nowrap">
+              Copied!
+            </div>
+          </transition>
+        </button>
       </div>
       <div v-if="isHost" class="flex">
         <button
@@ -311,6 +323,20 @@ const isLoading = ref(false)
 const isSubmitting = ref(false)
 const hasVoted = ref(false)
 const myVote = ref<string | null>(null)
+const copied = ref(false)
+
+const copyRoomCode = async () => {
+  if (!roomState.value.roomCode) return
+  try {
+    await navigator.clipboard.writeText(roomState.value.roomCode)
+    copied.value = true
+    setTimeout(() => {
+      copied.value = false
+    }, 2000)
+  } catch (err) {
+    console.error('Failed to copy:', err)
+  }
+}
 
 const votes = computed(() => multiplayer.votes.value || [])
 
@@ -453,5 +479,15 @@ onMounted(() => {
 }
 .animate-fade-in {
   animation: fade-in 0.3s ease-out;
+}
+
+.fade-enter-active,
+.fade-leave-active {
+  transition: opacity 0.3s;
+}
+
+.fade-enter-from,
+.fade-leave-to {
+  opacity: 0;
 }
 </style>
