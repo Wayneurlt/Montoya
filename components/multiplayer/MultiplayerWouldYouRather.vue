@@ -2,10 +2,13 @@
   <div class="max-w-3xl mx-auto relative z-10 pt-4 sm:pt-6 md:pt-8">
     <!-- Header -->
     <div class="flex justify-between items-center mb-6">
-      <NuxtLink to="/lobby" class="bg-white/10 hover:bg-white/20 backdrop-blur-md px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg transition-all flex items-center gap-2 border border-white/20 hover:scale-105">
+      <button
+        @click="handleBackToLobby"
+        class="bg-white/10 hover:bg-white/20 backdrop-blur-md px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg transition-all flex items-center gap-2 border border-white/20 hover:scale-105"
+      >
         <Icon icon="mdi:arrow-left" class="w-5 h-5" />
         <span class="font-medium">Back to Lobby</span>
-      </NuxtLink>
+      </button>
       <div class="text-center">
         <div class="text-xs text-white/60 mb-1">Room Code</div>
         <button
@@ -298,6 +301,7 @@
 import { ref, computed, watch, onMounted } from 'vue'
 import { Icon } from '@iconify/vue'
 import { useRouter } from 'vue-router'
+import { navigateTo } from '#app'
 
 interface Props {
   roomState: any
@@ -316,7 +320,16 @@ const isHost = computed(() => multiplayer.isHost.value)
 const handleChangeGame = () => {
   if (!isHost.value) return
   multiplayer.endGame()
-  router.push('/lobby')
+  navigateTo('/lobby')
+}
+
+const handleBackToLobby = () => {
+  // If host, end the game first, otherwise just navigate
+  if (isHost.value) {
+    multiplayer.endGame()
+  }
+  // Navigate immediately - don't wait for socket response
+  navigateTo('/lobby')
 }
 
 const isLoading = ref(false)

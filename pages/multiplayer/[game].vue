@@ -23,6 +23,12 @@
       <div class="animate-pulse">
         <Icon icon="mdi:loading" class="w-16 h-16 mx-auto mb-4 text-purple-400 animate-spin" />
         <p class="text-xl font-semibold">Connecting to room...</p>
+        <button
+          @click="handleLeaveRoom"
+          class="mt-4 bg-white/10 hover:bg-white/20 px-4 py-2 rounded-lg transition-all"
+        >
+          Cancel
+        </button>
       </div>
     </div>
 
@@ -86,10 +92,11 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, watch } from 'vue'
+import { ref, computed, onMounted, watch, nextTick } from 'vue'
 import { Icon } from '@iconify/vue'
 import { useMultiplayer } from '~/composables/useMultiplayer'
 import { useRoute, useRouter } from 'vue-router'
+import { navigateTo } from '#app'
 
 const route = useRoute()
 const router = useRouter()
@@ -140,7 +147,10 @@ watch(() => roomState.value?.currentGame, (currentGame) => {
 watch(() => roomState.value?.gamePhase, (phase) => {
   if (phase === 'lobby' && roomState.value?.currentGame === null) {
     // Game was ended by host leaving, redirect to lobby
-    router.push('/lobby')
+    // Use nextTick to ensure state is updated
+    nextTick(() => {
+      navigateTo('/lobby')
+    })
   }
 })
 

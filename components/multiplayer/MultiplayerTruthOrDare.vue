@@ -1,11 +1,14 @@
 <template>
-  <div class="max-w-3xl mx-auto relative z-10 pt-4 sm:pt-6 md:pt-8">
+  <div class="max-w-3xl mx-auto relative z-10 pt-2 sm:pt-4 md:pt-6 lg:pt-8 pb-4 sm:pb-6">
     <!-- Header -->
     <div class="flex justify-between items-center mb-6">
-      <NuxtLink to="/lobby" class="bg-white/10 hover:bg-white/20 backdrop-blur-md px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg transition-all flex items-center gap-2 border border-white/20 hover:scale-105">
+      <button
+        @click="handleBackToLobby"
+        class="bg-white/10 hover:bg-white/20 backdrop-blur-md px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg transition-all flex items-center gap-2 border border-white/20 hover:scale-105"
+      >
         <Icon icon="mdi:arrow-left" class="w-5 h-5" />
         <span class="font-medium">Back to Lobby</span>
-      </NuxtLink>
+      </button>
       <div class="text-center">
         <div class="text-xs text-white/60 mb-1">Room Code</div>
         <button
@@ -36,26 +39,26 @@
     </div>
 
     <!-- Game Title -->
-    <div class="text-center mb-8">
-      <h1 class="text-4xl sm:text-5xl md:text-6xl font-black mb-4 bg-clip-text text-transparent bg-gradient-to-r from-purple-400 via-pink-500 to-cyan-400 drop-shadow-2xl">
+    <div class="text-center mb-4 sm:mb-6 md:mb-8">
+      <h1 class="text-2xl sm:text-3xl md:text-4xl lg:text-5xl xl:text-6xl font-black mb-2 sm:mb-3 md:mb-4 bg-clip-text text-transparent bg-gradient-to-r from-purple-400 via-pink-500 to-cyan-400 drop-shadow-2xl">
         💬 Truth or Dare
       </h1>
-      <p class="text-purple-200/80 text-sm font-medium">{{ roomState.answerVisibility === 'anonymous' ? 'Anonymous Mode' : 'Public Mode' }}</p>
+      <p class="text-purple-200/80 text-xs sm:text-sm font-medium">{{ roomState.answerVisibility === 'anonymous' ? 'Anonymous Mode' : 'Public Mode' }}</p>
     </div>
 
     <!-- Current Player Display -->
-    <div v-if="currentPlayer" class="bg-white/5 rounded-xl p-4 mb-6 border border-white/10">
+    <div v-if="currentPlayer" class="bg-white/5 rounded-lg sm:rounded-xl p-2 sm:p-3 md:p-4 mb-3 sm:mb-4 md:mb-6 border border-white/10">
       <div class="text-center">
-        <div class="text-sm text-white/60 mb-1">Current Turn</div>
-        <div class="text-xl font-bold flex items-center justify-center gap-2">
+        <div class="text-xs sm:text-sm text-white/60 mb-1">Current Turn</div>
+        <div class="text-base sm:text-lg md:text-xl font-bold flex items-center justify-center gap-2">
           <span>{{ currentPlayer.nickname }}</span>
-          <span v-if="currentPlayer.gender" class="text-2xl">{{ currentPlayer.gender === 'male' ? '♂' : currentPlayer.gender === 'female' ? '♀' : '⚧' }}</span>
+          <span v-if="currentPlayer.gender" class="text-xl sm:text-2xl">{{ currentPlayer.gender === 'male' ? '♂' : currentPlayer.gender === 'female' ? '♀' : '⚧' }}</span>
         </div>
       </div>
     </div>
 
     <!-- Intensity Toggle (Host Only) -->
-    <div v-if="isHost" class="mb-6">
+    <div v-if="isHost" class="mb-4 sm:mb-5 md:mb-6">
       <div class="flex bg-white/5 rounded-xl p-1 border-2 border-white/10">
         <button
           @click="isSpicyMode = false"
@@ -87,50 +90,50 @@
     </div>
 
     <!-- Current Card Display -->
-    <div v-if="roomState.currentPrompt && cardFlipped" class="mb-6">
-      <div class="bg-white/10 backdrop-blur-md rounded-2xl p-6 sm:p-8 md:p-10 border border-white/20 shadow-2xl">
+    <div v-if="roomState.currentPrompt && cardFlipped" class="mb-4 sm:mb-6">
+      <div class="bg-white/10 backdrop-blur-md rounded-xl sm:rounded-2xl p-4 sm:p-6 md:p-8 lg:p-10 border border-white/20 shadow-2xl">
         <div class="text-center">
           <!-- Type Badge -->
-          <div class="mb-6 flex justify-center">
-            <div class="inline-flex items-center gap-3 px-6 py-3 rounded-full font-black text-lg shadow-lg"
+          <div class="mb-3 sm:mb-4 md:mb-6 flex justify-center">
+            <div class="inline-flex items-center gap-2 sm:gap-3 px-3 sm:px-4 md:px-6 py-2 sm:py-2.5 md:py-3 rounded-full font-black text-sm sm:text-base md:text-lg shadow-lg"
               :class="roomState.currentPrompt.type === 'TRUTH' 
                 ? 'bg-gradient-to-r from-blue-600 to-cyan-600 text-white' 
                 : 'bg-gradient-to-r from-pink-600 to-red-600 text-white'">
-              <Icon :icon="roomState.currentPrompt.type === 'TRUTH' ? 'mdi:chat-question' : 'mdi:fire'" class="w-6 h-6" />
+              <Icon :icon="roomState.currentPrompt.type === 'TRUTH' ? 'mdi:chat-question' : 'mdi:fire'" class="w-4 h-4 sm:w-5 sm:h-5 md:w-6 md:h-6" />
               {{ roomState.currentPrompt.type === 'TRUTH' ? 'TRUTH' : 'DARE' }}
             </div>
           </div>
           
           <!-- Question Text -->
-          <p class="text-2xl sm:text-3xl md:text-4xl font-bold mb-6 leading-relaxed px-4">
+          <p class="text-lg sm:text-xl md:text-2xl lg:text-3xl xl:text-4xl font-bold mb-4 sm:mb-5 md:mb-6 leading-tight sm:leading-relaxed px-2 sm:px-4">
             {{ roomState.currentPrompt.text }}
           </p>
           
           <!-- Target Player (for Dares) -->
-          <div v-if="roomState.currentPrompt.target" class="bg-white/5 rounded-xl p-4 max-w-sm mx-auto mb-4 border border-white/10">
-            <p class="text-base font-medium flex items-center justify-center gap-2">
-              <Icon icon="mdi:account-arrow-right" class="w-5 h-5" />
+          <div v-if="roomState.currentPrompt.target" class="bg-white/5 rounded-lg sm:rounded-xl p-2 sm:p-3 md:p-4 max-w-sm mx-auto mb-3 sm:mb-4 border border-white/10">
+            <p class="text-xs sm:text-sm md:text-base font-medium flex items-center justify-center gap-1.5 sm:gap-2">
+              <Icon icon="mdi:account-arrow-right" class="w-4 h-4 sm:w-5 sm:h-5" />
               To: {{ roomState.currentPrompt.target.nickname }}
-              <span v-if="roomState.currentPrompt.target.gender" class="text-xl">{{ roomState.currentPrompt.target.gender === 'male' ? '♂' : roomState.currentPrompt.target.gender === 'female' ? '♀' : '⚧' }}</span>
+              <span v-if="roomState.currentPrompt.target.gender" class="text-lg sm:text-xl">{{ roomState.currentPrompt.target.gender === 'male' ? '♂' : roomState.currentPrompt.target.gender === 'female' ? '♀' : '⚧' }}</span>
             </p>
           </div>
         </div>
       </div>
 
       <!-- Action Buttons (All Players) -->
-      <div v-if="roomState.currentPrompt && cardFlipped" class="grid grid-cols-2 gap-4 mb-6">
+      <div v-if="roomState.currentPrompt && cardFlipped" class="grid grid-cols-2 gap-3 sm:gap-4 mb-4 sm:mb-6">
         <button
           @click="completeChallenge"
-          class="group bg-gradient-to-r from-green-700 to-emerald-700 hover:from-green-600 hover:to-emerald-600 py-4 rounded-2xl font-black text-lg transition-all flex items-center justify-center gap-3 shadow-xl hover:shadow-green-600/50 border-2 border-green-500/30 hover:scale-105"
+          class="group bg-gradient-to-r from-green-700 to-emerald-700 hover:from-green-600 hover:to-emerald-600 py-3 sm:py-4 rounded-xl sm:rounded-2xl font-black text-sm sm:text-base md:text-lg transition-all flex items-center justify-center gap-2 sm:gap-3 shadow-xl hover:shadow-green-600/50 border-2 border-green-500/30 hover:scale-105"
         >
-          <Icon icon="mdi:check-bold" class="w-6 h-6 group-hover:scale-110 transition-transform" />
+          <Icon icon="mdi:check-bold" class="w-5 h-5 sm:w-6 sm:h-6 group-hover:scale-110 transition-transform" />
           Completed
         </button>
         <button
           @click="failChallenge"
-          class="group bg-gradient-to-r from-red-700 to-pink-700 hover:from-red-600 hover:to-pink-600 py-4 rounded-2xl font-black text-lg transition-all flex items-center justify-center gap-3 shadow-xl hover:shadow-red-600/50 border-2 border-red-500/30 hover:scale-105"
+          class="group bg-gradient-to-r from-red-700 to-pink-700 hover:from-red-600 hover:to-pink-600 py-3 sm:py-4 rounded-xl sm:rounded-2xl font-black text-sm sm:text-base md:text-lg transition-all flex items-center justify-center gap-2 sm:gap-3 shadow-xl hover:shadow-red-600/50 border-2 border-red-500/30 hover:scale-105"
         >
-          <Icon icon="mdi:close-thick" class="w-6 h-6 group-hover:scale-110 transition-transform" />
+          <Icon icon="mdi:close-thick" class="w-5 h-5 sm:w-6 sm:h-6 group-hover:scale-110 transition-transform" />
           Failed
         </button>
       </div>
@@ -145,52 +148,52 @@
     </div>
 
     <!-- Host Controls -->
-    <div v-if="isHost" class="bg-purple-500/20 rounded-xl p-6 border border-purple-500/30 space-y-4">
-      <h3 class="font-bold text-lg mb-4 flex items-center gap-2">
-        <Icon icon="mdi:crown" class="w-5 h-5" />
+    <div v-if="isHost" class="bg-purple-500/20 rounded-lg sm:rounded-xl p-4 sm:p-5 md:p-6 border border-purple-500/30 space-y-3 sm:space-y-4">
+      <h3 class="font-bold text-base sm:text-lg mb-3 sm:mb-4 flex items-center gap-2">
+        <Icon icon="mdi:crown" class="w-4 h-4 sm:w-5 sm:h-5" />
         Host Controls
       </h3>
 
-      <div class="grid grid-cols-2 gap-3 mb-4">
+      <div class="grid grid-cols-2 gap-2 sm:gap-3 mb-3 sm:mb-4">
         <button
           @click="drawCard('TRUTH')"
           :disabled="isDrawing"
-          class="bg-blue-500/20 hover:bg-blue-500/30 border-2 border-blue-500/50 rounded-xl p-4 transition-all transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed"
+          class="bg-blue-500/20 hover:bg-blue-500/30 border-2 border-blue-500/50 rounded-lg sm:rounded-xl p-3 sm:p-4 transition-all transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed"
         >
-          <Icon icon="mdi:eye" class="w-8 h-8 mx-auto mb-2" />
-          <span class="font-bold">Truth</span>
+          <Icon icon="mdi:eye" class="w-6 h-6 sm:w-7 sm:h-7 md:w-8 md:h-8 mx-auto mb-1 sm:mb-2" />
+          <span class="font-bold text-xs sm:text-sm md:text-base">Truth</span>
         </button>
         <button
           @click="drawCard('DARE')"
           :disabled="isDrawing"
-          class="bg-red-500/20 hover:bg-red-500/30 border-2 border-red-500/50 rounded-xl p-4 transition-all transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed"
+          class="bg-red-500/20 hover:bg-red-500/30 border-2 border-red-500/50 rounded-lg sm:rounded-xl p-3 sm:p-4 transition-all transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed"
         >
-          <Icon icon="mdi:fire" class="w-8 h-8 mx-auto mb-2" />
-          <span class="font-bold">Dare</span>
+          <Icon icon="mdi:fire" class="w-6 h-6 sm:w-7 sm:h-7 md:w-8 md:h-8 mx-auto mb-1 sm:mb-2" />
+          <span class="font-bold text-xs sm:text-sm md:text-base">Dare</span>
         </button>
       </div>
 
       <button
         @click="drawRandomCard"
         :disabled="isDrawing"
-        class="w-full bg-gradient-to-r from-purple-600 via-pink-600 to-purple-600 hover:from-purple-500 hover:via-pink-500 hover:to-purple-500 text-white px-6 py-3 rounded-xl font-black shadow-xl transition-all transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed"
+        class="w-full bg-gradient-to-r from-purple-600 via-pink-600 to-purple-600 hover:from-purple-500 hover:via-pink-500 hover:to-purple-500 text-white px-4 sm:px-6 py-2 sm:py-3 rounded-lg sm:rounded-xl font-black text-sm sm:text-base shadow-xl transition-all transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed"
       >
-        <Icon icon="mdi:dice-multiple" class="w-5 h-5 inline mr-2" />
+        <Icon icon="mdi:dice-multiple" class="w-4 h-4 sm:w-5 sm:h-5 inline mr-2" />
         {{ isDrawing ? 'Drawing...' : 'Random Card' }}
       </button>
     </div>
 
     <!-- Player List -->
-    <div class="bg-white/10 backdrop-blur-md rounded-xl p-4 border border-white/20 mt-6">
-      <h3 class="font-bold mb-3 flex items-center gap-2">
-        <Icon icon="mdi:account-group" class="w-5 h-5" />
+    <div class="bg-white/10 backdrop-blur-md rounded-lg sm:rounded-xl p-3 sm:p-4 border border-white/20 mt-4 sm:mt-5 md:mt-6">
+      <h3 class="font-bold mb-2 sm:mb-3 text-sm sm:text-base flex items-center gap-2">
+        <Icon icon="mdi:account-group" class="w-4 h-4 sm:w-5 sm:h-5" />
         Players ({{ roomState.players.length }})
       </h3>
-      <div class="grid grid-cols-2 sm:grid-cols-3 gap-2">
+      <div class="grid grid-cols-2 sm:grid-cols-3 gap-1.5 sm:gap-2">
         <div
           v-for="player in roomState.players"
           :key="player.socketId"
-          class="bg-white/5 rounded-lg p-2 text-center text-sm"
+          class="bg-white/5 rounded-lg p-1.5 sm:p-2 text-center text-xs sm:text-sm"
           :class="{ 'ring-2 ring-purple-500': player.isHost }"
         >
           {{ player.nickname }}
@@ -206,6 +209,7 @@
 import { ref, computed, onMounted, watch } from 'vue'
 import { Icon } from '@iconify/vue'
 import { useRouter } from 'vue-router'
+import { navigateTo } from '#app'
 
 interface Props {
   roomState: any
@@ -222,7 +226,17 @@ const isHost = computed(() => props.multiplayer.isHost.value)
 const handleChangeGame = () => {
   if (!isHost.value) return
   props.multiplayer.endGame()
-  router.push('/lobby')
+  // Use navigateTo for better navigation handling
+  navigateTo('/lobby')
+}
+
+const handleBackToLobby = () => {
+  // If host, end the game first, otherwise just navigate
+  if (isHost.value) {
+    props.multiplayer.endGame()
+  }
+  // Navigate immediately - don't wait for socket response
+  navigateTo('/lobby')
 }
 
 const isSpicyMode = ref(false)

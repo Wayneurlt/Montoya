@@ -242,6 +242,7 @@
 import { ref, computed, watch, onMounted } from 'vue'
 import { Icon } from '@iconify/vue'
 import { useRouter } from 'vue-router'
+import { navigateTo } from '#app'
 
 interface Props {
   roomState: any
@@ -260,7 +261,16 @@ const isHost = computed(() => multiplayer.isHost.value)
 const handleChangeGame = () => {
   if (!isHost.value) return
   multiplayer.endGame()
-  router.push('/lobby')
+  navigateTo('/lobby')
+}
+
+const handleBackToLobby = () => {
+  // If host, end the game first, otherwise just navigate
+  if (isHost.value) {
+    multiplayer.endGame()
+  }
+  // Navigate immediately - don't wait for socket response
+  navigateTo('/lobby')
 }
 
 const isLoading = ref(false)
