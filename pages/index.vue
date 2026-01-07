@@ -70,8 +70,8 @@
 
       <!-- Action Buttons -->
       <div class="flex flex-col items-center gap-2 sm:gap-3 md:gap-4 px-4 mb-3 sm:mb-4 md:mb-6">
-        <button
-          @click="showAgeModal = true"
+        <NuxtLink
+          to="/setup"
           class="group relative bg-gradient-to-r from-purple-600 via-pink-600 to-purple-600 hover:from-purple-500 hover:via-pink-500 hover:to-purple-500 text-white px-6 sm:px-8 md:px-12 py-3 sm:py-4 md:py-5 rounded-full text-sm sm:text-base md:text-lg lg:text-xl xl:text-2xl font-black shadow-2xl hover:shadow-pink-600/50 transition-all duration-300 transform hover:scale-110 animate-pulse-slow border-2 sm:border-3 md:border-4 border-pink-500/50 w-full max-w-md"
         >
           <span class="relative z-10 flex flex-col items-center gap-1">
@@ -79,7 +79,7 @@
             <span class="text-xs sm:text-sm font-normal opacity-90">Pass & Play Mode</span>
           </span>
           <div class="absolute inset-0 bg-gradient-to-r from-pink-500 to-purple-500 rounded-full blur-xl opacity-50 group-hover:opacity-75 transition-opacity"></div>
-        </button>
+        </NuxtLink>
         <NuxtLink
           to="/lobby"
           class="group relative bg-gradient-to-r from-cyan-600 via-blue-600 to-purple-600 hover:from-cyan-500 hover:via-blue-500 hover:to-purple-500 text-white px-6 sm:px-8 md:px-12 py-3 sm:py-4 md:py-5 rounded-full text-sm sm:text-base md:text-lg lg:text-xl font-black shadow-2xl hover:shadow-cyan-600/50 transition-all duration-300 transform hover:scale-105 border-2 sm:border-3 md:border-4 border-cyan-500/50 w-full max-w-md flex items-center justify-center gap-2"
@@ -113,6 +113,8 @@
     </div>
 
     <!-- Age Confirmation Modal -->
+    <!-- COMMENTED OUT: Age modal removed from single device mode flow -->
+    <!--
     <Teleport to="body">
       <div
         v-if="showAgeModal"
@@ -120,7 +122,6 @@
         @click.self="showAgeModal = false"
       >
         <div class="bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 border-2 sm:border-3 md:border-4 border-red-500/50 rounded-xl sm:rounded-2xl md:rounded-3xl p-4 sm:p-5 md:p-6 lg:p-8 xl:p-10 max-w-2xl w-full mx-auto relative">
-          <!-- Close Button -->
           <button
             @click="showAgeModal = false"
             class="absolute top-3 right-3 sm:top-4 sm:right-4 text-white/60 hover:text-white transition-colors"
@@ -128,7 +129,6 @@
             <Icon icon="mdi:close" class="w-6 h-6 sm:w-7 sm:h-8" />
           </button>
 
-          <!-- Modal Content -->
           <div class="text-center">
             <div class="text-4xl sm:text-5xl md:text-6xl lg:text-7xl xl:text-8xl mb-3 sm:mb-4 md:mb-5">🔞</div>
             <h2 class="text-xl sm:text-2xl md:text-3xl lg:text-4xl xl:text-5xl font-black mb-3 sm:mb-4 md:mb-5 text-red-300">
@@ -147,7 +147,6 @@
               By continuing, you confirm you are 18 years or older.
             </p>
             
-            <!-- Confirmation Button -->
             <button
               @click="confirmAge"
               :disabled="isConfirming"
@@ -160,6 +159,7 @@
         </div>
       </div>
     </Teleport>
+    -->
   </div>
 </template>
 
@@ -170,50 +170,52 @@ import { useAnalytics } from "~/composables/useAnalytics";
 
 const { trackPageView } = useAnalytics();
 
-const showAgeModal = ref(false);
-const isConfirming = ref(false);
+// COMMENTED OUT: Age modal logic removed from single device mode flow
+// const showAgeModal = ref(false);
+// const isConfirming = ref(false);
 
-const confirmAge = async () => {
-  isConfirming.value = true;
-  
-  try {
-    // Track the age confirmation
-    await $fetch('/api/age-confirmation', {
-      method: 'POST',
-      body: {
-        userAgent: typeof navigator !== 'undefined' ? navigator.userAgent : null
-      }
-    });
-    
-    // Mark as shown in localStorage so it only shows once
-    if (typeof window !== 'undefined') {
-      localStorage.setItem('age_modal_shown', 'true');
-    }
-    
-    // Just close the modal and stay on the index page (which has the mode selection buttons)
-    // No navigation needed - user can now click the buttons
-  } catch (error) {
-    console.error('Error confirming age:', error);
-    // Still mark as shown even if tracking fails
-    if (typeof window !== 'undefined') {
-      localStorage.setItem('age_modal_shown', 'true');
-    }
-  } finally {
-    isConfirming.value = false;
-    showAgeModal.value = false;
-  }
-};
+// const confirmAge = async () => {
+//   isConfirming.value = true;
+//   
+//   try {
+//     // Track the age confirmation
+//     await $fetch('/api/age-confirmation', {
+//       method: 'POST',
+//       body: {
+//         userAgent: typeof navigator !== 'undefined' ? navigator.userAgent : null
+//       }
+//     });
+//     
+//     // Mark as shown in localStorage so it only shows once
+//     if (typeof window !== 'undefined') {
+//       localStorage.setItem('age_modal_shown', 'true');
+//     }
+//     
+//     // Just close the modal and stay on the index page (which has the mode selection buttons)
+//     // No navigation needed - user can now click the buttons
+//   } catch (error) {
+//     console.error('Error confirming age:', error);
+//     // Still mark as shown even if tracking fails
+//     if (typeof window !== 'undefined') {
+//       localStorage.setItem('age_modal_shown', 'true');
+//     }
+//   } finally {
+//     isConfirming.value = false;
+//     showAgeModal.value = false;
+//   }
+// };
 
 onMounted(() => {
   trackPageView('home');
   
-  // Only show age modal if it hasn't been shown before
-  if (typeof window !== 'undefined') {
-    const ageModalShown = localStorage.getItem('age_modal_shown');
-    if (!ageModalShown) {
-      showAgeModal.value = true;
-    }
-  }
+  // COMMENTED OUT: Age modal no longer shows on page load
+  // // Only show age modal if it hasn't been shown before
+  // if (typeof window !== 'undefined') {
+  //   const ageModalShown = localStorage.getItem('age_modal_shown');
+  //   if (!ageModalShown) {
+  //     showAgeModal.value = true;
+  //   }
+  // }
 });
 </script>
 
