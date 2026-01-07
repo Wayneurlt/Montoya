@@ -428,14 +428,19 @@ watch(() => roomState.value.currentPrompt, () => {
 
 const submitVote = async (vote: 'Option A' | 'Option B') => {
   if (isSubmitting.value || hasVoted.value) return
+  
+  // Set submitting immediately to prevent double clicks
   isSubmitting.value = true
+  hasVoted.value = true
+  myVote.value = vote
 
   try {
     multiplayer.submitVote(vote)
-    hasVoted.value = true
-    myVote.value = vote
   } catch (error) {
     console.error('Error submitting vote:', error)
+    // Reset on error
+    hasVoted.value = false
+    myVote.value = null
   } finally {
     isSubmitting.value = false
   }

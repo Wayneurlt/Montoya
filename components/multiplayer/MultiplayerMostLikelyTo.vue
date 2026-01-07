@@ -54,12 +54,12 @@
         </div>
       </div>
 
-      <!-- Voting Options (if not voted yet) - Players cannot vote for themselves -->
+      <!-- Voting Options (if not voted yet) - Players can vote for themselves -->
       <div v-if="!hasVoted" class="bg-white/10 backdrop-blur-md rounded-xl p-6 border border-white/20">
         <h3 class="font-bold mb-4 text-center">Who is most likely to?</h3>
         <div class="grid grid-cols-2 sm:grid-cols-3 gap-3">
           <button
-            v-for="player in otherPlayers"
+            v-for="player in roomState.players"
             :key="player.socketId"
             @click="submitVote(player.socketId)"
             :disabled="isSubmitting"
@@ -307,14 +307,6 @@ const copyRoomCode = async () => {
 
 const votes = computed(() => multiplayer.votes.value || [])
 
-// Get other players (exclude self) - Players cannot vote for themselves
-const otherPlayers = computed(() => {
-  const myPlayer = multiplayer.myPlayer.value
-  if (!myPlayer) return roomState.value.players
-  
-  return roomState.value.players.filter((p: any) => p.socketId !== myPlayer.socketId)
-})
-
 // Get vote count for a player
 const getVoteCount = (socketId: string) => {
   return votes.value.filter((v: any) => v.vote === socketId).length
@@ -370,15 +362,21 @@ watch(() => roomState.value.currentPrompt, () => {
 
 const submitVote = async (playerSocketId: string) => {
   if (isSubmitting.value || hasVoted.value) return
+  
+  // Set submitting immediately to prevent double clicks
   isSubmitting.value = true
+  hasVoted.value = true
+  myVote.value = playerSocketId
+  votedForPlayer.value = roomState.value.players.find((p: any) => p.socketId === playerSocketId)
 
   try {
     multiplayer.submitVote(playerSocketId)
-    hasVoted.value = true
-    myVote.value = playerSocketId
-    votedForPlayer.value = roomState.value.players.find((p: any) => p.socketId === playerSocketId)
   } catch (error) {
     console.error('Error submitting vote:', error)
+    // Reset on error
+    hasVoted.value = false
+    myVote.value = null
+    votedForPlayer.value = null
   } finally {
     isSubmitting.value = false
   }

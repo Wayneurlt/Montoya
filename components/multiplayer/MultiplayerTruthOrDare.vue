@@ -112,6 +112,28 @@
         </div>
       </div>
 
+      <!-- Hesitation Timer -->
+      <div v-if="roomState.currentPrompt && cardFlipped" class="mb-4 sm:mb-6 bg-white/5 rounded-lg sm:rounded-xl p-3 sm:p-4">
+        <div class="flex justify-between items-center mb-2">
+          <div class="flex items-center gap-2">
+            <Icon icon="mdi:timer-sand" class="w-4 h-4 sm:w-5 sm:h-5 text-pink-300" />
+            <span class="font-medium text-sm sm:text-base">Hesitation Timer</span>
+          </div>
+          <span
+            class="font-bold text-lg sm:text-xl"
+            :class="hesitationTime <= 10 ? 'text-red-400' : 'text-cyan-400'"
+          >
+            {{ Math.floor(hesitationTime / 60) }}:{{ String(Math.floor(hesitationTime % 60)).padStart(2, '0') }}
+          </span>
+        </div>
+        <div class="w-full h-2 bg-white/20 rounded-full overflow-hidden">
+          <div
+            class="h-full bg-gradient-to-r from-pink-500 to-purple-500 transition-all duration-1000 ease-linear"
+            :style="{ width: hesitationPercent + '%' }"
+          ></div>
+        </div>
+      </div>
+
       <!-- Action Buttons (All Players) -->
       <div v-if="roomState.currentPrompt && cardFlipped" class="grid grid-cols-2 gap-3 sm:gap-4 mb-4 sm:mb-6">
         <button
@@ -218,7 +240,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, watch } from 'vue'
+import { ref, computed, onMounted, onBeforeUnmount, watch } from 'vue'
 import { Icon } from '@iconify/vue'
 import { useRouter } from 'vue-router'
 import { navigateTo } from '#app'
@@ -258,6 +280,9 @@ const isDrawing = ref(false)
 const cardFlipped = ref(false)
 const questionsLoading = ref(false)
 const copied = ref(false)
+const hesitationTime = ref(60) // 1 minute in seconds
+const hesitationTimer = ref<number | null>(null)
+const hesitationPercent = ref(100)
 
 const copyRoomCode = async () => {
   if (!props.roomState.roomCode) return
@@ -436,6 +461,7 @@ const drawRandomCard = async () => {
 // Complete challenge - move to next player
 const completeChallenge = () => {
   if (!props.roomState.currentPrompt) return
+  resetHesitationTimer()
   
   // Clear current prompt to move to next turn
   props.multiplayer.nextRound(null)
@@ -445,6 +471,7 @@ const completeChallenge = () => {
 // Fail challenge - move to next player
 const failChallenge = () => {
   if (!props.roomState.currentPrompt) return
+  resetHesitationTimer()
   
   // Clear current prompt to move to next turn
   props.multiplayer.nextRound(null)
@@ -460,13 +487,47 @@ const handleSkipQuestion = () => {
   cardFlipped.value = false
 }
 
+// Start hesitation timer
+const startHesitationTimer = () => {
+  clearInterval(hesitationTimer.value || undefined)
+  hesitationTime.value = 60 // 1 minute
+  hesitationPercent.value = 100
+  hesitationTimer.value = setInterval(() => {
+    hesitationTime.value--
+    hesitationPercent.value = (hesitationTime.value / 60) * 100
+    if (hesitationTime.value <= 0) {
+      clearInterval(hesitationTimer.value || undefined)
+      hesitationTimer.value = null
+      // Auto-fail if time runs out
+      if (props.roomState.currentPrompt) {
+        failChallenge()
+      }
+    }
+  }, 1000) as unknown as number
+}
+
+// Reset hesitation timer
+const resetHesitationTimer = () => {
+  clearInterval(hesitationTimer.value || undefined)
+  hesitationTimer.value = null
+  hesitationTime.value = 60
+  hesitationPercent.value = 100
+}
+
 // Watch for prompt changes to flip card
 watch(() => props.roomState.currentPrompt, (newPrompt) => {
   if (newPrompt) {
     cardFlipped.value = true
+    startHesitationTimer()
   } else {
     cardFlipped.value = false
+    resetHesitationTimer()
   }
+})
+
+// Cleanup on unmount
+onBeforeUnmount(() => {
+  resetHesitationTimer()
 })
 
 onMounted(() => {

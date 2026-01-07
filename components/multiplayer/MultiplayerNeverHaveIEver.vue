@@ -301,15 +301,20 @@ watch(() => roomState.value.currentPrompt, () => {
 
 const submitVote = async (vote: 'I Have' | 'I Have Not') => {
   if (isSubmitting.value || hasVoted.value) return
+  
+  // Set submitting immediately to prevent double clicks
   isSubmitting.value = true
+  hasVoted.value = true
+  myVote.value = vote
 
   try {
     // Submit vote - server will auto-transition to results when all players vote
     multiplayer.submitVote(vote)
-    hasVoted.value = true
-    myVote.value = vote
   } catch (error) {
     console.error('Error submitting vote:', error)
+    // Reset on error
+    hasVoted.value = false
+    myVote.value = null
   } finally {
     isSubmitting.value = false
   }

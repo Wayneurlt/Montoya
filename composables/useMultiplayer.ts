@@ -239,6 +239,8 @@ export const useMultiplayer = () => {
     roomName?: string
     maxPlayers?: number
     answerVisibility?: 'anonymous' | 'public'
+    nickname?: string
+    gender?: 'male' | 'female' | 'other'
   }) => {
     if (!socket || !socket.connected) {
       connect()
@@ -249,6 +251,8 @@ export const useMultiplayer = () => {
         roomName: options.roomName,
         maxPlayers: options.maxPlayers || 8,
         answerVisibility: options.answerVisibility || 'anonymous',
+        nickname: options.nickname,
+        gender: options.gender,
       })
     }
   }

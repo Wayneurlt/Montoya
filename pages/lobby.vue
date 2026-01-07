@@ -476,11 +476,23 @@ const handleCreateRoom = async () => {
     createRoom({
       roomName: createForm.value.roomName || undefined,
       answerVisibility: createForm.value.answerVisibility,
+      nickname: createForm.value.nickname,
+      gender: createForm.value.gender,
     })
     
+    // Store room info for reconnection (will be updated when room is created)
     // Update nickname and gender after room is created
     setTimeout(() => {
       updateNickname(createForm.value.nickname, createForm.value.gender)
+      // Store room info once we have the room code
+      if (roomState.value.roomCode) {
+        localStorage.setItem('multiplayer_room', JSON.stringify({
+          roomCode: roomState.value.roomCode,
+          nickname: createForm.value.nickname,
+          gender: createForm.value.gender,
+          isHost: true,
+        }))
+      }
       isConnecting.value = false
     }, 500)
   } catch (err) {
@@ -521,6 +533,13 @@ const handleJoinRoom = async () => {
     
     // Join room
     joinRoom(joinForm.value.roomCode, joinForm.value.nickname, joinForm.value.gender)
+    
+    // Store room info for reconnection
+    localStorage.setItem('multiplayer_room', JSON.stringify({
+      roomCode: joinForm.value.roomCode,
+      nickname: joinForm.value.nickname,
+      gender: joinForm.value.gender,
+    }))
     
     // Update nickname and gender after joining (in case joinRoom doesn't accept gender)
     setTimeout(() => {
@@ -580,6 +599,39 @@ watch(() => roomState.value.gamePhase, (newPhase) => {
 
 onMounted(() => {
   connect()
+  
+  // Check if we have room info from previous session and reconnect
+  if (typeof window !== 'undefined') {
+    const roomInfo = localStorage.getItem('multiplayer_room')
+    if (roomInfo) {
+      try {
+        const info = JSON.parse(roomInfo)
+        if (info.roomCode && info.nickname) {
+          // Update form values first
+          joinForm.value.roomCode = info.roomCode
+          joinForm.value.nickname = info.nickname
+          joinForm.value.gender = info.gender || 'male'
+          isCreating.value = false
+          
+          // Wait for connection to establish, then rejoin
+          const attemptReconnect = () => {
+            if (isConnected.value && info.roomCode) {
+              joinRoom(info.roomCode, info.nickname, info.gender)
+            } else {
+              // Retry after a short delay
+              setTimeout(attemptReconnect, 200)
+            }
+          }
+          
+          // Start attempting after initial connection delay
+          setTimeout(attemptReconnect, 500)
+        }
+      } catch (e) {
+        console.error('Failed to parse room info:', e)
+        localStorage.removeItem('multiplayer_room')
+      }
+    }
+  }
 })
 </script>
 

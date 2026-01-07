@@ -185,11 +185,19 @@ const confirmAge = async () => {
       }
     });
     
+    // Mark as shown in localStorage so it only shows once
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('age_modal_shown', 'true');
+    }
+    
     // Navigate to setup
     await navigateTo('/setup?mode=adult');
   } catch (error) {
     console.error('Error confirming age:', error);
     // Still navigate even if tracking fails
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('age_modal_shown', 'true');
+    }
     await navigateTo('/setup?mode=adult');
   } finally {
     isConfirming.value = false;
@@ -199,6 +207,14 @@ const confirmAge = async () => {
 
 onMounted(() => {
   trackPageView('home');
+  
+  // Only show age modal if it hasn't been shown before
+  if (typeof window !== 'undefined') {
+    const ageModalShown = localStorage.getItem('age_modal_shown');
+    if (!ageModalShown) {
+      showAgeModal.value = true;
+    }
+  }
 });
 </script>
 
