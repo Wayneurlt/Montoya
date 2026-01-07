@@ -152,34 +152,33 @@ io.on('connection', (socket) => {
         return
       }
 
-      // Check if game has already started
-      if (room.gamePhase !== 'lobby') {
-        socket.emit('room:error', { message: 'Game has already started' })
-        return
-      }
-
-      // Check for duplicate nicknames
+      // Allow joining mid-game - no restriction on game phase
+      // Check for duplicate nicknames (only among connected players)
       let finalNickname = data.nickname
       let nicknameCounter = 1
-      const existingNicknames = Array.from(room.players.values()).map(p => p.nickname.toLowerCase())
+      const existingNicknames = Array.from(room.players.values())
+        .filter(p => p.connected)
+        .map(p => p.nickname.toLowerCase())
       while (existingNicknames.includes(finalNickname.toLowerCase())) {
         finalNickname = `${data.nickname} ${nicknameCounter}`
         nicknameCounter++
       }
 
-      // Add player
+      // Add new player (always as new player, no reconnection)
       room.players.set(socket.id, {
         socketId: socket.id,
         nickname: finalNickname,
         gender: data.gender,
         isHost: false,
         connected: true,
+        hasVoted: false,
+        vote: undefined,
       })
 
       socket.join(room.roomId)
       room.lastUpdated = Date.now()
 
-      console.log(`👤 ${finalNickname} joined room ${room.roomCode}`)
+      console.log(`👤 ${finalNickname} joined room ${room.roomCode} (game phase: ${room.gamePhase})`)
 
       // Notify all players in room
       const playersList = Array.from(room.players.values()).map(p => ({
@@ -334,11 +333,37 @@ io.on('connection', (socket) => {
         }
       })
 
+      const allPlayersVoted = room.votes.size >= room.players.size
+
       io.to(room.roomId).emit('game:vote:update', {
         votes: votesData,
         totalVotes: room.votes.size,
         totalPlayers: room.players.size,
+        allVoted: allPlayersVoted,
       })
+
+      // Auto-transition to results if all players voted (for all voting games)
+      const votingGames = ['never-have-i-ever', 'would-you-rather', 'most-likely-to']
+      if (allPlayersVoted && room.currentGame && votingGames.includes(room.currentGame)) {
+        room.gamePhase = 'results'
+        room.lastUpdated = Date.now()
+
+        // Prepare results with visibility rules
+        const results = votesData
+
+        io.to(room.roomId).emit('game:results', {
+          results,
+          answerVisibility: room.answerVisibility,
+        })
+
+        io.to(room.roomId).emit('game:state:update', {
+          currentGame: room.currentGame,
+          gamePhase: room.gamePhase,
+          currentPrompt: room.currentPrompt,
+        })
+
+        console.log(`✅ All players voted in room ${room.roomCode}, auto-showing results for ${room.currentGame}`)
+      }
     } catch (error) {
       console.error('❌ Error submitting vote:', error)
       socket.emit('room:error', { message: 'Failed to submit vote' })
@@ -483,6 +508,46 @@ io.on('connection', (socket) => {
     }
   })
 
+  // Skip question (host only)
+  socket.on('game:skip', (data) => {
+    try {
+      const room = findRoomBySocketId(socket.id)
+      if (!room) {
+        socket.emit('room:error', { message: 'Not in a room' })
+        return
+      }
+
+      const player = room.players.get(socket.id)
+      if (!player || !player.isHost) {
+        socket.emit('room:error', { message: 'Only host can skip question' })
+        return
+      }
+
+      // Skip to next question - same as next round
+      room.gamePhase = 'playing'
+      room.currentPrompt = data?.prompt || null
+      room.votes.clear()
+      room.lastUpdated = Date.now()
+
+      // Reset all player votes
+      room.players.forEach(p => {
+        p.hasVoted = false
+        p.vote = undefined
+      })
+
+      console.log(`⏭️ Question skipped in room ${room.roomCode}`)
+
+      io.to(room.roomId).emit('game:state:update', {
+        currentGame: room.currentGame,
+        gamePhase: room.gamePhase,
+        currentPrompt: room.currentPrompt,
+      })
+    } catch (error) {
+      console.error('❌ Error skipping question:', error)
+      socket.emit('room:error', { message: 'Failed to skip question' })
+    }
+  })
+
   // Leave room
   socket.on('room:leave', () => {
     try {
@@ -565,19 +630,22 @@ io.on('connection', (socket) => {
       const player = room.players.get(socket.id)
       const wasHost = player?.isHost || false
 
-      // Mark as disconnected but keep in room (for reconnection)
-      if (player) {
-        player.connected = false
-      }
-
+      // Completely remove player from room (no reconnection)
+      room.players.delete(socket.id)
       room.votes.delete(socket.id)
       room.lastUpdated = Date.now()
+
+      console.log(`🗑️ Removed disconnected player ${player?.nickname || socket.id} from room ${room.roomCode}`)
 
       // Migrate host if needed
       if (wasHost) {
         const newHost = migrateHost(room)
         if (newHost) {
           console.log(`👑 Host migrated to ${newHost.nickname} in room ${room.roomCode}`)
+        } else {
+          // No connected players left, clean up room
+          cleanupRoom(room.roomId)
+          return
         }
       }
 
@@ -591,6 +659,7 @@ io.on('connection', (socket) => {
       const playersList = Array.from(room.players.values()).map(p => ({
         socketId: p.socketId,
         nickname: p.nickname,
+        gender: p.gender,
         isHost: p.isHost,
         connected: p.connected,
       }))

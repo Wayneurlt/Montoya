@@ -178,6 +178,15 @@
         <Icon icon="mdi:dice-multiple" class="w-4 h-4 sm:w-5 sm:h-5 inline mr-2" />
         {{ isDrawing ? 'Drawing...' : 'Random Card' }}
       </button>
+
+      <button
+        v-if="roomState.currentPrompt"
+        @click="handleSkipQuestion"
+        class="w-full bg-gradient-to-r from-yellow-500 to-orange-500 hover:from-yellow-600 hover:to-orange-600 text-white px-4 sm:px-6 py-2 sm:py-3 rounded-lg sm:rounded-xl font-black text-sm sm:text-base shadow-xl transition-all transform hover:scale-105"
+      >
+        <Icon icon="mdi:skip-next" class="w-4 h-4 sm:w-5 sm:h-5 inline mr-2" />
+        Skip Question
+      </button>
     </div>
 
     <!-- Player List -->
@@ -439,6 +448,15 @@ const failChallenge = () => {
   
   // Clear current prompt to move to next turn
   props.multiplayer.nextRound(null)
+  cardFlipped.value = false
+}
+
+// Skip question
+const handleSkipQuestion = () => {
+  if (!props.roomState.currentPrompt || !props.isHost) return
+  
+  // Clear current prompt to move to next turn
+  props.multiplayer.skipQuestion(null)
   cardFlipped.value = false
 }
 

@@ -85,6 +85,18 @@
           Waiting for others... ({{ votes.length }} / {{ roomState.players.length }})
         </p>
       </div>
+
+      <!-- Host: Skip Question Button -->
+      <div v-if="isHost" class="bg-yellow-500/20 rounded-xl p-4 border border-yellow-500/30">
+        <button
+          @click="handleSkipQuestion"
+          :disabled="isLoading"
+          class="w-full bg-gradient-to-r from-yellow-500 to-orange-500 hover:from-yellow-600 hover:to-orange-600 text-white px-6 py-3 rounded-xl font-black shadow-xl transition-all transform hover:scale-105 disabled:opacity-50"
+        >
+          <Icon icon="mdi:skip-next" class="w-5 h-5 inline mr-2" />
+          Skip Question
+        </button>
+      </div>
     </div>
 
     <!-- Results Phase - Auto-transitioned -->
@@ -345,6 +357,29 @@ const getNextQuestion = async () => {
     }
   } catch (error) {
     console.error('Error fetching question:', error)
+  } finally {
+    isLoading.value = false
+  }
+}
+
+const handleSkipQuestion = async () => {
+  if (isLoading.value || !isHost.value) return
+  isLoading.value = true
+
+  try {
+    if (!questionTracker) {
+      await loadQuestions()
+    }
+    
+    if (questionTracker) {
+      const result = questionTracker.getNextQuestion()
+      multiplayer.skipQuestion({
+        text: result.question,
+        intensity: 2,
+      })
+    }
+  } catch (error) {
+    console.error('Error skipping question:', error)
   } finally {
     isLoading.value = false
   }

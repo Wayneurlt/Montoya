@@ -303,6 +303,13 @@ export const useMultiplayer = () => {
     }
   }
 
+  // Skip question
+  const skipQuestion = (prompt?: any) => {
+    if (socket && socket.connected && isHost.value) {
+      socket.emit('game:skip', { prompt })
+    }
+  }
+
   // End game and return to lobby (keeps players in room)
   const endGame = () => {
     if (socket && socket.connected && isHost.value) {
@@ -348,6 +355,7 @@ export const useMultiplayer = () => {
     submitVote,
     showResults,
     nextRound,
+    skipQuestion,
     endGame,
     leaveRoom,
     ringHost,

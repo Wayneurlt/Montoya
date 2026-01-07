@@ -136,20 +136,31 @@
       </button>
       
       <!-- Action Buttons (when card is revealed) -->
-      <div v-else-if="currentCard && cardFlipped" class="grid grid-cols-2 gap-3 sm:gap-4">
+      <div v-else-if="currentCard && cardFlipped" class="space-y-3 sm:space-y-4">
+        <div class="grid grid-cols-2 gap-3 sm:gap-4">
+          <button
+            @click="completeChallenge"
+            class="group bg-gradient-to-r from-green-700 to-emerald-700 hover:from-green-600 hover:to-emerald-600 py-4 sm:py-5 rounded-xl sm:rounded-2xl font-black text-base sm:text-lg transition-all flex items-center justify-center gap-2 sm:gap-3 shadow-xl hover:shadow-green-600/50 border-2 border-green-500/30 hover:scale-105"
+          >
+            <Icon icon="mdi:check-bold" class="w-5 h-5 sm:w-6 sm:h-6 group-hover:scale-110 transition-transform" />
+            Completed
+          </button>
+          <button
+            @click="takeDrink"
+            class="group bg-gradient-to-r from-purple-700 to-pink-700 hover:from-purple-600 hover:to-pink-600 py-4 sm:py-5 rounded-xl sm:rounded-2xl font-black text-base sm:text-lg transition-all flex items-center justify-center gap-2 sm:gap-3 shadow-xl hover:shadow-purple-600/50 border-2 border-purple-500/30 hover:scale-105"
+          >
+            <Icon icon="mdi:glass-cocktail" class="w-5 h-5 sm:w-6 sm:h-6 group-hover:animate-bounce" />
+            Take Drink
+          </button>
+        </div>
+        <!-- Host: Skip Question Button -->
         <button
-          @click="completeChallenge"
-          class="group bg-gradient-to-r from-green-700 to-emerald-700 hover:from-green-600 hover:to-emerald-600 py-4 sm:py-5 rounded-xl sm:rounded-2xl font-black text-base sm:text-lg transition-all flex items-center justify-center gap-2 sm:gap-3 shadow-xl hover:shadow-green-600/50 border-2 border-green-500/30 hover:scale-105"
+          v-if="isHost"
+          @click="handleSkipQuestion"
+          class="w-full bg-gradient-to-r from-yellow-500 to-orange-500 hover:from-yellow-600 hover:to-orange-600 text-white py-3 sm:py-4 rounded-xl sm:rounded-2xl font-black text-base sm:text-lg shadow-xl transition-all transform hover:scale-105"
         >
-          <Icon icon="mdi:check-bold" class="w-5 h-5 sm:w-6 sm:h-6 group-hover:scale-110 transition-transform" />
-          Completed
-        </button>
-        <button
-          @click="takeDrink"
-          class="group bg-gradient-to-r from-purple-700 to-pink-700 hover:from-purple-600 hover:to-pink-600 py-4 sm:py-5 rounded-xl sm:rounded-2xl font-black text-base sm:text-lg transition-all flex items-center justify-center gap-2 sm:gap-3 shadow-xl hover:shadow-purple-600/50 border-2 border-purple-500/30 hover:scale-105"
-        >
-          <Icon icon="mdi:glass-cocktail" class="w-5 h-5 sm:w-6 sm:h-6 group-hover:animate-bounce" />
-          Take Drink
+          <Icon icon="mdi:skip-next" class="w-5 h-5 sm:w-6 sm:h-6 inline mr-2" />
+          Skip Question
         </button>
       </div>
     </div>
@@ -473,6 +484,14 @@ const takeDrink = () => {
   })
 
   nextTurn()
+}
+
+const handleSkipQuestion = () => {
+  if (!currentCard.value || !props.isHost) return
+  clearInterval(hesitationTimer.value)
+  props.multiplayer.skipQuestion(null)
+  currentCard.value = null
+  cardFlipped.value = false
 }
 
 const nextTurn = () => {
