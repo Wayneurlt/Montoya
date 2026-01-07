@@ -190,15 +190,14 @@ const confirmAge = async () => {
       localStorage.setItem('age_modal_shown', 'true');
     }
     
-    // Navigate to adult landing page
-    await navigateTo('/adult-landing');
+    // Just close the modal and stay on the index page (which has the mode selection buttons)
+    // No navigation needed - user can now click the buttons
   } catch (error) {
     console.error('Error confirming age:', error);
-    // Still navigate even if tracking fails
+    // Still mark as shown even if tracking fails
     if (typeof window !== 'undefined') {
       localStorage.setItem('age_modal_shown', 'true');
     }
-    await navigateTo('/adult-landing');
   } finally {
     isConfirming.value = false;
     showAgeModal.value = false;
