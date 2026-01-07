@@ -109,6 +109,7 @@ const {
   isHost,
   connect,
   leaveRoom,
+  attemptAutoReconnect,
 } = multiplayer
 
 const gameType = computed(() => route.params.game as string)
@@ -163,10 +164,42 @@ onMounted(() => {
     connect()
   }
 
-  // If we're not in a room, redirect to lobby
-  if (!roomState.value?.roomCode) {
+  // Check if we have room info but aren't in a room (page refresh scenario)
+  if (!roomState.value?.roomCode && typeof window !== 'undefined') {
+    const roomInfo = localStorage.getItem('multiplayer_room')
+    if (roomInfo) {
+      try {
+        const info = JSON.parse(roomInfo)
+        if (info.roomCode && info.nickname) {
+          // Wait for connection, then rejoin
+          const attemptReconnect = () => {
+            if (isConnected.value) {
+              console.log('🔄 Reconnecting to room from game page:', info.roomCode)
+              attemptAutoReconnect()
+            } else {
+              setTimeout(attemptReconnect, 200)
+            }
+          }
+          setTimeout(attemptReconnect, 500)
+          return // Don't redirect yet, wait for reconnection
+        }
+      } catch (e) {
+        console.error('Failed to parse room info:', e)
+      }
+    }
+    // No room info found, redirect to lobby
     router.push('/lobby')
+    return
   }
+  
+  // Also watch for connection to auto-reconnect
+  watch(isConnected, (connected) => {
+    if (connected && !roomState.value?.roomCode) {
+      setTimeout(() => {
+        attemptAutoReconnect()
+      }, 300)
+    }
+  })
 
   // If the current game doesn't match, redirect
   if (roomState.value?.currentGame && roomState.value.currentGame !== gameType.value) {

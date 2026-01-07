@@ -378,6 +378,7 @@ const {
   startGame,
   leaveRoom,
   updateNickname,
+  attemptAutoReconnect,
 } = multiplayer
 
 // Form state
@@ -559,9 +560,19 @@ const handleStartGame = () => {
   // Set game in store
   gameStore.setSelectedGame(selectedGame.value as any)
   
-  // Store room info for game pages
+  // Store room info for game pages (preserve nickname)
   if (roomState.value.roomCode) {
+    const existingInfo = localStorage.getItem('multiplayer_room')
+    let roomInfo: any = {}
+    if (existingInfo) {
+      try {
+        roomInfo = JSON.parse(existingInfo)
+      } catch (e) {
+        roomInfo = {}
+      }
+    }
     localStorage.setItem('multiplayer_room', JSON.stringify({
+      ...roomInfo,
       roomCode: roomState.value.roomCode,
       isHost: isHost.value,
       answerVisibility: roomState.value.answerVisibility,
@@ -583,9 +594,19 @@ const handleLeaveRoom = () => {
 // Watch for game phase changes
 watch(() => roomState.value.gamePhase, (newPhase) => {
   if (newPhase === 'playing' && roomState.value.currentGame) {
-    // Store room info
+    // Store room info with nickname
     if (roomState.value.roomCode) {
+      const existingInfo = localStorage.getItem('multiplayer_room')
+      let roomInfo: any = {}
+      if (existingInfo) {
+        try {
+          roomInfo = JSON.parse(existingInfo)
+        } catch (e) {
+          roomInfo = {}
+        }
+      }
       localStorage.setItem('multiplayer_room', JSON.stringify({
+        ...roomInfo,
         roomCode: roomState.value.roomCode,
         isHost: isHost.value,
         answerVisibility: roomState.value.answerVisibility,
@@ -600,38 +621,33 @@ watch(() => roomState.value.gamePhase, (newPhase) => {
 onMounted(() => {
   connect()
   
-  // Check if we have room info from previous session and reconnect
-  if (typeof window !== 'undefined') {
-    const roomInfo = localStorage.getItem('multiplayer_room')
-    if (roomInfo) {
-      try {
-        const info = JSON.parse(roomInfo)
-        if (info.roomCode && info.nickname) {
-          // Update form values first
-          joinForm.value.roomCode = info.roomCode
-          joinForm.value.nickname = info.nickname
-          joinForm.value.gender = info.gender || 'male'
-          isCreating.value = false
-          
-          // Wait for connection to establish, then rejoin
-          const attemptReconnect = () => {
-            if (isConnected.value && info.roomCode) {
-              joinRoom(info.roomCode, info.nickname, info.gender)
-            } else {
-              // Retry after a short delay
-              setTimeout(attemptReconnect, 200)
-            }
+  // Watch for connection and auto-reconnect
+  watch(isConnected, (connected) => {
+    if (connected && typeof window !== 'undefined') {
+      const roomInfo = localStorage.getItem('multiplayer_room')
+      if (roomInfo && !roomState.value?.roomCode) {
+        try {
+          const info = JSON.parse(roomInfo)
+          if (info.roomCode && info.nickname) {
+            // Update form values
+            joinForm.value.roomCode = info.roomCode
+            joinForm.value.nickname = info.nickname
+            joinForm.value.gender = info.gender || 'male'
+            isCreating.value = false
+            
+            // Rejoin room using the composable method
+            setTimeout(() => {
+              console.log('🔄 Auto-reconnecting to room from lobby:', info.roomCode)
+              attemptAutoReconnect()
+            }, 300)
           }
-          
-          // Start attempting after initial connection delay
-          setTimeout(attemptReconnect, 500)
+        } catch (e) {
+          console.error('Failed to parse room info:', e)
+          localStorage.removeItem('multiplayer_room')
         }
-      } catch (e) {
-        console.error('Failed to parse room info:', e)
-        localStorage.removeItem('multiplayer_room')
       }
     }
-  }
+  }, { immediate: true })
 })
 </script>
 

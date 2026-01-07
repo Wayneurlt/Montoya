@@ -97,6 +97,10 @@ export const useMultiplayer = () => {
       console.log('✅ Connected to server:', socket?.id)
       isConnected.value = true
       error.value = null
+      
+      // Trigger auto-reconnect check (will be handled by pages or watchers)
+      // We can't call joinRoom here as it's not defined yet, so we'll rely on
+      // the page-level reconnection logic
     })
 
     socket.on('disconnect', () => {
@@ -125,6 +129,24 @@ export const useMultiplayer = () => {
       roomState.value.answerVisibility = data.answerVisibility
       roomState.value.hostSocketId = data.hostSocketId
       console.log('🏠 Room created:', data.roomCode, 'hostSocketId:', data.hostSocketId, 'mySocketId:', socket?.id, 'isHost:', isHost.value)
+      
+      // Store room info for reconnection
+      if (typeof window !== 'undefined' && data.roomCode) {
+        const existingInfo = localStorage.getItem('multiplayer_room')
+        let roomInfo: any = {}
+        if (existingInfo) {
+          try {
+            roomInfo = JSON.parse(existingInfo)
+          } catch (e) {
+            roomInfo = {}
+          }
+        }
+        localStorage.setItem('multiplayer_room', JSON.stringify({
+          ...roomInfo,
+          roomCode: data.roomCode,
+          isHost: true,
+        }))
+      }
     })
 
     socket.on('room:joined', (data: RoomState) => {
@@ -136,6 +158,30 @@ export const useMultiplayer = () => {
         isHost: isHost.value,
         players: data.players
       })
+      
+      // Store room info for reconnection
+      if (typeof window !== 'undefined' && data.roomCode) {
+        const existingInfo = localStorage.getItem('multiplayer_room')
+        let roomInfo: any = {}
+        if (existingInfo) {
+          try {
+            roomInfo = JSON.parse(existingInfo)
+          } catch (e) {
+            roomInfo = {}
+          }
+        }
+        
+        // Get nickname from current player if available
+        const myPlayer = data.players.find((p: any) => p.socketId === socket?.id)
+        const nickname = myPlayer?.nickname || roomInfo.nickname
+        
+        localStorage.setItem('multiplayer_room', JSON.stringify({
+          ...roomInfo,
+          roomCode: data.roomCode,
+          nickname: nickname || roomInfo.nickname,
+          isHost: isHost.value,
+        }))
+      }
     })
 
     socket.on('room:sync', (data: RoomState) => {
@@ -147,6 +193,24 @@ export const useMultiplayer = () => {
         isHost: isHost.value,
         players: data.players
       })
+      
+      // Store room info for reconnection whenever room syncs
+      if (typeof window !== 'undefined' && data.roomCode) {
+        const existingInfo = localStorage.getItem('multiplayer_room')
+        let roomInfo: any = {}
+        if (existingInfo) {
+          try {
+            roomInfo = JSON.parse(existingInfo)
+          } catch (e) {
+            roomInfo = {}
+          }
+        }
+        localStorage.setItem('multiplayer_room', JSON.stringify({
+          ...roomInfo,
+          roomCode: data.roomCode,
+          isHost: isHost.value,
+        }))
+      }
     })
 
     socket.on('game:state:update', (data: {
@@ -336,6 +400,24 @@ export const useMultiplayer = () => {
     }
   }
 
+  // Auto-reconnect helper - call this after socket connects
+  const attemptAutoReconnect = () => {
+    if (typeof window !== 'undefined' && isConnected.value && !roomState.value.roomCode) {
+      const roomInfo = localStorage.getItem('multiplayer_room')
+      if (roomInfo) {
+        try {
+          const info = JSON.parse(roomInfo)
+          if (info.roomCode && info.nickname) {
+            console.log('🔄 Auto-reconnecting to room:', info.roomCode, 'as', info.nickname)
+            joinRoom(info.roomCode, info.nickname, info.gender)
+          }
+        } catch (e) {
+          console.error('Failed to parse room info for auto-reconnect:', e)
+        }
+      }
+    }
+  }
+
   return {
     // State
     isConnected: readonly(isConnected),
@@ -363,6 +445,7 @@ export const useMultiplayer = () => {
     endGame,
     leaveRoom,
     ringHost,
+    attemptAutoReconnect,
   }
 }
 
