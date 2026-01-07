@@ -101,17 +101,6 @@
         </div>
       </div>
 
-      <!-- Host: Show Results Button -->
-      <div v-if="isHost && votes.length > 0" class="bg-purple-500/20 rounded-xl p-4 border border-purple-500/30">
-        <button
-          @click="showResults"
-          class="w-full bg-gradient-to-r from-purple-600 via-pink-600 to-purple-600 hover:from-purple-500 hover:via-pink-500 hover:to-purple-500 text-white px-6 py-3 rounded-xl font-black shadow-xl transition-all transform hover:scale-105"
-        >
-          <Icon icon="mdi:chart-bar" class="w-5 h-5 inline mr-2" />
-          Show Results
-        </button>
-      </div>
-
       <!-- Host: Skip Question Button -->
       <div v-if="isHost" class="bg-yellow-500/20 rounded-xl p-4 border border-yellow-500/30">
         <button
