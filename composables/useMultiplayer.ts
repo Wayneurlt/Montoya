@@ -127,6 +127,17 @@ export const useMultiplayer = () => {
       console.log('🏠 Room created:', data.roomCode, 'hostSocketId:', data.hostSocketId, 'mySocketId:', socket?.id, 'isHost:', isHost.value)
     })
 
+    socket.on('room:joined', (data: RoomState) => {
+      roomState.value = data
+      console.log('✅ Room joined:', data.roomCode)
+      console.log('👑 Host check:', {
+        hostSocketId: roomState.value.hostSocketId,
+        mySocketId: socket?.id,
+        isHost: isHost.value,
+        players: data.players
+      })
+    })
+
     socket.on('room:sync', (data: RoomState) => {
       roomState.value = data
       console.log('🔄 Room synced:', data.roomCode)
@@ -153,9 +164,21 @@ export const useMultiplayer = () => {
       votes: VoteData[]
       totalVotes: number
       totalPlayers: number
+      allVoted?: boolean
     }) => {
       votes.value = data.votes
       console.log('🗳️ Votes updated:', data)
+    })
+
+    socket.on('ring:notify', (data: {
+      playerName: string
+      message: string
+    }) => {
+      console.log('🔔 Ring notification:', data.message)
+      // Trigger visual/sound notification (handled in components)
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(new CustomEvent('host-ring', { detail: data }))
+      }
     })
 
     socket.on('game:results', (data: {
@@ -295,6 +318,13 @@ export const useMultiplayer = () => {
     disconnect()
   }
 
+  // Ring host to notify them players are waiting
+  const ringHost = () => {
+    if (socket && socket.connected) {
+      socket.emit('room:ring-host')
+    }
+  }
+
   return {
     // State
     isConnected: readonly(isConnected),
@@ -320,6 +350,7 @@ export const useMultiplayer = () => {
     nextRound,
     endGame,
     leaveRoom,
+    ringHost,
   }
 }
 

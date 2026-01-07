@@ -10,6 +10,7 @@ interface RoomPlayer {
   connected: boolean
   hasVoted?: boolean
   vote?: any
+  lastRingTime?: number
 }
 
 interface RoomState {
@@ -188,28 +189,104 @@ export default defineNitroPlugin((nitroApp) => {
           return
         }
 
-        // Check if game has already started
-        if (room.gamePhase !== 'lobby') {
-          socket.emit('room:error', { message: 'Game has already started' })
+        // Check if player is reconnecting (disconnected player with same nickname)
+        const disconnectedPlayer = Array.from(room.players.values()).find(
+          p => p.nickname.toLowerCase() === data.nickname.toLowerCase() && !p.connected
+        )
+
+        if (disconnectedPlayer) {
+          // Reconnect existing player
+          const oldSocketId = disconnectedPlayer.socketId
+          
+          // Remove old disconnected entry
+          room.players.delete(oldSocketId)
+          room.votes.delete(oldSocketId)
+          
+          // Update with new socket ID and mark as connected
+          room.players.set(socket.id, {
+            socketId: socket.id,
+            nickname: disconnectedPlayer.nickname,
+            gender: data.gender || disconnectedPlayer.gender,
+            isHost: disconnectedPlayer.isHost,
+            connected: true,
+            hasVoted: false,
+            vote: undefined,
+            lastRingTime: disconnectedPlayer.lastRingTime,
+          })
+
+          socket.join(room.roomId)
+          room.lastUpdated = Date.now()
+
+          console.log(`🔄 ${disconnectedPlayer.nickname} reconnected to room ${room.roomCode}`)
+
+          // Notify all players in room
+          const playersList = Array.from(room.players.values()).map(p => ({
+            socketId: p.socketId,
+            nickname: p.nickname,
+            gender: p.gender,
+            isHost: p.isHost,
+            connected: p.connected,
+          }))
+
+          if (io) {
+            io.to(room.roomId).emit('room:sync', {
+              roomId: room.roomId,
+              roomCode: room.roomCode,
+              roomName: room.roomName,
+              maxPlayers: room.maxPlayers,
+              answerVisibility: room.answerVisibility,
+              hostSocketId: room.hostSocketId,
+              players: playersList,
+              currentGame: room.currentGame,
+              gamePhase: room.gamePhase,
+              currentPrompt: room.currentPrompt,
+            })
+          }
+
+          // Send success response
+          socket.emit('room:joined', {
+            roomId: room.roomId,
+            roomCode: room.roomCode,
+            roomName: room.roomName,
+            maxPlayers: room.maxPlayers,
+            answerVisibility: room.answerVisibility,
+            hostSocketId: room.hostSocketId,
+            players: playersList,
+            currentGame: room.currentGame,
+            gamePhase: room.gamePhase,
+            currentPrompt: room.currentPrompt,
+          })
+
           return
         }
 
-        // Check for duplicate nicknames
+        // New player joining - check if game has already started
+        if (room.gamePhase !== 'lobby') {
+          socket.emit('room:error', { message: 'Game has already started. You can only rejoin if you were previously in the room.' })
+          return
+        }
+
+        // Check for duplicate nicknames (only among connected players)
         let finalNickname = data.nickname
         let nicknameCounter = 1
-        const existingNicknames = Array.from(room.players.values()).map(p => p.nickname.toLowerCase())
+        const existingNicknames = Array.from(room.players.values())
+          .filter(p => p.connected)
+          .map(p => p.nickname.toLowerCase())
+        
         while (existingNicknames.includes(finalNickname.toLowerCase())) {
           finalNickname = `${data.nickname} ${nicknameCounter}`
           nicknameCounter++
         }
 
-        // Add player
+        // Add new player
         room.players.set(socket.id, {
           socketId: socket.id,
           nickname: finalNickname,
           gender: data.gender,
           isHost: false,
           connected: true,
+          hasVoted: false,
+          vote: undefined,
         })
 
         socket.join(room.roomId)
@@ -228,6 +305,21 @@ export default defineNitroPlugin((nitroApp) => {
 
         if (io) {
           io.to(room.roomId).emit('room:sync', {
+            roomId: room.roomId,
+            roomCode: room.roomCode,
+            roomName: room.roomName,
+            maxPlayers: room.maxPlayers,
+            answerVisibility: room.answerVisibility,
+            hostSocketId: room.hostSocketId,
+            players: playersList,
+            currentGame: room.currentGame,
+            gamePhase: room.gamePhase,
+            currentPrompt: room.currentPrompt,
+          })
+        }
+
+        // Send success response
+        socket.emit('room:joined', {
           roomId: room.roomId,
           roomCode: room.roomCode,
           roomName: room.roomName,
@@ -239,7 +331,6 @@ export default defineNitroPlugin((nitroApp) => {
           gamePhase: room.gamePhase,
           currentPrompt: room.currentPrompt,
         })
-        }
       } catch (error) {
         console.error('❌ Error joining room:', error)
         socket.emit('room:error', { message: 'Failed to join room' })
@@ -376,12 +467,37 @@ export default defineNitroPlugin((nitroApp) => {
           }
         })
 
+        const allPlayersVoted = room.votes.size >= room.players.size
+
         if (io) {
           io.to(room.roomId).emit('game:vote:update', {
             votes: votesData,
             totalVotes: room.votes.size,
             totalPlayers: room.players.size,
+            allVoted: allPlayersVoted,
           })
+
+          // Auto-transition to results if all players voted (for games like Never Have I Ever)
+          if (allPlayersVoted && room.currentGame === 'never-have-i-ever') {
+            room.gamePhase = 'results'
+            room.lastUpdated = Date.now()
+
+            // Prepare results with visibility rules
+            const results = votesData
+
+            io.to(room.roomId).emit('game:results', {
+              results,
+              answerVisibility: room.answerVisibility,
+            })
+
+            io.to(room.roomId).emit('game:state:update', {
+              currentGame: room.currentGame,
+              gamePhase: room.gamePhase,
+              currentPrompt: room.currentPrompt,
+            })
+
+            console.log(`✅ All players voted in room ${room.roomCode}, auto-showing results`)
+          }
         }
       } catch (error) {
         console.error('❌ Error submitting vote:', error)
@@ -533,6 +649,53 @@ export default defineNitroPlugin((nitroApp) => {
       }
     })
 
+    // Ring host - notify host that players are waiting
+    socket.on('room:ring-host', () => {
+      try {
+        const room = findRoomBySocketId(socket.id)
+        if (!room) {
+          socket.emit('room:error', { message: 'Not in a room' })
+          return
+        }
+
+        const player = room.players.get(socket.id)
+        if (!player) {
+          socket.emit('room:error', { message: 'Player not found' })
+          return
+        }
+
+        // Don't ring if game is already started
+        if (room.gamePhase === 'playing' || room.gamePhase === 'voting' || room.gamePhase === 'results') {
+          return
+        }
+
+        // Rate limit: track last ring time per player
+        const now = Date.now()
+        if (!player.lastRingTime) {
+          player.lastRingTime = 0
+        }
+        
+        // Only allow ringing once every 10 seconds per player
+        if (now - player.lastRingTime < 10000) {
+          return
+        }
+
+        player.lastRingTime = now
+
+        // Notify host
+        if (io && room.hostSocketId) {
+          io.to(room.hostSocketId).emit('ring:notify', {
+            playerName: player.nickname,
+            message: `${player.nickname} is waiting for you to start the game`,
+          })
+        }
+
+        console.log(`🔔 ${player.nickname} rang host in room ${room.roomCode}`)
+      } catch (error) {
+        console.error('❌ Error ringing host:', error)
+      }
+    })
+
     // Leave room - if host leaves, end game and notify all players
     socket.on('room:leave', () => {
       try {
@@ -620,8 +783,49 @@ export default defineNitroPlugin((nitroApp) => {
         const wasHost = player?.isHost || false
 
         // Mark as disconnected but keep in room (for reconnection)
+        // Set a timeout to remove disconnected players after 5 minutes
         if (player) {
           player.connected = false
+          
+          // Schedule cleanup of disconnected player after 5 minutes
+          setTimeout(() => {
+            const roomCheck = findRoomBySocketId(socket.id)
+            if (roomCheck && roomCheck.roomId === room.roomId) {
+              const playerCheck = roomCheck.players.get(socket.id)
+              if (playerCheck && !playerCheck.connected) {
+                // Still disconnected after 5 minutes, remove them
+                roomCheck.players.delete(socket.id)
+                roomCheck.votes.delete(socket.id)
+                roomCheck.lastUpdated = Date.now()
+                
+                console.log(`🧹 Removed disconnected player ${playerCheck.nickname} from room ${roomCheck.roomCode}`)
+                
+                // Broadcast update
+                const playersList = Array.from(roomCheck.players.values()).map(p => ({
+                  socketId: p.socketId,
+                  nickname: p.nickname,
+                  gender: p.gender,
+                  isHost: p.isHost,
+                  connected: p.connected,
+                }))
+
+                if (io) {
+                  io.to(roomCheck.roomId).emit('room:sync', {
+                    roomId: roomCheck.roomId,
+                    roomCode: roomCheck.roomCode,
+                    roomName: roomCheck.roomName,
+                    maxPlayers: roomCheck.maxPlayers,
+                    answerVisibility: roomCheck.answerVisibility,
+                    hostSocketId: roomCheck.hostSocketId,
+                    players: playersList,
+                    currentGame: roomCheck.currentGame,
+                    gamePhase: roomCheck.gamePhase,
+                    currentPrompt: roomCheck.currentPrompt,
+                  })
+                }
+              }
+            }
+          }, 5 * 60 * 1000) // 5 minutes
         }
 
         room.votes.delete(socket.id)
@@ -635,7 +839,7 @@ export default defineNitroPlugin((nitroApp) => {
           }
         }
 
-        // Clean up if empty
+        // Clean up if empty (no connected or disconnected players)
         if (room.players.size === 0) {
           cleanupRoom(room.roomId)
           return
@@ -645,6 +849,7 @@ export default defineNitroPlugin((nitroApp) => {
         const playersList = Array.from(room.players.values()).map(p => ({
           socketId: p.socketId,
           nickname: p.nickname,
+          gender: p.gender,
           isHost: p.isHost,
           connected: p.connected,
         }))

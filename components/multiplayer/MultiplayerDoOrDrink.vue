@@ -39,82 +39,27 @@
     </div>
 
     <!-- Game Title -->
-    <div class="text-center mb-8">
-      <h1 class="text-4xl sm:text-5xl md:text-6xl font-black mb-4 bg-clip-text text-transparent bg-gradient-to-r from-purple-400 via-pink-500 to-cyan-400 drop-shadow-2xl">
+    <div class="text-center mb-4 sm:mb-6">
+      <h1 class="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-black mb-2 sm:mb-3 bg-clip-text text-transparent bg-gradient-to-r from-purple-400 via-pink-500 to-cyan-400 drop-shadow-2xl">
         🍺 Do or Drink
       </h1>
-      <p class="text-purple-200/80 text-sm font-medium">Host controls the game flow</p>
     </div>
 
-    <!-- Current Player Display -->
-    <div v-if="currentPlayer" class="bg-white/5 rounded-xl p-4 mb-6 border border-white/10">
-      <div class="text-center">
-        <div class="text-sm text-white/60 mb-1">Current Turn</div>
-        <div class="text-xl font-bold flex items-center justify-center gap-2">
-          <span>{{ currentPlayer.nickname }}</span>
-          <span v-if="currentPlayer.gender" class="text-2xl">{{ currentPlayer.gender === 'male' ? '♂' : currentPlayer.gender === 'female' ? '♀' : '⚧' }}</span>
-        </div>
-      </div>
-    </div>
+    <!-- Turn Indicator -->
+    <TurnIndicator :current-player="currentPlayer" />
 
-    <!-- Main Game Card -->
+    <!-- Main Game Card - Simplified -->
     <div
-      class="relative w-full h-80 mb-8 cursor-pointer perspective-1000 group"
-      @click="flipCard"
+      v-if="currentCard && cardFlipped"
+      class="relative w-full min-h-[300px] sm:min-h-[350px] mb-4 sm:mb-6"
     >
-      <div
-        class="relative w-full h-full transition-transform duration-700 transform-style-preserve-3d"
-        :class="{ 'rotate-y-180': cardFlipped }"
-      >
-        <!-- Front of Card -->
-        <div
-          class="absolute w-full h-full backface-hidden rounded-3xl flex flex-col justify-center items-center p-8 shadow-2xl border-4 border-purple-600/40 group-hover:scale-105 transition-all"
-          :class="cardColor"
-        >
-          <div class="absolute inset-0 bg-gradient-to-br from-purple-500/20 to-transparent rounded-3xl opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-          
-          <div class="text-center relative z-10">
-            <p class="text-4xl font-black mb-4 drop-shadow-lg">Do or Drink</p>
-            <p v-if="!currentCard" class="text-xl opacity-90 font-semibold">
-              Click to draw a card
-            </p>
-            <p v-else-if="!cardFlipped" class="text-xl opacity-90 font-bold">
-              Click to reveal challenge
-            </p>
-            <p v-else class="text-xl opacity-90 font-bold">
-              Level {{ currentCard?.intensity }} Challenge
-              <span class="inline-block text-lg mt-2 px-4 py-2 bg-white/20 rounded-full">
-                Penalty: {{ currentCard?.drinkAmount }}
-              </span>
-            </p>
-            <div class="mt-8 text-7xl animate-pulse">
-              <Icon
-                v-if="currentCard?.intensity === 1"
-                icon="mdi:emoticon-happy"
-                class="drop-shadow-lg"
-              />
-              <Icon
-                v-else-if="currentCard?.intensity === 2"
-                icon="mdi:emoticon-excited"
-                class="drop-shadow-lg"
-              />
-              <Icon
-                v-else-if="currentCard?.intensity === 3"
-                icon="mdi:emoticon-devil"
-                class="drop-shadow-lg"
-              />
-              <Icon v-else icon="mdi:cards" class="drop-shadow-lg" />
-            </div>
-          </div>
-        </div>
-
-        <!-- Back of Card -->
-        <div
-          class="absolute w-full h-full backface-hidden bg-white text-gray-900 rounded-3xl flex flex-col justify-center items-center p-8 shadow-2xl rotate-y-180 border-4 border-white/40"
-        >
-          <div v-if="currentCard" class="text-center w-full">
-            <span
-              class="font-black text-xl px-5 py-2 rounded-full mb-6 inline-flex items-center gap-2 shadow-lg"
+      <!-- Challenge Card - Simplified Display -->
+      <div class="bg-white/10 backdrop-blur-md rounded-2xl sm:rounded-3xl p-6 sm:p-8 md:p-10 border-2 border-white/20 shadow-2xl">
+        <div class="text-center">
+          <!-- Intensity Badge -->
+          <div class="mb-4 sm:mb-6 flex justify-center">
+            <div
+              class="inline-flex items-center gap-2 sm:gap-3 px-4 sm:px-6 py-2 sm:py-3 rounded-full font-black text-sm sm:text-base md:text-lg shadow-lg"
               :class="intensityClass"
             >
               <Icon
@@ -125,32 +70,36 @@
                     ? 'mdi:emoticon-excited'
                     : 'mdi:emoticon-devil'
                 "
-                class="w-6 h-6"
+                class="w-5 h-5 sm:w-6 sm:h-6"
               />
               Level {{ currentCard.intensity }}
-            </span>
-            <p class="text-2xl font-bold mb-6 px-4 leading-relaxed">
-              {{ currentCard.text }}
-            </p>
-
-            <div
-              v-if="currentCard.target"
-              class="bg-gray-100 rounded-xl p-4 w-full max-w-sm mx-auto mb-4 border-2 border-gray-200"
-            >
-              <p
-                class="text-base font-bold text-gray-700 flex items-center justify-center gap-2"
-              >
-                <Icon icon="mdi:account-arrow-right" class="w-6 h-6" />
-                <span>
-                  To: {{ currentCard.target.nickname }}
-                  <span v-if="currentCard.target.gender" class="text-xl">{{
-                    currentCard.target.gender === "male" ? "♂" : "♀"
-                  }}</span>
-                </span>
-              </p>
             </div>
+          </div>
+          
+          <!-- Challenge Text -->
+          <p class="text-xl sm:text-2xl md:text-3xl font-bold mb-4 sm:mb-6 px-2 sm:px-4 leading-relaxed">
+            {{ currentCard.text }}
+          </p>
 
-            <p class="mt-5 font-black text-2xl px-6 py-3 rounded-full inline-block" :class="intensityTextClass">
+          <!-- Target Player (if any) -->
+          <div
+            v-if="currentCard.target"
+            class="bg-white/10 rounded-xl p-3 sm:p-4 max-w-sm mx-auto mb-4 sm:mb-6 border border-white/20"
+          >
+            <p class="text-sm sm:text-base font-medium flex items-center justify-center gap-2">
+              <Icon icon="mdi:account-arrow-right" class="w-5 h-5 sm:w-6 sm:h-6" />
+              <span>
+                To: {{ currentCard.target.nickname }}
+                <span v-if="currentCard.target.gender" class="text-lg sm:text-xl">{{
+                  currentCard.target.gender === "male" ? "♂" : "♀"
+                }}</span>
+              </span>
+            </p>
+          </div>
+
+          <!-- Penalty -->
+          <div class="mt-4 sm:mt-6">
+            <p class="text-base sm:text-lg md:text-xl font-black px-4 sm:px-6 py-2 sm:py-3 rounded-full inline-block" :class="intensityTextClass">
               Penalty: {{ currentCard.drinkAmount }}
             </p>
           </div>
@@ -158,52 +107,62 @@
       </div>
     </div>
 
-    <!-- Action Buttons -->
-    <div class="grid grid-cols-1 gap-4 mb-6">
+    <!-- Waiting for Card -->
+    <div v-else-if="!currentCard" class="mb-4 sm:mb-6">
+      <div class="bg-white/5 rounded-2xl p-8 sm:p-12 text-center border border-white/10">
+        <Icon icon="mdi:cards" class="w-16 h-16 sm:w-20 sm:h-20 mx-auto mb-4 text-purple-400" />
+        <p class="text-lg sm:text-xl font-semibold text-white/70">
+          {{ isHost ? 'Click below to draw a card' : 'Waiting for host to draw a card...' }}
+        </p>
+      </div>
+    </div>
+
+    <!-- Action Buttons - Simplified -->
+    <div class="space-y-4 mb-4 sm:mb-6">
+      <!-- Host: Draw Card Button -->
       <button
         v-if="isHost && !currentCard"
         @click="drawCard"
         :disabled="isDrawing"
-        class="group bg-gradient-to-r from-purple-700 to-pink-700 hover:from-purple-600 hover:to-pink-600 py-5 rounded-2xl font-black text-lg transition-all flex items-center justify-center gap-3 disabled:opacity-50 disabled:cursor-not-allowed shadow-xl hover:shadow-purple-600/50 border-2 border-purple-500/30 hover:scale-105"
+        class="w-full group bg-gradient-to-r from-purple-700 to-pink-700 hover:from-purple-600 hover:to-pink-600 py-4 sm:py-5 rounded-xl sm:rounded-2xl font-black text-base sm:text-lg transition-all flex items-center justify-center gap-3 disabled:opacity-50 disabled:cursor-not-allowed shadow-xl hover:shadow-purple-600/50 border-2 border-purple-500/30 hover:scale-105"
       >
         <Icon
           v-if="isDrawing"
           icon="svg-spinners:3-dots-fade"
-          class="w-6 h-6"
+          class="w-5 h-5 sm:w-6 sm:h-6"
         />
-        <Icon v-else icon="mdi:cards" class="w-6 h-6 group-hover:rotate-12 transition-transform" />
+        <Icon v-else icon="mdi:cards" class="w-5 h-5 sm:w-6 sm:h-6 group-hover:rotate-12 transition-transform" />
         {{ isDrawing ? "Drawing..." : "Draw Card" }}
       </button>
-      <div v-else-if="currentCard && !cardFlipped" class="text-center">
-        <p class="text-sm text-white/70 mb-2">Card drawn! Click the card above to reveal the challenge</p>
-      </div>
-      <div v-else-if="currentCard && cardFlipped" class="grid grid-cols-2 gap-4">
+      
+      <!-- Action Buttons (when card is revealed) -->
+      <div v-else-if="currentCard && cardFlipped" class="grid grid-cols-2 gap-3 sm:gap-4">
         <button
           @click="completeChallenge"
-          class="group bg-gradient-to-r from-green-700 to-emerald-700 hover:from-green-600 hover:to-emerald-600 py-4 rounded-2xl font-black text-lg transition-all flex items-center justify-center gap-3 shadow-xl hover:shadow-green-600/50 border-2 border-green-500/30 hover:scale-105"
+          class="group bg-gradient-to-r from-green-700 to-emerald-700 hover:from-green-600 hover:to-emerald-600 py-4 sm:py-5 rounded-xl sm:rounded-2xl font-black text-base sm:text-lg transition-all flex items-center justify-center gap-2 sm:gap-3 shadow-xl hover:shadow-green-600/50 border-2 border-green-500/30 hover:scale-105"
         >
-          <Icon icon="mdi:check-bold" class="w-6 h-6 group-hover:scale-110 transition-transform" />
+          <Icon icon="mdi:check-bold" class="w-5 h-5 sm:w-6 sm:h-6 group-hover:scale-110 transition-transform" />
           Completed
         </button>
         <button
           @click="takeDrink"
-          class="group bg-gradient-to-r from-purple-700 to-pink-700 hover:from-purple-600 hover:to-pink-600 py-4 rounded-2xl font-black text-lg transition-all flex items-center justify-center gap-3 shadow-xl hover:shadow-purple-600/50 border-2 border-purple-500/30 hover:scale-105"
+          class="group bg-gradient-to-r from-purple-700 to-pink-700 hover:from-purple-600 hover:to-pink-600 py-4 sm:py-5 rounded-xl sm:rounded-2xl font-black text-base sm:text-lg transition-all flex items-center justify-center gap-2 sm:gap-3 shadow-xl hover:shadow-purple-600/50 border-2 border-purple-500/30 hover:scale-105"
         >
-          <Icon icon="mdi:glass-cocktail" class="w-6 h-6 group-hover:animate-bounce" />
+          <Icon icon="mdi:glass-cocktail" class="w-5 h-5 sm:w-6 sm:h-6 group-hover:animate-bounce" />
           Take Drink
         </button>
       </div>
     </div>
 
-    <!-- Hesitation Timer -->
-    <div v-if="currentCard && cardFlipped" class="mb-6 bg-white/5 rounded-xl p-4">
+    <!-- Hesitation Timer - Simplified -->
+    <div v-if="currentCard && cardFlipped" class="mb-4 sm:mb-6 bg-white/5 rounded-lg sm:rounded-xl p-3 sm:p-4">
       <div class="flex justify-between items-center mb-2">
         <div class="flex items-center gap-2">
-          <Icon icon="mdi:timer-sand" class="w-5 h-5 text-pink-300" />
-          <span class="font-medium">Hesitation Timer:</span>
+          <Icon icon="mdi:timer-sand" class="w-4 h-4 sm:w-5 sm:h-5 text-pink-300" />
+          <span class="font-medium text-sm sm:text-base">Hesitation Timer</span>
         </div>
         <span
-          class="font-bold"
+          class="font-bold text-lg sm:text-xl"
           :class="hesitationTime <= 5 ? 'text-red-400' : 'text-cyan-400'"
         >
           {{ hesitationTime }}s
@@ -217,47 +176,35 @@
       </div>
     </div>
 
-    <!-- Game Log -->
-    <div class="bg-white/5 rounded-xl p-4 max-h-40 overflow-y-auto mb-6">
-      <h3 class="font-semibold mb-3 flex items-center gap-2">
-        <Icon icon="mdi:history" class="w-5 h-5" />
-        <span>Game Log</span>
-      </h3>
-      <ul class="space-y-2 text-sm">
-        <li
-          v-for="(log, index) in gameHistory"
-          :key="index"
-          class="py-1.5 px-2 rounded-lg"
-          :class="index % 2 === 0 ? 'bg-white/5' : ''"
-        >
-          <div class="flex items-start gap-2">
-            <Icon
-              :icon="getLogIcon(log)"
-              class="w-4 h-4 mt-0.5 flex-shrink-0"
-              :class="getLogIconColor(log)"
-            />
-            <span>{{ log.text || log }}</span>
-          </div>
-        </li>
-      </ul>
-    </div>
+    <!-- Waiting State -->
+    <WaitingForHost
+      v-if="roomState.gamePhase === 'lobby' && !isHost"
+      :host-name="hostName"
+      :multiplayer="props.multiplayer"
+    />
 
-    <!-- Player List -->
-    <div class="bg-white/10 backdrop-blur-md rounded-xl p-4 border border-white/20">
-      <h3 class="font-bold mb-3 flex items-center gap-2">
-        <Icon icon="mdi:account-group" class="w-5 h-5" />
+    <!-- Player List with Turn Highlighting -->
+    <div class="bg-white/10 backdrop-blur-md rounded-xl p-4 border border-white/20 mt-4 sm:mt-6">
+      <h3 class="font-bold mb-3 flex items-center gap-2 text-sm sm:text-base">
+        <Icon icon="mdi:account-group" class="w-4 h-4 sm:w-5 sm:h-5" />
         Players ({{ roomState.players.length }})
       </h3>
       <div class="grid grid-cols-2 sm:grid-cols-3 gap-2">
         <div
           v-for="player in roomState.players"
           :key="player.socketId"
-          class="bg-white/5 rounded-lg p-2 text-center text-sm"
-          :class="{ 'ring-2 ring-purple-500': player.isHost }"
+          class="bg-white/5 rounded-lg p-2 text-center text-xs sm:text-sm transition-all"
+          :class="{
+            'ring-2 ring-purple-500': player.isHost,
+            'ring-2 ring-pink-500 bg-pink-500/20 scale-105 shadow-lg shadow-pink-500/50': currentPlayer && player.socketId === currentPlayer.socketId,
+          }"
         >
-          {{ player.nickname }}
-          <span v-if="player.gender" class="text-xs">{{ player.gender === 'male' ? '♂' : player.gender === 'female' ? '♀' : '⚧' }}</span>
-          <span v-if="player.isHost" class="text-xs text-purple-400">👑</span>
+          <div class="font-semibold">{{ player.nickname }}</div>
+          <div class="flex items-center justify-center gap-1 mt-1">
+            <span v-if="player.gender" class="text-xs">{{ player.gender === 'male' ? '♂' : player.gender === 'female' ? '♀' : '⚧' }}</span>
+            <span v-if="player.isHost" class="text-xs text-purple-400">👑</span>
+            <span v-if="currentPlayer && player.socketId === currentPlayer.socketId" class="text-xs text-pink-400 animate-pulse">⭐</span>
+          </div>
         </div>
       </div>
     </div>
@@ -265,10 +212,12 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onBeforeUnmount, watch } from 'vue'
+import { ref, computed, onBeforeUnmount, watch, onMounted } from 'vue'
 import { Icon } from '@iconify/vue'
 import { useRouter } from 'vue-router'
 import { navigateTo } from '#app'
+import TurnIndicator from './TurnIndicator.vue'
+import WaitingForHost from './WaitingForHost.vue'
 
 interface Props {
   roomState: any
@@ -327,6 +276,12 @@ const currentPlayer = computed(() => {
   
   // Return null if no player is assigned yet (don't use random fallback)
   return null
+})
+
+// Get host name
+const hostName = computed(() => {
+  const host = props.roomState.players.find((p: any) => p.isHost)
+  return host?.nickname || 'Host'
 })
 
 const copied = ref(false)
@@ -468,11 +423,7 @@ const drawCard = () => {
 }
 
 const flipCard = () => {
-  if (!currentCard.value && !isDrawing.value && props.isHost) {
-    drawCard()
-    return
-  }
-  
+  // Auto-flip when card is drawn from server
   if (currentCard.value && !cardFlipped.value && !isDrawing.value) {
     cardFlipped.value = true
     startHesitationTimer()
@@ -570,13 +521,11 @@ watch(() => props.roomState.currentPrompt, (newPrompt) => {
       drinkAmount: newPrompt.drinkAmount || "1 sip",
       target: newPrompt.target,
     }
-    if (newPrompt.player) {
-      // Card is already drawn, just flip it
-      setTimeout(() => {
-        cardFlipped.value = true
-        startHesitationTimer()
-      }, 300)
-    }
+    // Auto-flip card when received from server
+    setTimeout(() => {
+      cardFlipped.value = true
+      startHesitationTimer()
+    }, 300)
   } else {
     currentCard.value = null
     cardFlipped.value = false

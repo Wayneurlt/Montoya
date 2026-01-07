@@ -92,7 +92,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, watch, nextTick } from 'vue'
+import { ref, computed, onMounted, onBeforeUnmount, watch, nextTick } from 'vue'
 import { Icon } from '@iconify/vue'
 import { useMultiplayer } from '~/composables/useMultiplayer'
 import { useRoute, useRouter } from 'vue-router'
@@ -171,6 +171,43 @@ onMounted(() => {
   // If the current game doesn't match, redirect
   if (roomState.value?.currentGame && roomState.value.currentGame !== gameType.value) {
     router.push(`/multiplayer/${roomState.value.currentGame}`)
+  }
+
+  // Listen for host ring notifications
+  if (typeof window !== 'undefined') {
+    const handleHostRing = (event: CustomEvent) => {
+      const data = event.detail
+      // Play sound notification
+      try {
+        const audio = new Audio('data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2/LDciUFLIHO8tiJNwgZaLvt559NEAxQp+PwtmMcBjiR1/LMeSwFJHfH8N2QQAoUXrTp66hVFApGn+DyvmwhBTGH0fPTgjMGFm')
+        audio.volume = 0.5
+        audio.play().catch(() => {})
+      } catch (e) {
+        // Fallback: use browser notification if available
+        if ('Notification' in window && Notification.permission === 'granted') {
+          new Notification('🔔 Players are waiting!', {
+            body: data.message,
+            icon: '/icon.png',
+          })
+        }
+      }
+      
+      // Visual pulse animation
+      const ringElement = document.querySelector('[data-host-ring]')
+      if (ringElement) {
+        ringElement.classList.add('animate-pulse', 'ring-4', 'ring-yellow-500')
+        setTimeout(() => {
+          ringElement.classList.remove('animate-pulse', 'ring-4', 'ring-yellow-500')
+        }, 2000)
+      }
+    }
+    
+    window.addEventListener('host-ring', handleHostRing as EventListener)
+    
+    // Cleanup
+    onBeforeUnmount(() => {
+      window.removeEventListener('host-ring', handleHostRing as EventListener)
+    })
   }
 })
 </script>

@@ -57,108 +57,54 @@
         </div>
       </div>
 
-      <!-- Voting Options (if not voted yet) -->
-      <div v-if="!hasVoted" class="grid grid-cols-2 gap-4">
+      <!-- Voting Options (if not voted yet) - Self-voting only -->
+      <div v-if="!hasVoted" class="grid grid-cols-2 gap-4 sm:gap-6">
         <button
           @click="submitVote('I Have')"
           :disabled="isSubmitting"
-          class="bg-green-500/20 hover:bg-green-500/30 border-2 border-green-500/50 rounded-xl p-6 transition-all transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed"
+          class="bg-green-500/20 hover:bg-green-500/30 border-2 border-green-500/50 rounded-xl sm:rounded-2xl p-6 sm:p-8 transition-all transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed"
         >
-          <Icon icon="mdi:check-circle" class="w-12 h-12 mx-auto mb-2" />
-          <span class="font-bold text-lg">I Have</span>
+          <Icon icon="mdi:check-circle" class="w-12 h-12 sm:w-16 sm:h-16 mx-auto mb-3 sm:mb-4" />
+          <span class="font-black text-lg sm:text-xl md:text-2xl">I Have</span>
         </button>
         <button
           @click="submitVote('I Have Not')"
           :disabled="isSubmitting"
-          class="bg-red-500/20 hover:bg-red-500/30 border-2 border-red-500/50 rounded-xl p-6 transition-all transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed"
+          class="bg-red-500/20 hover:bg-red-500/30 border-2 border-red-500/50 rounded-xl sm:rounded-2xl p-6 sm:p-8 transition-all transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed"
         >
-          <Icon icon="mdi:close-circle" class="w-12 h-12 mx-auto mb-2" />
-          <span class="font-bold text-lg">I Have Not</span>
+          <Icon icon="mdi:close-circle" class="w-12 h-12 sm:w-16 sm:h-16 mx-auto mb-3 sm:mb-4" />
+          <span class="font-black text-lg sm:text-xl md:text-2xl">I Have Not</span>
         </button>
       </div>
 
-      <!-- Already Voted -->
-      <div v-else class="bg-purple-500/20 border-2 border-purple-500/50 rounded-xl p-6 text-center">
-        <Icon icon="mdi:check-circle" class="w-16 h-16 mx-auto mb-4 text-green-400" />
-        <p class="text-xl font-semibold">You've voted! Waiting for others...</p>
-      </div>
-
-      <!-- Live Vote Count - Real-time Animation -->
-      <div v-if="votes.length > 0" class="bg-white/10 backdrop-blur-md rounded-xl p-4 border border-white/20">
-        <h3 class="font-bold mb-3">Live Results</h3>
-        <div class="space-y-4">
-          <!-- I Have -->
-          <div class="bg-green-500/20 border-2 border-green-500/50 rounded-xl p-4">
-            <div class="flex items-center justify-between mb-2">
-              <span class="font-bold text-lg">I Have</span>
-              <span class="text-2xl font-black text-green-400 animate-pulse">{{ iHaveCount }}</span>
-            </div>
-            <!-- Show names if public -->
-            <div v-if="roomState.answerVisibility === 'public' && iHaveVotes.length > 0" class="mt-2 space-y-1">
-              <div
-                v-for="vote in iHaveVotes"
-                :key="vote.socketId || Math.random()"
-                class="text-sm text-white/80 animate-fade-in"
-              >
-                {{ vote.nickname || 'Player' }}
-              </div>
-            </div>
-          </div>
-
-          <!-- I Have Not -->
-          <div class="bg-red-500/20 border-2 border-red-500/50 rounded-xl p-4">
-            <div class="flex items-center justify-between mb-2">
-              <span class="font-bold text-lg">I Have Not</span>
-              <span class="text-2xl font-black text-red-400 animate-pulse">{{ iHaveNotCount }}</span>
-            </div>
-            <!-- Show names if public -->
-            <div v-if="roomState.answerVisibility === 'public' && iHaveNotVotes.length > 0" class="mt-2 space-y-1">
-              <div
-                v-for="vote in iHaveNotVotes"
-                :key="vote.socketId || Math.random()"
-                class="text-sm text-white/80 animate-fade-in"
-              >
-                {{ vote.nickname || 'Player' }}
-              </div>
-            </div>
-          </div>
-          
-          <div class="text-sm text-white/60 text-center">
-            {{ votes.length }} / {{ roomState.players.length }} players voted
-          </div>
-        </div>
-      </div>
-
-      <!-- Host: Show Results Button -->
-      <div v-if="isHost && votes.length > 0" class="bg-purple-500/20 rounded-xl p-4 border border-purple-500/30">
-        <button
-          @click="showResults"
-          class="w-full bg-gradient-to-r from-purple-600 via-pink-600 to-purple-600 hover:from-purple-500 hover:via-pink-500 hover:to-purple-500 text-white px-6 py-3 rounded-xl font-black shadow-xl transition-all transform hover:scale-105"
-        >
-          <Icon icon="mdi:chart-bar" class="w-5 h-5 inline mr-2" />
-          Show Results
-        </button>
+      <!-- Already Voted - Waiting for others -->
+      <div v-else class="bg-purple-500/20 border-2 border-purple-500/50 rounded-xl sm:rounded-2xl p-6 sm:p-8 text-center">
+        <Icon icon="mdi:check-circle" class="w-16 h-16 sm:w-20 sm:h-20 mx-auto mb-4 text-green-400 animate-pulse" />
+        <p class="text-xl sm:text-2xl font-semibold mb-2">You've voted!</p>
+        <p class="text-sm sm:text-base text-white/70">
+          Waiting for others... ({{ votes.length }} / {{ roomState.players.length }})
+        </p>
       </div>
     </div>
 
-    <!-- Results Phase -->
+    <!-- Results Phase - Auto-transitioned -->
     <div v-else-if="roomState.gamePhase === 'results'" class="space-y-6">
-      <div class="bg-white/10 backdrop-blur-md rounded-2xl p-6 border border-white/20">
-        <h2 class="text-2xl font-bold mb-4 text-center">Results</h2>
+      <div class="bg-white/10 backdrop-blur-md rounded-2xl p-6 sm:p-8 border border-white/20">
+        <h2 class="text-2xl sm:text-3xl font-bold mb-4 sm:mb-6 text-center">Results</h2>
         
         <div class="space-y-4">
           <!-- I Have -->
-          <div class="bg-green-500/20 border-2 border-green-500/50 rounded-xl p-4">
-            <div class="flex items-center justify-between mb-2">
-              <span class="font-bold text-lg">I Have</span>
-              <span class="text-2xl font-black text-green-400">{{ iHaveCount }}</span>
+          <div class="bg-green-500/20 border-2 border-green-500/50 rounded-xl p-4 sm:p-6">
+            <div class="flex items-center justify-between mb-3">
+              <span class="font-bold text-lg sm:text-xl">I Have</span>
+              <span class="text-3xl sm:text-4xl font-black text-green-400">{{ iHaveCount }}</span>
             </div>
             <!-- Anonymous: show only totals, Public: show names -->
-            <div v-if="roomState.answerVisibility === 'public' && iHaveVotes.length > 0" class="mt-2 space-y-1">
+            <div v-if="roomState.answerVisibility === 'public' && iHaveVotes.length > 0" class="mt-3 space-y-2">
               <div
                 v-for="vote in iHaveVotes"
                 :key="vote.socketId || Math.random()"
-                class="text-sm text-white/80"
+                class="text-sm sm:text-base text-white/90 font-medium"
               >
                 {{ vote.nickname || 'Player' }}
               </div>
@@ -166,17 +112,17 @@
           </div>
 
           <!-- I Have Not -->
-          <div class="bg-red-500/20 border-2 border-red-500/50 rounded-xl p-4">
-            <div class="flex items-center justify-between mb-2">
-              <span class="font-bold text-lg">I Have Not</span>
-              <span class="text-2xl font-black text-red-400">{{ iHaveNotCount }}</span>
+          <div class="bg-red-500/20 border-2 border-red-500/50 rounded-xl p-4 sm:p-6">
+            <div class="flex items-center justify-between mb-3">
+              <span class="font-bold text-lg sm:text-xl">I Have Not</span>
+              <span class="text-3xl sm:text-4xl font-black text-red-400">{{ iHaveNotCount }}</span>
             </div>
             <!-- Anonymous: show only totals, Public: show names -->
-            <div v-if="roomState.answerVisibility === 'public' && iHaveNotVotes.length > 0" class="mt-2 space-y-1">
+            <div v-if="roomState.answerVisibility === 'public' && iHaveNotVotes.length > 0" class="mt-3 space-y-2">
               <div
                 v-for="vote in iHaveNotVotes"
                 :key="vote.socketId || Math.random()"
-                class="text-sm text-white/80"
+                class="text-sm sm:text-base text-white/90 font-medium"
               >
                 {{ vote.nickname || 'Player' }}
               </div>
@@ -220,12 +166,11 @@
     </div>
 
     <!-- Waiting State -->
-    <div v-else class="bg-white/10 backdrop-blur-md rounded-2xl p-8 border border-white/20 text-center">
-      <div class="animate-pulse">
-        <Icon icon="mdi:clock-outline" class="w-16 h-16 mx-auto mb-4 text-purple-400" />
-        <p class="text-xl font-semibold">Waiting for host to start...</p>
-      </div>
-    </div>
+    <WaitingForHost
+      v-else-if="roomState.gamePhase === 'lobby'"
+      :host-name="hostName"
+      :multiplayer="multiplayer"
+    />
 
     <!-- Player List -->
     <div class="bg-white/10 backdrop-blur-md rounded-xl p-4 border border-white/20 mt-6">
@@ -253,6 +198,7 @@ import { ref, computed, watch, onMounted } from 'vue'
 import { Icon } from '@iconify/vue'
 import { useRouter } from 'vue-router'
 import { navigateTo } from '#app'
+import WaitingForHost from './WaitingForHost.vue'
 
 interface Props {
   roomState: any
@@ -315,6 +261,12 @@ const iHaveNotVotes = computed(() => {
 const iHaveCount = computed(() => iHaveVotes.value.length)
 const iHaveNotCount = computed(() => iHaveNotVotes.value.length)
 
+// Get host name
+const hostName = computed(() => {
+  const host = roomState.value.players.find((p: any) => p.isHost)
+  return host?.nickname || 'Host'
+})
+
 // Watch for vote updates to check if we've voted
 watch(() => [multiplayer.votes.value, multiplayer.myPlayer.value], ([newVotes, myPlayer]) => {
   if (myPlayer && newVotes) {
@@ -340,6 +292,7 @@ const submitVote = async (vote: 'I Have' | 'I Have Not') => {
   isSubmitting.value = true
 
   try {
+    // Submit vote - server will auto-transition to results when all players vote
     multiplayer.submitVote(vote)
     hasVoted.value = true
     myVote.value = vote
@@ -350,6 +303,8 @@ const submitVote = async (vote: 'I Have' | 'I Have Not') => {
   }
 }
 
+// Results are now auto-shown when all players vote, so this is no longer needed
+// But keeping for backwards compatibility
 const showResults = () => {
   if (!isHost.value) return
   multiplayer.showResults()

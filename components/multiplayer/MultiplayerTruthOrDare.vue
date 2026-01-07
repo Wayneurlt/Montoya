@@ -46,16 +46,8 @@
       <p class="text-purple-200/80 text-xs sm:text-sm font-medium">{{ roomState.answerVisibility === 'anonymous' ? 'Anonymous Mode' : 'Public Mode' }}</p>
     </div>
 
-    <!-- Current Player Display -->
-    <div v-if="currentPlayer" class="bg-white/5 rounded-lg sm:rounded-xl p-2 sm:p-3 md:p-4 mb-3 sm:mb-4 md:mb-6 border border-white/10">
-      <div class="text-center">
-        <div class="text-xs sm:text-sm text-white/60 mb-1">Current Turn</div>
-        <div class="text-base sm:text-lg md:text-xl font-bold flex items-center justify-center gap-2">
-          <span>{{ currentPlayer.nickname }}</span>
-          <span v-if="currentPlayer.gender" class="text-xl sm:text-2xl">{{ currentPlayer.gender === 'male' ? '♂' : currentPlayer.gender === 'female' ? '♀' : '⚧' }}</span>
-        </div>
-      </div>
-    </div>
+    <!-- Turn Indicator -->
+    <TurnIndicator :current-player="currentPlayer" />
 
     <!-- Intensity Toggle (Host Only) -->
     <div v-if="isHost" class="mb-4 sm:mb-5 md:mb-6">
@@ -140,10 +132,15 @@
     </div>
 
     <!-- Waiting for Host -->
-    <div v-else-if="!roomState.currentPrompt" class="bg-white/10 backdrop-blur-md rounded-2xl p-8 mb-6 border border-white/20 text-center">
+    <WaitingForHost
+      v-else-if="!roomState.currentPrompt && roomState.gamePhase === 'playing' && !isHost"
+      :host-name="hostName"
+      :multiplayer="props.multiplayer"
+    />
+    <div v-else-if="!roomState.currentPrompt && isHost" class="bg-white/10 backdrop-blur-md rounded-2xl p-8 mb-6 border border-white/20 text-center">
       <div class="animate-pulse">
-        <Icon icon="mdi:clock-outline" class="w-16 h-16 mx-auto mb-4 text-purple-400" />
-        <p class="text-xl font-semibold">Waiting for host to start...</p>
+        <Icon icon="mdi:cards" class="w-16 h-16 mx-auto mb-4 text-purple-400" />
+        <p class="text-xl font-semibold">Draw a card to start!</p>
       </div>
     </div>
 
@@ -193,12 +190,18 @@
         <div
           v-for="player in roomState.players"
           :key="player.socketId"
-          class="bg-white/5 rounded-lg p-1.5 sm:p-2 text-center text-xs sm:text-sm"
-          :class="{ 'ring-2 ring-purple-500': player.isHost }"
+          class="bg-white/5 rounded-lg p-1.5 sm:p-2 text-center text-xs sm:text-sm transition-all"
+          :class="{
+            'ring-2 ring-purple-500': player.isHost,
+            'ring-2 ring-pink-500 bg-pink-500/20 scale-105 shadow-lg shadow-pink-500/50': currentPlayer && player.socketId === currentPlayer.socketId,
+          }"
         >
-          {{ player.nickname }}
-          <span v-if="player.gender" class="text-xs">{{ player.gender === 'male' ? '♂' : player.gender === 'female' ? '♀' : '⚧' }}</span>
-          <span v-if="player.isHost" class="text-xs text-purple-400">👑</span>
+          <div class="font-semibold">{{ player.nickname }}</div>
+          <div class="flex items-center justify-center gap-1 mt-1">
+            <span v-if="player.gender" class="text-xs">{{ player.gender === 'male' ? '♂' : player.gender === 'female' ? '♀' : '⚧' }}</span>
+            <span v-if="player.isHost" class="text-xs text-purple-400">👑</span>
+            <span v-if="currentPlayer && player.socketId === currentPlayer.socketId" class="text-xs text-pink-400 animate-pulse">⭐</span>
+          </div>
         </div>
       </div>
     </div>
@@ -210,6 +213,8 @@ import { ref, computed, onMounted, watch } from 'vue'
 import { Icon } from '@iconify/vue'
 import { useRouter } from 'vue-router'
 import { navigateTo } from '#app'
+import TurnIndicator from './TurnIndicator.vue'
+import WaitingForHost from './WaitingForHost.vue'
 
 interface Props {
   roomState: any
@@ -351,6 +356,12 @@ const currentPlayer = computed(() => {
   
   // Return null if no player is assigned yet (don't use random fallback)
   return null
+})
+
+// Get host name
+const hostName = computed(() => {
+  const host = props.roomState.players.find((p: any) => p.isHost)
+  return host?.nickname || 'Host'
 })
 
 // Get random target player (for Dares)
