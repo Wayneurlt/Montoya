@@ -1,14 +1,14 @@
 <template>
   <div
     data-setup-container
-    class="fixed inset-0 bg-gradient-to-br from-slate-950 via-purple-950 to-slate-950 text-white p-3 sm:p-4 md:p-8 overflow-hidden"
+    class="fixed inset-0 bg-gradient-to-br from-slate-950 via-purple-950 to-slate-950 text-white p-3 sm:p-4 md:p-8 overflow-x-hidden overflow-y-auto"
     style="height: 100vh; height: calc(var(--vh, 1vh) * 100);"
   >
     <!-- Background Icons Pattern -->
     <BackgroundIcons />
 
     <div
-      class="max-w-3xl mx-auto bg-white/10 backdrop-blur-md rounded-xl p-4 sm:p-5 md:p-8 shadow-2xl relative z-10 h-full overflow-y-auto"
+      class="max-w-3xl mx-auto bg-white/10 backdrop-blur-md rounded-xl p-4 sm:p-5 md:p-8 shadow-2xl relative z-10 min-h-full overflow-y-auto pb-6 sm:pb-8 md:pb-12"
     >
       <!-- Mode Indicator -->
       <div class="mb-4 flex items-center justify-center">
