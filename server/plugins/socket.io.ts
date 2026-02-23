@@ -1,5 +1,6 @@
 import { Server } from 'socket.io'
 import type { Server as HTTPServer } from 'http'
+import { realtimeAnalytics } from '~/server/utils/realtimeAnalytics'
 
 // Room state management
 interface RoomPlayer {
@@ -92,6 +93,11 @@ function migrateHost(room: RoomState) {
 // Global Socket.IO instance
 let io: Server | null = null
 
+// Export function to get io instance
+export function getIO(): Server | null {
+  return io
+}
+
 export default defineNitroPlugin((nitroApp) => {
   console.log('🔧 Socket.IO plugin loading...')
   
@@ -123,6 +129,35 @@ export default defineNitroPlugin((nitroApp) => {
 
     io.on('connection', (socket) => {
     console.log(`✅ Client connected: ${socket.id}`)
+    
+    // Track user connection
+    const ipAddress = socket.handshake.address || socket.request?.socket?.remoteAddress || null
+    const userAgent = socket.handshake.headers['user-agent'] || 'unknown'
+    
+    realtimeAnalytics.addUser(socket.id, {
+      userId: null,
+      sessionId: null,
+      page: 'unknown',
+      userAgent,
+      ipAddress,
+      isInGame: false,
+      currentGame: null,
+      roomCode: null,
+    })
+
+    // Admin analytics room
+    socket.on('admin:join-analytics', () => {
+      socket.join('admin:analytics')
+      console.log(`📊 Admin client ${socket.id} joined analytics room`)
+      // Send immediate stats
+      const stats = realtimeAnalytics.getStats()
+      socket.emit('analytics:update', stats)
+    })
+
+    socket.on('admin:leave-analytics', () => {
+      socket.leave('admin:analytics')
+      console.log(`📊 Admin client ${socket.id} left analytics room`)
+    })
 
     // Create room
     socket.on('room:create', (data: {
@@ -215,6 +250,14 @@ export default defineNitroPlugin((nitroApp) => {
 
         socket.join(room.roomId)
         room.lastUpdated = Date.now()
+
+        // Track analytics
+        realtimeAnalytics.updateUserActivity(socket.id, {
+          page: 'lobby',
+          isInGame: room.gamePhase !== 'lobby',
+          currentGame: room.currentGame || null,
+          roomCode: room.roomCode,
+        })
 
         console.log(`👤 ${finalNickname} joined room ${room.roomCode} (game phase: ${room.gamePhase})`)
 
@@ -324,6 +367,16 @@ export default defineNitroPlugin((nitroApp) => {
 
         room.currentGame = data.gameType
         room.gamePhase = 'playing'
+
+        // Track analytics for all players in room
+        room.players.forEach((player) => {
+          realtimeAnalytics.updateUserActivity(player.socketId, {
+            isInGame: true,
+            currentGame: data.gameType,
+            roomCode: room.roomCode,
+            page: 'multiplayer',
+          })
+        })
         room.currentPrompt = data.prompt || null
         room.votes.clear()
         room.lastUpdated = Date.now()
@@ -736,11 +789,32 @@ export default defineNitroPlugin((nitroApp) => {
       }
     })
 
+    // Track page views and navigation
+    socket.on('analytics:page-view', (data: { page: string, userId?: string, sessionId?: string }) => {
+      realtimeAnalytics.updateUserActivity(socket.id, {
+        page: data.page,
+        userId: data.userId || null,
+        sessionId: data.sessionId || null,
+      })
+    })
+
+    // Track game activity
+    socket.on('analytics:game-activity', (data: { isInGame: boolean, currentGame?: string, roomCode?: string }) => {
+      realtimeAnalytics.updateUserActivity(socket.id, {
+        isInGame: data.isInGame,
+        currentGame: data.currentGame || null,
+        roomCode: data.roomCode || null,
+      })
+    })
+
     // Handle disconnect
     socket.on('disconnect', () => {
       console.log(`❌ Client disconnected: ${socket.id}`)
 
       try {
+        // Remove from real-time analytics
+        realtimeAnalytics.removeUser(socket.id)
+        
         const room = findRoomBySocketId(socket.id)
         if (!room) {
           return
@@ -803,6 +877,15 @@ export default defineNitroPlugin((nitroApp) => {
     })
 
     console.log('✅ Socket.IO server initialized and ready for connections')
+    
+    // Start analytics broadcast
+    setTimeout(() => {
+      import('~/server/utils/broadcastAnalytics').then(({ startAnalyticsBroadcast }) => {
+        startAnalyticsBroadcast()
+      }).catch(err => {
+        console.error('Failed to start analytics broadcast:', err)
+      })
+    }, 1000)
     }) // Close io.on('connection') callback
   } // Close initializeSocketIO function
   

@@ -446,6 +446,7 @@ export const useMultiplayer = () => {
     leaveRoom,
     ringHost,
     attemptAutoReconnect,
+    socket, // Export socket for analytics
   }
 }
 

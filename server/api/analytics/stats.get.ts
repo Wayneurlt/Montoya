@@ -1,5 +1,6 @@
 import prisma from '~/lib/prisma'
 import { requireAdmin } from '~/server/utils/adminAuth'
+import { realtimeAnalytics } from '~/server/utils/realtimeAnalytics'
 
 export default defineEventHandler(async (event) => {
   // Require admin authentication
@@ -80,6 +81,10 @@ export default defineEventHandler(async (event) => {
     })
     const activePlayers = activePlayersResult.length
 
+    // Get real-time stats
+    const realtimeStats = realtimeAnalytics.getStats()
+    const peakUsers = realtimeAnalytics.getPeakUsers()
+
     return {
       totalAnalytics,
       pageViews,
@@ -93,7 +98,17 @@ export default defineEventHandler(async (event) => {
       recentEvents: recentEvents.map(event => ({
         ...event,
         type: event.eventType
-      }))
+      })),
+      // Real-time stats
+      realtime: {
+        totalActiveUsers: realtimeStats.totalActiveUsers,
+        usersInGames: realtimeStats.usersInGames,
+        usersInLobby: realtimeStats.usersInLobby,
+        usersOnPages: realtimeStats.usersOnPages,
+        activeRooms: realtimeStats.activeRooms,
+        popularGames: realtimeStats.popularGames,
+        peakUsers,
+      }
     }
   } catch (error) {
     console.error('Error getting analytics stats:', error)

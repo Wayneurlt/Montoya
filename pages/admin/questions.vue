@@ -1,18 +1,18 @@
 <template>
-  <div>
+  <div class="overflow-x-hidden overflow-y-auto pb-6">
     <!-- Header -->
-    <div class="flex items-center justify-between mb-6">
+    <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6">
       <div>
-        <h1 class="text-2xl sm:text-3xl font-bold">Manage Questions</h1>
+        <h1 class="text-2xl sm:text-3xl md:text-4xl font-bold">Manage Questions</h1>
         <p class="text-white/60 text-sm mt-1">
           Total: {{ totalQuestions }} questions
         </p>
       </div>
-      <div class="flex gap-2">
-        <UButton icon="i-mdi:database-import" color="neutral" variant="soft" @click="seedAllQuestions">
+      <div class="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
+        <UButton icon="i-mdi:database-import" color="neutral" variant="soft" @click="seedAllQuestions" class="w-full sm:w-auto">
           Import All
         </UButton>
-        <UButton icon="i-mdi:plus" color="primary" @click="showAddForm = true">
+        <UButton icon="i-mdi:plus" color="primary" @click="showAddForm = true" class="w-full sm:w-auto">
           Add Question
         </UButton>
       </div>
@@ -20,7 +20,7 @@
 
     <!-- Search and Filters -->
     <div class="bg-white/5 border border-white/10 rounded-xl p-4 mb-6">
-      <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <UInput
           v-model="searchQuery"
           placeholder="Search questions..."
@@ -260,7 +260,7 @@
 
     <!-- Questions Table -->
     <div class="bg-white/5 border border-white/10 rounded-xl overflow-hidden">
-      <div class="overflow-x-auto">
+      <div class="overflow-x-auto -mx-4 sm:mx-0">
         <table class="w-full">
           <thead class="bg-white/10">
             <tr>

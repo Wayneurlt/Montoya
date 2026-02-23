@@ -172,6 +172,21 @@ export const useAnalytics = () => {
       sessionId: analyticsData.value.sessionId,
       page: pageName,
     })
+    
+    // Also send to Socket.IO for real-time tracking (if available)
+    try {
+      const { socket } = useMultiplayer()
+      if (socket && typeof socket.emit === 'function' && socket.connected) {
+        socket.emit('analytics:page-view', {
+          page: pageName,
+          userId: analyticsData.value.userId,
+          sessionId: analyticsData.value.sessionId,
+        })
+      }
+    } catch (error) {
+      // Socket not available, that's okay - analytics will still work via API
+    }
+    
     console.log(`📄 Page view: ${pageName}`)
   }
 

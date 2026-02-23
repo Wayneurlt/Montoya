@@ -15,7 +15,7 @@
         <form @submit.prevent="handleLogin" class="space-y-6">
           <!-- Username Field -->
           <div>
-            <label for="username" class="block text-sm font-semibold text-white/90 mb-2 flex items-center gap-2">
+            <label for="username" class="flex items-center gap-2 text-sm font-semibold text-white/90 mb-2">
               <Icon name="i-heroicons-user" class="h-4 w-4" />
               Username
             </label>
@@ -41,7 +41,7 @@
 
           <!-- Password Field -->
           <div>
-            <label for="password" class="block text-sm font-semibold text-white/90 mb-2 flex items-center gap-2">
+            <label for="password" class="flex items-center gap-2 text-sm font-semibold text-white/90 mb-2">
               <Icon name="i-heroicons-key" class="h-4 w-4" />
               Password
             </label>
