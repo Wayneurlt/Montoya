@@ -10,6 +10,18 @@
     <div
       class="max-w-3xl mx-auto bg-white/10 backdrop-blur-md rounded-xl p-4 sm:p-5 md:p-8 shadow-2xl relative z-10 min-h-full overflow-y-auto pb-6 sm:pb-8 md:pb-12"
     >
+      <!-- Back to Home -->
+      <div class="mb-4 flex items-center justify-between">
+        <NuxtLink
+          to="/"
+          class="inline-flex items-center gap-2 bg-white/10 hover:bg-white/20 backdrop-blur-md px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg transition-all border border-white/20 hover:scale-105"
+        >
+          <Icon icon="mdi:arrow-left" class="w-5 h-5" />
+          <span class="font-medium">Home</span>
+        </NuxtLink>
+        <span class="flex-1" />
+      </div>
+
       <!-- Mode Indicator -->
       <div class="mb-4 flex items-center justify-center">
         <span 
