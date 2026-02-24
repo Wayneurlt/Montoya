@@ -167,8 +167,10 @@
 import { ref } from "vue";
 import { Icon } from "@iconify/vue";
 import { useAnalytics } from "~/composables/useAnalytics";
+import { useGameStore } from "~/stores/game";
 
 const { trackPageView } = useAnalytics();
+const gameStore = useGameStore();
 
 // COMMENTED OUT: Age modal logic removed from single device mode flow
 // const showAgeModal = ref(false);
@@ -207,15 +209,13 @@ const { trackPageView } = useAnalytics();
 
 onMounted(() => {
   trackPageView('home');
-  
-  // COMMENTED OUT: Age modal no longer shows on page load
-  // // Only show age modal if it hasn't been shown before
-  // if (typeof window !== 'undefined') {
-  //   const ageModalShown = localStorage.getItem('age_modal_shown');
-  //   if (!ageModalShown) {
-  //     showAgeModal.value = true;
-  //   }
-  // }
+
+  // Clear one-device (pass-and-play) state when returning home so next time
+  // they play they get a fresh setup with no previous player names or game details
+  gameStore.resetSetup();
+  if (typeof window !== 'undefined') {
+    localStorage.removeItem('montoya_game_state');
+  }
 });
 </script>
 

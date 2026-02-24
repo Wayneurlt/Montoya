@@ -13,6 +13,9 @@ interface ActiveUser {
   roomCode: string | null
 }
 
+// API-only sessions (e.g. single-device users who don't connect to socket)
+const API_SESSION_TTL_MS = 5 * 60 * 1000 // 5 minutes
+
 interface RealtimeStats {
   totalActiveUsers: number
   usersInGames: number
@@ -25,8 +28,20 @@ interface RealtimeStats {
 
 class RealtimeAnalyticsStore {
   private activeUsers = new Map<string, ActiveUser>()
+  private apiSessions = new Map<string, number>() // sessionId -> lastActivity (ms)
   private statsHistory: RealtimeStats[] = []
   private maxHistorySize = 100
+
+  // Record activity from API (page_view from single-device or non-socket users)
+  recordApiActivity(sessionId: string | null, page?: string) {
+    if (!sessionId) return
+    const now = Date.now()
+    this.apiSessions.set(sessionId, now)
+    // Prune old entries
+    for (const [sid, last] of this.apiSessions.entries()) {
+      if (now - last > API_SESSION_TTL_MS) this.apiSessions.delete(sid)
+    }
+  }
 
   // Add or update active user
   addUser(socketId: string, data: Partial<ActiveUser>) {
@@ -77,14 +92,21 @@ class RealtimeAnalyticsStore {
     }
   }
 
-  // Get current stats
+  // Get current stats (socket users + API-only sessions in last 5 min)
   getStats(): RealtimeStats {
     this.cleanupInactiveUsers()
-    
+
+    const now = Date.now()
+    let apiActiveCount = 0
+    for (const [sid, last] of this.apiSessions.entries()) {
+      if (now - last <= API_SESSION_TTL_MS) apiActiveCount++
+      else this.apiSessions.delete(sid)
+    }
+
     const users = Array.from(this.activeUsers.values())
     const usersInGames = users.filter(u => u.isInGame).length
     const usersInLobby = users.filter(u => u.page === 'lobby' || u.page === 'multiplayer').length
-    
+
     // Count users by page
     const usersOnPages: Record<string, number> = {}
     users.forEach(user => {
@@ -104,14 +126,13 @@ class RealtimeAnalyticsStore {
 
     // Users by hour (last 24 hours)
     const usersByHour = new Array(24).fill(0)
-    const now = new Date()
     users.forEach(user => {
       const hour = new Date(user.connectedAt).getHours()
       usersByHour[hour] = (usersByHour[hour] || 0) + 1
     })
 
     const stats: RealtimeStats = {
-      totalActiveUsers: users.length,
+      totalActiveUsers: users.length + apiActiveCount,
       usersInGames,
       usersInLobby,
       usersOnPages,

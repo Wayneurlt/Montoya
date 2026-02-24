@@ -22,6 +22,12 @@
       </div>
     </div>
 
+    <!-- DB unavailable notice -->
+    <div v-if="stats && stats.dbAvailable === false" class="mb-4 p-4 rounded-xl bg-amber-500/20 border border-amber-500/40 flex items-center gap-2">
+      <Icon name="mdi:database-off" class="w-5 h-5 text-amber-400 shrink-0" />
+      <p class="text-amber-200 text-sm">Database temporarily unavailable. Showing real-time counts only; historical stats will appear when the database is back.</p>
+    </div>
+
     <!-- Real-time Stats -->
     <div class="mb-6 p-4 sm:p-6 bg-gradient-to-r from-green-500/10 via-blue-500/10 to-purple-500/10 border border-green-500/20 rounded-xl relative overflow-hidden">
       <div class="absolute top-0 right-0 w-32 h-32 bg-green-500/5 rounded-full -mr-16 -mt-16"></div>
@@ -38,22 +44,22 @@
         <div class="grid grid-cols-2 sm:grid-cols-4 gap-4">
           <div class="bg-white/5 rounded-lg p-3 border border-white/10">
             <div class="text-white/70 text-xs mb-1 font-medium">Active Users</div>
-            <div class="text-2xl sm:text-3xl font-bold text-green-400">{{ realtimeStats?.totalActiveUsers ?? 0 }}</div>
-            <div class="text-white/50 text-xs mt-1">Currently on site</div>
+            <div class="text-2xl sm:text-3xl font-bold text-green-400">{{ effectiveRealtime?.totalActiveUsers ?? 0 }}</div>
+            <div class="text-white/50 text-xs mt-1">Currently on site (incl. one-device)</div>
           </div>
           <div class="bg-white/5 rounded-lg p-3 border border-white/10">
             <div class="text-white/70 text-xs mb-1 font-medium">In Games</div>
-            <div class="text-2xl sm:text-3xl font-bold text-purple-400">{{ realtimeStats?.usersInGames ?? 0 }}</div>
+            <div class="text-2xl sm:text-3xl font-bold text-purple-400">{{ effectiveRealtime?.usersInGames ?? 0 }}</div>
             <div class="text-white/50 text-xs mt-1">Playing now</div>
           </div>
           <div class="bg-white/5 rounded-lg p-3 border border-white/10">
             <div class="text-white/70 text-xs mb-1 font-medium">Active Rooms</div>
-            <div class="text-2xl sm:text-3xl font-bold text-blue-400">{{ realtimeStats?.activeRooms ?? 0 }}</div>
+            <div class="text-2xl sm:text-3xl font-bold text-blue-400">{{ effectiveRealtime?.activeRooms ?? 0 }}</div>
             <div class="text-white/50 text-xs mt-1">Multiplayer sessions</div>
           </div>
           <div class="bg-white/5 rounded-lg p-3 border border-white/10">
             <div class="text-white/70 text-xs mb-1 font-medium">In Lobby</div>
-            <div class="text-2xl sm:text-3xl font-bold text-cyan-400">{{ realtimeStats?.usersInLobby ?? 0 }}</div>
+            <div class="text-2xl sm:text-3xl font-bold text-cyan-400">{{ effectiveRealtime?.usersInLobby ?? 0 }}</div>
             <div class="text-white/50 text-xs mt-1">Waiting to play</div>
           </div>
         </div>
@@ -91,8 +97,8 @@
             <h2 class="text-lg sm:text-xl font-semibold">Popular Games (Live)</h2>
             <div v-if="isConnected" class="w-2 h-2 bg-green-400 rounded-full animate-pulse" title="Live"></div>
           </div>
-          <div v-if="realtimeStats?.popularGames && Object.keys(realtimeStats.popularGames).length" class="space-y-3">
-            <div v-for="(count, game) in realtimeStats.popularGames" :key="game" class="space-y-1">
+          <div v-if="effectiveRealtime?.popularGames && Object.keys(effectiveRealtime.popularGames).length" class="space-y-3">
+            <div v-for="(count, game) in effectiveRealtime.popularGames" :key="game" class="space-y-1">
               <div class="flex justify-between text-sm">
                 <span class="text-white/80 capitalize">{{ game.replace('-', ' ') }}</span>
                 <span class="font-semibold">{{ count }}</span>
@@ -187,6 +193,9 @@ const { realtimeStats, isConnected, fetchStats: fetchRealtimeStats } = useAdminA
 const stats = ref<any>(null)
 const loading = ref(false)
 
+// Prefer live socket stats; fall back to stats.realtime from API (e.g. after refresh)
+const effectiveRealtime = computed(() => realtimeStats.value ?? stats.value?.realtime ?? null)
+
 const fetchStats = async () => {
   loading.value = true
   try {
@@ -208,7 +217,7 @@ const maxGameCount = computed(() => {
 })
 
 const maxRealtimeGameCount = computed(() => {
-  const vals = Object.values(realtimeStats.value?.popularGames || {}) as number[]
+  const vals = Object.values(effectiveRealtime.value?.popularGames || {}) as number[]
   return Math.max(1, ...(vals.length ? vals : [1]))
 })
 
@@ -219,7 +228,7 @@ const refresh = () => {
 const exportJson = () => {
   const data = {
     stats: stats.value,
-    realtime: realtimeStats.value,
+    realtime: effectiveRealtime.value,
     exportedAt: new Date().toISOString()
   }
   const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' })

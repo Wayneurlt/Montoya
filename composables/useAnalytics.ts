@@ -23,10 +23,9 @@ const USER_KEY = 'montoya_user_id'
 // Generate unique IDs
 const generateId = () => Date.now().toString(36) + Math.random().toString(36).substr(2, 9)
 
-// Get or create user ID
+// Get or create user ID (works synchronously)
 const getUserId = (): string => {
   if (typeof window === 'undefined') return ''
-  
   let userId = localStorage.getItem(USER_KEY)
   if (!userId) {
     userId = generateId()
@@ -35,10 +34,9 @@ const getUserId = (): string => {
   return userId
 }
 
-// Get or create session ID
+// Get or create session ID (works synchronously)
 const getSessionId = (): string => {
   if (typeof window === 'undefined') return ''
-  
   let sessionId = sessionStorage.getItem(SESSION_KEY)
   if (!sessionId) {
     sessionId = generateId()
@@ -47,19 +45,24 @@ const getSessionId = (): string => {
   return sessionId
 }
 
+const POST_EVENT_RETRY_MS = 1500
+const POST_EVENT_MAX_RETRIES = 2
+
 // Analytics composable
 export const useAnalytics = () => {
   const isTracking = ref(false)
-  const currentUsers = ref(0)
   const analyticsData = ref<AnalyticsData | null>(null)
+  // Real-time user count comes from admin dashboard; client shows 0 to avoid fake data
+  const currentUsers = ref(0)
 
-  // Initialize analytics
+  // Initialize analytics: set data synchronously first so trackPageView never misses
   const initializeAnalytics = async () => {
     if (typeof window === 'undefined') return
 
     const userId = getUserId()
     const sessionId = getSessionId()
-    
+
+    // Set immediately so any trackPageView call has data
     analyticsData.value = {
       sessionId,
       userId,
@@ -70,36 +73,28 @@ export const useAnalytics = () => {
       lastActivity: Date.now()
     }
 
-    // Try to get location (optional) - using server-side proxy to avoid CORS
-    try {
-      const response = await fetch('/api/analytics/location', {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      })
-      if (response.ok) {
-        const location = await response.json()
-        if (analyticsData.value && location.country) {
-          analyticsData.value.location = {
-            country: location.country,
-            city: location.city
-          }
-        }
-      }
-    } catch (error) {
-      // Location detection is optional, fail silently
-      console.log('Location detection disabled:', error)
-    }
-
-    // Load existing analytics data
+    // Load existing analytics data (merge preferences/session count)
     loadAnalyticsData()
-    
+
     // Start tracking
     isTracking.value = true
     updateActivity()
 
-    console.log('📊 Analytics initialized for user:', userId)
+    // Location is optional; fetch in background (don't block tracking)
+    try {
+      const response = await fetch('/api/analytics/location', {
+        method: 'GET',
+        headers: { 'Content-Type': 'application/json' },
+      })
+      if (response.ok) {
+        const location = await response.json()
+        if (analyticsData.value && location.country) {
+          analyticsData.value.location = { country: location.country, city: location.city }
+        }
+      }
+    } catch {
+      // Location optional; fail silently
+    }
   }
 
   // Load existing analytics from localStorage
@@ -132,13 +127,21 @@ export const useAnalytics = () => {
     }
   }
 
-  // Track game selection
-  const postEvent = async (payload: any) => {
-    try {
-      await $fetch('/api/analytics/event', { method: 'POST', body: payload })
-    } catch (e) {
-      console.warn('Failed to post analytics event', e)
+  // Post event to API with retry for robustness
+  const postEvent = async (payload: Record<string, unknown>) => {
+    let lastError: unknown
+    for (let attempt = 0; attempt <= POST_EVENT_MAX_RETRIES; attempt++) {
+      try {
+        await $fetch('/api/analytics/event', { method: 'POST', body: payload })
+        return
+      } catch (e) {
+        lastError = e
+        if (attempt < POST_EVENT_MAX_RETRIES) {
+          await new Promise(r => setTimeout(r, POST_EVENT_RETRY_MS))
+        }
+      }
     }
+    console.warn('Failed to post analytics event after retries', lastError)
   }
 
   const trackGameSelection = (gameName: string) => {
@@ -161,33 +164,35 @@ export const useAnalytics = () => {
     console.log(`🎮 Game tracked: ${gameName}`)
   }
 
-  // Track page view
+  // Track page view – always send to API (use getUserId/getSessionId if composable not ready)
   const trackPageView = (pageName: string) => {
-    if (!analyticsData.value) return
+    const userId = analyticsData.value?.userId ?? getUserId()
+    const sessionId = analyticsData.value?.sessionId ?? getSessionId()
+    if (analyticsData.value) {
+      updateActivity()
+    }
 
-    updateActivity()
+    // Always send to API so server has accurate counts (single-device users don't use socket)
     postEvent({
       type: 'page_view',
-      userId: analyticsData.value.userId,
-      sessionId: analyticsData.value.sessionId,
+      userId,
+      sessionId,
       page: pageName,
     })
-    
-    // Also send to Socket.IO for real-time tracking (if available)
+
+    // Also send to Socket.IO for real-time tracking when in multiplayer flow
     try {
       const { socket } = useMultiplayer()
       if (socket && typeof socket.emit === 'function' && socket.connected) {
         socket.emit('analytics:page-view', {
           page: pageName,
-          userId: analyticsData.value.userId,
-          sessionId: analyticsData.value.sessionId,
+          userId,
+          sessionId,
         })
       }
-    } catch (error) {
-      // Socket not available, that's okay - analytics will still work via API
+    } catch {
+      // Socket not available; API is source of truth
     }
-    
-    console.log(`📄 Page view: ${pageName}`)
   }
 
   // Update last activity
@@ -219,27 +224,12 @@ export const useAnalytics = () => {
     }
   }
 
-  // Simulate current users (in a real app, this would come from a server)
-  const updateCurrentUsers = () => {
-    // Simulate 5-50 users based on time of day
-    const hour = new Date().getHours()
-    const baseUsers = Math.max(5, Math.floor(Math.random() * 50))
-    const timeMultiplier = hour >= 18 && hour <= 23 ? 1.5 : hour >= 6 && hour <= 18 ? 1.2 : 0.7
-    currentUsers.value = Math.floor(baseUsers * timeMultiplier)
-  }
-
   // Lifecycle management
   onMounted(() => {
     initializeAnalytics()
-    updateCurrentUsers()
-    
-    // Update current users every 30 seconds
-    const userInterval = setInterval(updateCurrentUsers, 30000)
-    
-    // Save analytics every 5 minutes
+
     const saveInterval = setInterval(saveAnalyticsData, 5 * 60 * 1000)
 
-    // Track page visibility changes
     const handleVisibilityChange = () => {
       if (document.hidden) {
         saveAnalyticsData()
@@ -247,12 +237,9 @@ export const useAnalytics = () => {
         updateActivity()
       }
     }
-    
     document.addEventListener('visibilitychange', handleVisibilityChange)
 
-    // Cleanup
     onBeforeUnmount(() => {
-      clearInterval(userInterval)
       clearInterval(saveInterval)
       document.removeEventListener('visibilitychange', handleVisibilityChange)
       saveAnalyticsData()

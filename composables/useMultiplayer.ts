@@ -385,12 +385,15 @@ export const useMultiplayer = () => {
     }
   }
 
-  // Leave room
+  // Leave room – clear in-memory state and persisted room so next visit is fresh
   const leaveRoom = () => {
     if (socket && socket.connected) {
       socket.emit('room:leave')
     }
     disconnect()
+    if (typeof window !== 'undefined') {
+      localStorage.removeItem('multiplayer_room')
+    }
   }
 
   // Ring host to notify them players are waiting

@@ -2,12 +2,26 @@ import prisma from '~/lib/prisma'
 import { requireAdmin } from '~/server/utils/adminAuth'
 import { realtimeAnalytics } from '~/server/utils/realtimeAnalytics'
 
+function getRealtimePayload() {
+  const realtimeStats = realtimeAnalytics.getStats()
+  const peakUsers = realtimeAnalytics.getPeakUsers()
+  return {
+    totalActiveUsers: realtimeStats.totalActiveUsers,
+    usersInGames: realtimeStats.usersInGames,
+    usersInLobby: realtimeStats.usersInLobby,
+    usersOnPages: realtimeStats.usersOnPages,
+    activeRooms: realtimeStats.activeRooms,
+    popularGames: realtimeStats.popularGames,
+    peakUsers,
+  }
+}
+
 export default defineEventHandler(async (event) => {
-  // Require admin authentication
   requireAdmin(event)
 
+  const realtime = getRealtimePayload()
+
   try {
-    // Get analytics from database
     const [
       totalAnalytics,
       pageViews,
@@ -32,7 +46,7 @@ export default defineEventHandler(async (event) => {
         _count: { sessionId: true }
       }),
       prisma.analytics.findMany({
-        where: { 
+        where: {
           eventType: { in: ['game_start', 'game_join'] },
           game: { not: null }
         },
@@ -56,20 +70,14 @@ export default defineEventHandler(async (event) => {
       prisma.gameSession.count()
     ])
 
-    // Calculate popular games
     const gameCount: Record<string, number> = {}
-    gameEvents.forEach(event => {
-      if (event.game) {
-        gameCount[event.game] = (gameCount[event.game] || 0) + 1
-      }
+    gameEvents.forEach(ev => {
+      if (ev.game) gameCount[ev.game] = (gameCount[ev.game] || 0) + 1
     })
-
-    // Sort by popularity
     const popularGames = Object.fromEntries(
-      Object.entries(gameCount).sort(([,a], [,b]) => b - a)
+      Object.entries(gameCount).sort(([, a], [, b]) => b - a)
     )
 
-    // Get active players (players who have activity in the last hour)
     const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000)
     const activePlayersResult = await prisma.analytics.groupBy({
       by: ['userId'],
@@ -81,10 +89,6 @@ export default defineEventHandler(async (event) => {
     })
     const activePlayers = activePlayersResult.length
 
-    // Get real-time stats
-    const realtimeStats = realtimeAnalytics.getStats()
-    const peakUsers = realtimeAnalytics.getPeakUsers()
-
     return {
       totalAnalytics,
       pageViews,
@@ -95,28 +99,25 @@ export default defineEventHandler(async (event) => {
       activePlayers,
       activeSessions,
       popularGames,
-      recentEvents: recentEvents.map(event => ({
-        ...event,
-        type: event.eventType
-      })),
-      // Real-time stats
-      realtime: {
-        totalActiveUsers: realtimeStats.totalActiveUsers,
-        usersInGames: realtimeStats.usersInGames,
-        usersInLobby: realtimeStats.usersInLobby,
-        usersOnPages: realtimeStats.usersOnPages,
-        activeRooms: realtimeStats.activeRooms,
-        popularGames: realtimeStats.popularGames,
-        peakUsers,
-      }
+      recentEvents: recentEvents.map(ev => ({ ...ev, type: ev.eventType })),
+      realtime,
+      dbAvailable: true
     }
-  } catch (error) {
-    console.error('Error getting analytics stats:', error)
-    throw createError({
-      statusCode: 500,
-      statusMessage: 'Failed to get analytics stats'
-    })
-  } finally {
-    await prisma.$disconnect()
+  } catch (dbError) {
+    console.error('Analytics stats DB error, returning realtime-only:', dbError)
+    return {
+      totalAnalytics: 0,
+      pageViews: 0,
+      totalUsers: 0,
+      totalGameSessions: 0,
+      uniqueUsers: 0,
+      uniqueSessions: 0,
+      activePlayers: realtime.totalActiveUsers,
+      activeSessions: 0,
+      popularGames: realtime.popularGames,
+      recentEvents: [],
+      realtime,
+      dbAvailable: false
+    }
   }
 })
