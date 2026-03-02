@@ -1,6 +1,6 @@
 <template>
   <div
-    class="min-h-screen bg-gradient-to-br from-slate-950 via-purple-950 to-slate-950 text-white flex items-center justify-center px-3 sm:px-4 relative overflow-x-hidden overflow-y-auto py-4 sm:py-6"
+    class="min-h-screen bg-gradient-to-br from-slate-950 via-purple-950 to-slate-950 text-white flex flex-col items-center justify-center px-3 sm:px-4 relative overflow-x-hidden py-4 sm:py-6 pb-20 page-bottom-safe"
   >
     <!-- Background Icons Pattern -->
     <BackgroundIcons />
@@ -72,7 +72,7 @@
       <div class="flex flex-col items-center gap-2 sm:gap-3 md:gap-4 px-4 mb-3 sm:mb-4 md:mb-6">
         <NuxtLink
           to="/setup"
-          class="group relative bg-gradient-to-r from-purple-600 via-pink-600 to-purple-600 hover:from-purple-500 hover:via-pink-500 hover:to-purple-500 text-white px-6 sm:px-8 md:px-12 py-3 sm:py-4 md:py-5 rounded-full text-sm sm:text-base md:text-lg lg:text-xl xl:text-2xl font-black shadow-2xl hover:shadow-pink-600/50 transition-all duration-300 transform hover:scale-110 animate-pulse-slow border-2 sm:border-3 md:border-4 border-pink-500/50 w-full max-w-md"
+          class="group relative bg-gradient-to-r from-purple-600 via-pink-600 to-purple-600 hover:from-purple-500 hover:via-pink-500 hover:to-purple-500 text-white px-6 sm:px-8 md:px-12 py-3 sm:py-4 md:py-5 rounded-full text-sm sm:text-base md:text-lg lg:text-xl xl:text-2xl font-black shadow-2xl hover:shadow-pink-600/50 transition-all duration-300 transform hover:scale-110 animate-pulse-slow border-2 md:border-4 border-pink-500/50 w-full max-w-md"
         >
           <span class="relative z-10 flex flex-col items-center gap-1">
             <span>🎮 JOIN USING ONE DEVICE</span>
@@ -82,7 +82,7 @@
         </NuxtLink>
         <NuxtLink
           to="/lobby"
-          class="group relative bg-gradient-to-r from-cyan-600 via-blue-600 to-purple-600 hover:from-cyan-500 hover:via-blue-500 hover:to-purple-500 text-white px-6 sm:px-8 md:px-12 py-3 sm:py-4 md:py-5 rounded-full text-sm sm:text-base md:text-lg lg:text-xl font-black shadow-2xl hover:shadow-cyan-600/50 transition-all duration-300 transform hover:scale-105 border-2 sm:border-3 md:border-4 border-cyan-500/50 w-full max-w-md flex items-center justify-center gap-2"
+          class="group relative bg-gradient-to-r from-cyan-600 via-blue-600 to-purple-600 hover:from-cyan-500 hover:via-blue-500 hover:to-purple-500 text-white px-6 sm:px-8 md:px-12 py-3 sm:py-4 md:py-5 rounded-full text-sm sm:text-base md:text-lg lg:text-xl font-black shadow-2xl hover:shadow-cyan-600/50 transition-all duration-300 transform hover:scale-105 border-2 md:border-4 border-cyan-500/50 w-full max-w-md flex items-center justify-center gap-2"
         >
           <Icon icon="mdi:account-group" class="w-6 h-6 sm:w-7 sm:h-7 md:w-8 md:h-8" />
           <span class="relative z-10 flex flex-col items-center">
@@ -121,7 +121,7 @@
         class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm"
         @click.self="showAgeModal = false"
       >
-        <div class="bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 border-2 sm:border-3 md:border-4 border-red-500/50 rounded-xl sm:rounded-2xl md:rounded-3xl p-4 sm:p-5 md:p-6 lg:p-8 xl:p-10 max-w-2xl w-full mx-auto relative">
+        <div class="bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 border-2 md:border-4 border-red-500/50 rounded-xl sm:rounded-2xl md:rounded-3xl p-4 sm:p-5 md:p-6 lg:p-8 xl:p-10 max-w-2xl w-full mx-auto relative">
           <button
             @click="showAgeModal = false"
             class="absolute top-3 right-3 sm:top-4 sm:right-4 text-white/60 hover:text-white transition-colors"
@@ -150,7 +150,7 @@
             <button
               @click="confirmAge"
               :disabled="isConfirming"
-              class="group relative bg-gradient-to-r from-red-600 via-pink-600 to-red-600 hover:from-red-500 hover:via-pink-500 hover:to-red-500 text-white px-6 sm:px-8 md:px-12 py-3 sm:py-4 md:py-5 rounded-full text-sm sm:text-base md:text-lg lg:text-xl font-black shadow-2xl hover:shadow-red-600/50 transition-all duration-300 transform hover:scale-105 border-2 sm:border-3 md:border-4 border-red-500/50 w-full max-w-md disabled:opacity-50 disabled:cursor-not-allowed"
+              class="group relative bg-gradient-to-r from-red-600 via-pink-600 to-red-600 hover:from-red-500 hover:via-pink-500 hover:to-red-500 text-white px-6 sm:px-8 md:px-12 py-3 sm:py-4 md:py-5 rounded-full text-sm sm:text-base md:text-lg lg:text-xl font-black shadow-2xl hover:shadow-red-600/50 transition-all duration-300 transform hover:scale-105 border-2 md:border-4 border-red-500/50 w-full max-w-md disabled:opacity-50 disabled:cursor-not-allowed"
             >
               <span class="relative z-10">{{ isConfirming ? 'Processing...' : 'I am 18+' }}</span>
               <div class="absolute inset-0 bg-gradient-to-r from-pink-500 to-red-500 rounded-full blur-xl opacity-50 group-hover:opacity-75 transition-opacity"></div>

@@ -2,13 +2,24 @@ import prisma from '~/lib/prisma'
 import { realtimeAnalytics } from '~/server/utils/realtimeAnalytics'
 import { recordEvent as recordEventFile } from '~/server/utils/analyticsStore'
 
+function toFileEvent(body: any) {
+  return {
+    id: `${Date.now()}-${Math.random().toString(36).slice(2, 9)}`,
+    type: (body.type === 'page_view' || body.type === 'game_select' ? body.type : 'activity') as 'page_view' | 'game_select' | 'activity',
+    userId: body.userId,
+    sessionId: body.sessionId,
+    page: body.page,
+    game: body.game,
+    timestamp: Date.now()
+  }
+}
+
 export default defineEventHandler(async (event) => {
   const body = await readBody<any>(event)
   if (!body || !body.type) {
     throw createError({ statusCode: 400, statusMessage: 'Missing event type' })
   }
 
-  // Record in real-time store so active user counts include single-device / API-only users
   if (body.type === 'page_view' && (body.sessionId || body.userId)) {
     realtimeAnalytics.recordApiActivity(body.sessionId || body.userId, body.page)
   }
@@ -24,22 +35,17 @@ export default defineEventHandler(async (event) => {
         data: body.data ? JSON.stringify(body.data) : null
       }
     })
+    // Keep file store in sync as backup so all-time stats work when DB is down
+    recordEventFile(toFileEvent(body)).catch((err) =>
+      console.warn('Analytics file backup failed:', err)
+    )
     return { success: true }
   } catch (dbError) {
-    console.error('Analytics DB error, falling back to file store:', dbError)
     try {
-      await recordEventFile({
-        id: `${Date.now()}-${Math.random().toString(36).slice(2, 9)}`,
-        type: body.type as 'page_view' | 'game_select' | 'activity',
-        userId: body.userId,
-        sessionId: body.sessionId,
-        page: body.page,
-        game: body.game,
-        timestamp: Date.now()
-      })
+      await recordEventFile(toFileEvent(body))
       return { success: true }
     } catch (fileError) {
-      console.error('Analytics file store also failed:', fileError)
+      console.error('Analytics storage failed (DB and file):', fileError)
       throw createError({
         statusCode: 500,
         statusMessage: 'Failed to store analytics event'

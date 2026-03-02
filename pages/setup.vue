@@ -881,18 +881,15 @@ input::placeholder {
     -webkit-transform: translateZ(0);
   }
   
-  /* Prevent black space when keyboard appears */
+  /* Use 100dvh on setup container so inner scroll works on iOS */
   @supports (height: 100dvh) {
     [data-setup-container] {
       height: 100dvh !important;
     }
+    [data-setup-container] > div {
+      max-height: 100dvh !important;
+    }
   }
-  
-  /* Ensure background covers entire viewport */
-  html, body {
-    overflow: hidden !important;
-    height: 100% !important;
-    height: 100dvh !important;
-  }
+  /* Do NOT set html/body overflow:hidden here – it breaks scroll on lobby/index on iPhone */
 }
 </style>

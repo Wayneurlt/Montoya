@@ -92,13 +92,17 @@
               </div>
               <span class="text-sm text-white/80 group-hover:text-white/90 transition-colors select-none">Remember me</span>
             </label>
-            <NuxtLink
-              to="/admin/forgot-password"
+            <button
+              type="button"
+              @click="showForgotHint = true"
               class="text-sm text-white/70 hover:text-white/90 transition-colors focus:outline-none focus:ring-2 focus:ring-white/50 rounded px-2 py-1"
             >
               Forgot password?
-            </NuxtLink>
+            </button>
           </div>
+          <p v-if="showForgotHint" class="text-xs text-white/60 mt-1">
+            Contact your administrator to reset your password.
+          </p>
 
           <!-- Error Alert -->
           <Transition
@@ -186,6 +190,7 @@ const form = reactive({
 const loading = ref(false)
 const error = ref('')
 const showPassword = ref(false)
+const showForgotHint = ref(false)
 const errors = reactive({
   username: '',
   password: ''

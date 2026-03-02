@@ -60,7 +60,7 @@
         <!-- Adult Mode -->
         <NuxtLink
           to="/adult-landing"
-          class="group bg-gradient-to-br from-pink-500/20 to-purple-500/20 border-2 sm:border-3 md:border-4 border-pink-400/50 hover:border-pink-400 rounded-xl sm:rounded-2xl md:rounded-3xl p-4 sm:p-5 md:p-6 lg:p-8 hover:scale-105 transition-all duration-300 shadow-2xl hover:shadow-pink-500/50"
+          class="group bg-gradient-to-br from-pink-500/20 to-purple-500/20 border-2 md:border-4 border-pink-400/50 hover:border-pink-400 rounded-xl sm:rounded-2xl md:rounded-3xl p-4 sm:p-5 md:p-6 lg:p-8 hover:scale-105 transition-all duration-300 shadow-2xl hover:shadow-pink-500/50"
         >
           <div class="text-center">
             <div class="text-4xl sm:text-5xl md:text-6xl lg:text-7xl mb-3 sm:mb-4 md:mb-5 lg:mb-6 group-hover:scale-110 transition-transform">

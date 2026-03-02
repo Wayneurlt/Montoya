@@ -2,15 +2,36 @@
 @import "@nuxt/ui";
 @import "./colors.css";
 
-/* Global responsive improvements */
+/* Global: allow document scroll on all devices (critical for iOS) */
 html {
   -webkit-overflow-scrolling: touch;
   scroll-behavior: smooth;
+  overflow-x: hidden;
+  overflow-y: scroll;
+  height: auto;
+  min-height: 100%;
 }
 
 body {
   overflow-x: hidden;
+  overflow-y: scroll;
+  -webkit-overflow-scrolling: touch;
   position: relative;
+  min-height: 100%;
+  height: auto;
+}
+
+/* Ensure Nuxt app root doesn't block scroll on mobile */
+#__nuxt {
+  min-height: 100%;
+  height: auto;
+}
+
+/* Focus styles for accessibility (keyboard / focus-visible) */
+a:focus-visible,
+button:focus-visible {
+  outline: 2px solid rgba(168, 85, 247, 0.8);
+  outline-offset: 2px;
 }
 
 /* Better mobile scrolling */
@@ -19,7 +40,6 @@ body {
     -webkit-tap-highlight-color: transparent;
   }
   
-  /* Prevent horizontal scroll on mobile */
   body {
     overflow-x: hidden;
     width: 100%;
@@ -29,6 +49,11 @@ body {
 /* Ensure proper scrolling containers */
 .overflow-y-auto {
   -webkit-overflow-scrolling: touch;
+}
+
+/* iPhone safe area: extra bottom padding so buttons aren't behind home indicator */
+.page-bottom-safe {
+  padding-bottom: max(1.5rem, env(safe-area-inset-bottom, 0px));
 }
 
 @keyframes spin-slow {

@@ -70,6 +70,7 @@ export async function getStats() {
 
   return {
     pageViews: store.totals.pageViews,
+    totalEvents: store.events.length,
     totalUsers,
     totalSessions,
     popularGames,

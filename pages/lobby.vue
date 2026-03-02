@@ -1,9 +1,9 @@
 <template>
-  <div class="lobby-page min-h-screen bg-gradient-to-br from-slate-950 via-purple-950 to-slate-950 text-white p-3 sm:p-4 relative overflow-x-hidden overflow-y-auto">
+  <div class="lobby-page min-h-screen bg-gradient-to-br from-slate-950 via-purple-950 to-slate-950 text-white p-3 sm:p-4 relative overflow-x-hidden">
     <!-- Background Icons Pattern -->
     <BackgroundIcons />
 
-    <div class="max-w-4xl mx-auto relative z-10 pt-4 sm:pt-6 md:pt-8 pb-24 sm:pb-28">
+    <div class="max-w-4xl mx-auto relative z-10 pt-4 sm:pt-6 md:pt-8 pb-32 sm:pb-36" style="padding-bottom: max(8rem, env(safe-area-inset-bottom, 0px) + 4rem);">
       <!-- Header -->
       <div class="flex items-center justify-between mb-6 sm:mb-8">
         <NuxtLink to="/" class="bg-white/10 hover:bg-white/20 backdrop-blur-md px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg transition-all flex items-center gap-2 border border-white/20 hover:scale-105">
@@ -652,16 +652,10 @@ onMounted(() => {
 </script>
 
 <style scoped>
-/* Make lobby root the scroll container so the page scrolls inside the viewport on mobile */
+/* Use document scroll: page grows with content so body scrolls (works on all mobile browsers) */
 .lobby-page {
-  -webkit-overflow-scrolling: touch;
-  overscroll-behavior-y: contain;
-  max-height: 100vh; /* fallback for browsers that don't support dvh */
-}
-@supports (height: 100dvh) {
-  .lobby-page {
-    max-height: 100dvh;
-  }
+  min-height: 100vh;
+  min-height: 100dvh;
 }
 
 .fade-enter-active,

@@ -1,6 +1,7 @@
 import prisma from '~/lib/prisma'
 import { requireAdmin } from '~/server/utils/adminAuth'
 import { realtimeAnalytics } from '~/server/utils/realtimeAnalytics'
+import { getStats as getFileStats } from '~/server/utils/analyticsStore'
 
 function getRealtimePayload() {
   const realtimeStats = realtimeAnalytics.getStats()
@@ -30,7 +31,6 @@ export default defineEventHandler(async (event) => {
       gameEvents,
       recentEvents,
       activeSessions,
-      totalUsers,
       totalGameSessions
     ] = await Promise.all([
       prisma.analytics.count(),
@@ -66,9 +66,11 @@ export default defineEventHandler(async (event) => {
         }
       }),
       prisma.gameSession.count({ where: { status: 'IN_PROGRESS' } }),
-      prisma.user.count(),
       prisma.gameSession.count()
     ])
+
+    // Total users all time = unique userIds in analytics (visitors/players), not User table
+    const totalUsers = uniqueUsers.length
 
     const gameCount: Record<string, number> = {}
     gameEvents.forEach(ev => {
@@ -93,6 +95,7 @@ export default defineEventHandler(async (event) => {
       totalAnalytics,
       pageViews,
       totalUsers,
+      allTimeUniqueUsers: totalUsers,
       totalGameSessions,
       uniqueUsers: uniqueUsers.length,
       uniqueSessions: uniqueSessions.length,
@@ -104,20 +107,51 @@ export default defineEventHandler(async (event) => {
       dbAvailable: true
     }
   } catch (dbError) {
-    console.error('Analytics stats DB error, returning realtime-only:', dbError)
-    return {
-      totalAnalytics: 0,
-      pageViews: 0,
-      totalUsers: 0,
-      totalGameSessions: 0,
-      uniqueUsers: 0,
-      uniqueSessions: 0,
-      activePlayers: realtime.totalActiveUsers,
-      activeSessions: 0,
-      popularGames: realtime.popularGames,
-      recentEvents: [],
-      realtime,
-      dbAvailable: false
+    console.error('Analytics stats DB error, using file store + realtime:', dbError)
+    try {
+      const fileStats = await getFileStats()
+      const recentEvents = (fileStats.recentEvents || []).slice(0, 20).map((ev: any) => ({
+        id: ev.id,
+        eventType: ev.type,
+        type: ev.type,
+        userId: ev.userId,
+        sessionId: ev.sessionId,
+        page: ev.page,
+        game: ev.game,
+        timestamp: ev.timestamp ? new Date(ev.timestamp) : new Date()
+      }))
+      return {
+        totalAnalytics: fileStats.totalEvents ?? fileStats.pageViews ?? 0,
+        pageViews: fileStats.pageViews || 0,
+        totalUsers: fileStats.totalUsers || 0,
+        allTimeUniqueUsers: fileStats.totalUsers || 0,
+        totalGameSessions: fileStats.totalSessions || 0,
+        uniqueUsers: fileStats.totalUsers || 0,
+        uniqueSessions: fileStats.totalSessions || 0,
+        activePlayers: realtime.totalActiveUsers,
+        activeSessions: 0,
+        popularGames: fileStats.popularGames || realtime.popularGames,
+        recentEvents,
+        realtime,
+        dbAvailable: false
+      }
+    } catch (fileErr) {
+      console.error('File store also failed:', fileErr)
+      return {
+        totalAnalytics: 0,
+        pageViews: 0,
+        totalUsers: 0,
+        allTimeUniqueUsers: 0,
+        totalGameSessions: 0,
+        uniqueUsers: 0,
+        uniqueSessions: 0,
+        activePlayers: realtime.totalActiveUsers,
+        activeSessions: 0,
+        popularGames: realtime.popularGames,
+        recentEvents: [],
+        realtime,
+        dbAvailable: false
+      }
     }
   }
 })

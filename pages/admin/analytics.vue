@@ -22,6 +22,25 @@
       </div>
     </div>
 
+    <!-- All-time unique users (persistent, works offline) -->
+    <div class="mb-6 p-5 sm:p-6 bg-gradient-to-br from-violet-500/20 via-fuchsia-500/10 to-transparent border border-violet-400/30 rounded-xl relative overflow-hidden">
+      <div class="absolute bottom-0 right-0 w-48 h-48 bg-violet-500/10 rounded-full -mr-24 -mb-24"></div>
+      <div class="relative z-10 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div>
+          <h2 class="text-sm font-medium text-white/70 uppercase tracking-wider mb-1">All-time unique users</h2>
+          <p class="text-4xl sm:text-5xl font-bold text-white">
+            {{ allTimeUniqueUsers }}
+          </p>
+          <p class="text-white/60 text-sm mt-2">Unique visitors ever (stored; visible even when they’re offline)</p>
+        </div>
+        <div class="flex items-center gap-2 text-white/60 text-sm">
+          <Icon name="mdi:account-group" class="w-8 h-8 text-violet-400/80" />
+          <span v-if="stats?.dbAvailable === false">From backup store</span>
+          <span v-else>From database</span>
+        </div>
+      </div>
+    </div>
+
     <!-- DB unavailable notice -->
     <div v-if="stats && stats.dbAvailable === false" class="mb-4 p-4 rounded-xl bg-amber-500/20 border border-amber-500/40 flex items-center gap-2">
       <Icon name="mdi:database-off" class="w-5 h-5 text-amber-400 shrink-0" />
@@ -192,6 +211,11 @@ definePageMeta({
 const { realtimeStats, isConnected, fetchStats: fetchRealtimeStats } = useAdminAnalytics()
 const stats = ref<any>(null)
 const loading = ref(false)
+
+// All-time unique users: from stored analytics (DB or file backup). Always available.
+const allTimeUniqueUsers = computed(() =>
+  stats.value?.allTimeUniqueUsers ?? stats.value?.totalUsers ?? 0
+)
 
 // Prefer live socket stats; fall back to stats.realtime from API (e.g. after refresh)
 const effectiveRealtime = computed(() => realtimeStats.value ?? stats.value?.realtime ?? null)
