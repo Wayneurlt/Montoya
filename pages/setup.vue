@@ -8,7 +8,7 @@
     <BackgroundIcons />
 
     <div
-      class="max-w-3xl mx-auto bg-white/10 backdrop-blur-md rounded-xl p-4 sm:p-5 md:p-8 shadow-2xl relative z-10 min-h-full overflow-y-auto pb-6 sm:pb-8 md:pb-12"
+      class="max-w-3xl mx-auto bg-white/10 backdrop-blur-md rounded-xl p-4 sm:p-5 md:p-8 shadow-2xl relative z-10 min-h-full overflow-y-auto safe-bottom"
     >
       <!-- Back to Home -->
       <div class="mb-4 flex items-center justify-between">

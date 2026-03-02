@@ -1,6 +1,6 @@
 <template>
   <div
-    class="min-h-screen bg-gradient-to-br from-slate-950 via-purple-950 to-slate-950 text-white flex items-center justify-center px-3 sm:px-4 relative overflow-x-hidden overflow-y-auto py-4 sm:py-6"
+    class="min-h-screen bg-gradient-to-br from-slate-950 via-purple-950 to-slate-950 text-white flex flex-col items-center justify-start px-3 sm:px-4 relative overflow-x-hidden overflow-y-auto py-4 sm:py-6 safe-bottom"
   >
     <!-- Background Icons Pattern -->
     <BackgroundIcons />

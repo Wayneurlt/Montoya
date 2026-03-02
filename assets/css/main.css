@@ -56,6 +56,11 @@ button:focus-visible {
   padding-bottom: max(1.5rem, env(safe-area-inset-bottom, 0px));
 }
 
+/* Mobile: keep bottom content above browser nav / home indicator (use on main page containers) */
+.safe-bottom {
+  padding-bottom: max(6rem, calc(env(safe-area-inset-bottom, 0px) + 5rem));
+}
+
 @keyframes spin-slow {
   0% {
     transform: rotate(0deg);

@@ -28,17 +28,29 @@
       <div class="relative z-10 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <h2 class="text-sm font-medium text-white/70 uppercase tracking-wider mb-1">All-time unique users</h2>
-          <p class="text-4xl sm:text-5xl font-bold text-white">
-            {{ allTimeUniqueUsers }}
+          <p class="text-4xl sm:text-5xl font-bold text-white flex items-center gap-2">
+            <template v-if="stats === null && loading">—</template>
+            <template v-else>{{ allTimeUniqueUsers }}</template>
+            <Icon v-if="backgroundRefreshing" name="mdi:loading" class="w-6 h-6 text-violet-400 animate-spin" />
           </p>
           <p class="text-white/60 text-sm mt-2">Unique visitors ever (stored; visible even when they’re offline)</p>
+          <p v-if="lastUpdated" class="text-white/50 text-xs mt-1">Last updated {{ lastUpdated }}</p>
         </div>
-        <div class="flex items-center gap-2 text-white/60 text-sm">
-          <Icon name="mdi:account-group" class="w-8 h-8 text-violet-400/80" />
-          <span v-if="stats?.dbAvailable === false">From backup store</span>
-          <span v-else>From database</span>
+        <div class="flex flex-col items-end gap-1">
+          <div class="flex items-center gap-2 text-white/60 text-sm">
+            <Icon name="mdi:account-group" class="w-8 h-8 text-violet-400/80" />
+            <span v-if="stats?.dbAvailable === false">From backup store</span>
+            <span v-else>From database</span>
+          </div>
+          <span class="text-white/40 text-xs">Refreshes every 5s</span>
         </div>
       </div>
+    </div>
+
+    <!-- Stats fetch error -->
+    <div v-if="statsError" class="mb-4 p-4 rounded-xl bg-red-500/20 border border-red-500/40 flex items-center justify-between gap-2">
+      <p class="text-red-200 text-sm">{{ statsError }}</p>
+      <button @click="statsError = null; refresh()" class="text-red-300 hover:text-white text-sm font-medium">Retry</button>
     </div>
 
     <!-- DB unavailable notice -->
@@ -88,6 +100,11 @@
     <!-- Historical Stats -->
     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
       <div class="bg-white/10 border border-white/10 rounded-xl p-4 sm:p-5">
+        <div class="text-white/80 text-sm mb-1">Page views</div>
+        <div class="text-2xl sm:text-3xl font-bold text-amber-400">{{ stats?.pageViews ?? 0 }}</div>
+        <div class="text-xs text-white/60 mt-1">All time</div>
+      </div>
+      <div class="bg-white/10 border border-white/10 rounded-xl p-4 sm:p-5">
         <div class="text-white/80 text-sm mb-1">Active Players</div>
         <div class="text-2xl sm:text-3xl font-bold text-green-400">{{ stats?.activePlayers ?? 0 }}</div>
         <div class="text-xs text-white/60 mt-1">Last hour</div>
@@ -96,11 +113,6 @@
         <div class="text-white/80 text-sm mb-1">Active Sessions</div>
         <div class="text-2xl sm:text-3xl font-bold text-blue-400">{{ stats?.activeSessions ?? 0 }}</div>
         <div class="text-xs text-white/60 mt-1">Games in progress</div>
-      </div>
-      <div class="bg-white/10 border border-white/10 rounded-xl p-4 sm:p-5">
-        <div class="text-white/80 text-sm mb-1">Total Users</div>
-        <div class="text-2xl sm:text-3xl font-bold">{{ stats?.totalUsers ?? 0 }}</div>
-        <div class="text-xs text-white/60 mt-1">All time</div>
       </div>
       <div class="bg-white/10 border border-white/10 rounded-xl p-4 sm:p-5">
         <div class="text-white/80 text-sm mb-1">Total Games</div>
@@ -211,6 +223,9 @@ definePageMeta({
 const { realtimeStats, isConnected, fetchStats: fetchRealtimeStats } = useAdminAnalytics()
 const stats = ref<any>(null)
 const loading = ref(false)
+const backgroundRefreshing = ref(false)
+const lastUpdated = ref<string | null>(null)
+const statsError = ref<string | null>(null)
 
 // All-time unique users: from stored analytics (DB or file backup). Always available.
 const allTimeUniqueUsers = computed(() =>
@@ -221,16 +236,24 @@ const allTimeUniqueUsers = computed(() =>
 const effectiveRealtime = computed(() => realtimeStats.value ?? stats.value?.realtime ?? null)
 
 const fetchStats = async (silent = false) => {
-  if (!silent) loading.value = true
+  if (silent) backgroundRefreshing.value = true
+  else loading.value = true
+  statsError.value = null
   try {
     stats.value = await $fetch('/api/analytics/stats')
+    lastUpdated.value = stats.value?.lastUpdated
+      ? new Date(stats.value.lastUpdated).toLocaleTimeString()
+      : new Date().toLocaleTimeString()
     if (fetchRealtimeStats) {
       await fetchRealtimeStats()
     }
-  } catch (error) {
+  } catch (error: any) {
+    const msg = error?.data?.message || error?.message || 'Failed to load analytics'
+    statsError.value = msg
     if (!silent) console.error('Failed to fetch stats:', error)
   } finally {
-    if (!silent) loading.value = false
+    loading.value = false
+    backgroundRefreshing.value = false
   }
 }
 

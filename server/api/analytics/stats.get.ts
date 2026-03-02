@@ -47,7 +47,7 @@ export default defineEventHandler(async (event) => {
       }),
       prisma.analytics.findMany({
         where: {
-          eventType: { in: ['game_start', 'game_join'] },
+          eventType: { in: ['game_start', 'game_join', 'game_select'] },
           game: { not: null }
         },
         select: { game: true }
@@ -104,7 +104,8 @@ export default defineEventHandler(async (event) => {
       popularGames,
       recentEvents: recentEvents.map(ev => ({ ...ev, type: ev.eventType })),
       realtime,
-      dbAvailable: true
+      dbAvailable: true,
+      lastUpdated: new Date().toISOString()
     }
   } catch (dbError) {
     console.error('Analytics stats DB error, using file store + realtime:', dbError)
@@ -150,7 +151,8 @@ export default defineEventHandler(async (event) => {
         popularGames: realtime.popularGames,
         recentEvents: [],
         realtime,
-        dbAvailable: false
+        dbAvailable: false,
+        lastUpdated: new Date().toISOString()
       }
     }
   }

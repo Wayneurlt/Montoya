@@ -1,6 +1,6 @@
 <template>
   <div
-    class="min-h-screen bg-gradient-to-br from-slate-950 via-purple-950 to-slate-950 text-white flex flex-col items-center justify-center px-3 sm:px-4 relative overflow-x-hidden py-4 sm:py-6 pb-20 page-bottom-safe"
+    class="min-h-screen bg-gradient-to-br from-slate-950 via-purple-950 to-slate-950 text-white flex flex-col items-center justify-start px-3 sm:px-4 relative overflow-x-hidden py-4 sm:py-6 safe-bottom"
   >
     <!-- Background Icons Pattern -->
     <BackgroundIcons />
@@ -68,8 +68,8 @@
         </div>
       </div>
 
-      <!-- Action Buttons -->
-      <div class="flex flex-col items-center gap-2 sm:gap-3 md:gap-4 px-4 mb-3 sm:mb-4 md:mb-6">
+      <!-- Action Buttons: extra bottom margin so they sit above browser nav when scrolled -->
+      <div class="flex flex-col items-center gap-2 sm:gap-3 md:gap-4 px-4 mb-4 sm:mb-6 md:mb-8">
         <NuxtLink
           to="/setup"
           class="group relative bg-gradient-to-r from-purple-600 via-pink-600 to-purple-600 hover:from-purple-500 hover:via-pink-500 hover:to-purple-500 text-white px-6 sm:px-8 md:px-12 py-3 sm:py-4 md:py-5 rounded-full text-sm sm:text-base md:text-lg lg:text-xl xl:text-2xl font-black shadow-2xl hover:shadow-pink-600/50 transition-all duration-300 transform hover:scale-110 animate-pulse-slow border-2 md:border-4 border-pink-500/50 w-full max-w-md"

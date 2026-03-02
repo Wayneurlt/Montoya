@@ -375,18 +375,130 @@
       "sessionId": "mm8t2zee1aiju6qwl",
       "page": "app",
       "timestamp": 1772442589705
+    },
+    {
+      "id": "1772442606479-fj02w05",
+      "type": "page_view",
+      "userId": "mm8t2zedbb52kba47",
+      "sessionId": "mm8t2zee1aiju6qwl",
+      "page": "app",
+      "timestamp": 1772442606479
+    },
+    {
+      "id": "1772442625418-c20blwk",
+      "type": "page_view",
+      "userId": "mm8t2zedbb52kba47",
+      "sessionId": "mm8t2zee1aiju6qwl",
+      "page": "app",
+      "timestamp": 1772442625418
+    },
+    {
+      "id": "1772442638293-c2znx9y",
+      "type": "page_view",
+      "userId": "mm8t2zedbb52kba47",
+      "sessionId": "mm8t2zee1aiju6qwl",
+      "page": "app",
+      "timestamp": 1772442638293
+    },
+    {
+      "id": "1772442650825-ru7cayf",
+      "type": "page_view",
+      "userId": "mm8t2zedbb52kba47",
+      "sessionId": "mm8t2zee1aiju6qwl",
+      "page": "app",
+      "timestamp": 1772442650825
+    },
+    {
+      "id": "1772442659018-1q4ej0g",
+      "type": "page_view",
+      "userId": "mm8t2zedbb52kba47",
+      "sessionId": "mm8t2zee1aiju6qwl",
+      "page": "app",
+      "timestamp": 1772442659018
+    },
+    {
+      "id": "1772442669140-1u6jw6a",
+      "type": "page_view",
+      "userId": "mm8t2zedbb52kba47",
+      "sessionId": "mm8t2zee1aiju6qwl",
+      "page": "app",
+      "timestamp": 1772442669140
+    },
+    {
+      "id": "1772442681761-0zfs07w",
+      "type": "page_view",
+      "userId": "mm8t2zedbb52kba47",
+      "sessionId": "mm8t2zee1aiju6qwl",
+      "page": "app",
+      "timestamp": 1772442681761
+    },
+    {
+      "id": "1772442697195-q139iff",
+      "type": "page_view",
+      "userId": "mm8t2zedbb52kba47",
+      "sessionId": "mm8t2zee1aiju6qwl",
+      "page": "app",
+      "timestamp": 1772442697195
+    },
+    {
+      "id": "1772442707585-0ec9wri",
+      "type": "page_view",
+      "userId": "mm8t2zedbb52kba47",
+      "sessionId": "mm8t2zee1aiju6qwl",
+      "page": "app",
+      "timestamp": 1772442707585
+    },
+    {
+      "id": "1772442717151-5itrybs",
+      "type": "page_view",
+      "userId": "mm8t2zedbb52kba47",
+      "sessionId": "mm8t2zee1aiju6qwl",
+      "page": "app",
+      "timestamp": 1772442717151
+    },
+    {
+      "id": "1772442726396-tpvt2l8",
+      "type": "page_view",
+      "userId": "mm8t2zedbb52kba47",
+      "sessionId": "mm8t2zee1aiju6qwl",
+      "page": "app",
+      "timestamp": 1772442726396
+    },
+    {
+      "id": "1772442736121-dcjpkab",
+      "type": "page_view",
+      "userId": "mm8t2zedbb52kba47",
+      "sessionId": "mm8t2zee1aiju6qwl",
+      "page": "app",
+      "timestamp": 1772442736121
+    },
+    {
+      "id": "1772442759808-st9c8qh",
+      "type": "page_view",
+      "userId": "mm8t2zedbb52kba47",
+      "sessionId": "mm8t2zee1aiju6qwl",
+      "page": "app",
+      "timestamp": 1772442759808
+    },
+    {
+      "id": "1772442781632-6inhla0",
+      "type": "page_view",
+      "userId": "mm8t2zedbb52kba47",
+      "sessionId": "mm8t2zee1aiju6qwl",
+      "page": "app",
+      "timestamp": 1772442781632
     }
   ],
   "totals": {
-    "pageViews": 47,
+    "pageViews": 61,
     "gameSelections": {},
     "users": {
       "mee78ceez1ekgs72x": 1,
-      "mm8t2zedbb52kba47": 46
+      "mm8t2zedbb52kba47": 60
     },
     "sessions": {
       "mlytp48t4uw5vq9ry": 1,
-      "mm8t2zee1aiju6qwl": 46
+      "mm8t2zee1aiju6qwl": 60
     }
   }
 }
