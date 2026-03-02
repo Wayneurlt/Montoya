@@ -200,7 +200,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, onBeforeUnmount } from 'vue'
 import { useAdminAnalytics } from '~/composables/useAdminAnalytics'
 
 definePageMeta({ 
@@ -220,20 +220,21 @@ const allTimeUniqueUsers = computed(() =>
 // Prefer live socket stats; fall back to stats.realtime from API (e.g. after refresh)
 const effectiveRealtime = computed(() => realtimeStats.value ?? stats.value?.realtime ?? null)
 
-const fetchStats = async () => {
-  loading.value = true
+const fetchStats = async (silent = false) => {
+  if (!silent) loading.value = true
   try {
     stats.value = await $fetch('/api/analytics/stats')
-    // Refresh real-time stats
     if (fetchRealtimeStats) {
       await fetchRealtimeStats()
     }
   } catch (error) {
-    console.error('Failed to fetch stats:', error)
+    if (!silent) console.error('Failed to fetch stats:', error)
   } finally {
-    loading.value = false
+    if (!silent) loading.value = false
   }
 }
+
+let statsInterval: ReturnType<typeof setInterval> | null = null
 
 const maxGameCount = computed(() => {
   const vals = Object.values(stats.value?.popularGames || {}) as number[]
@@ -266,6 +267,12 @@ const exportJson = () => {
 
 onMounted(() => {
   fetchStats()
+  // Refresh all-time unique users and historical stats every 5 seconds
+  statsInterval = setInterval(() => fetchStats(true), 5000)
+})
+
+onBeforeUnmount(() => {
+  if (statsInterval) clearInterval(statsInterval)
 })
 </script>
 
