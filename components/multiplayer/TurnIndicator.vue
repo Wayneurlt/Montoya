@@ -1,19 +1,18 @@
 <template>
   <div
     v-if="currentPlayer"
-    class="bg-gradient-to-r from-purple-600/30 via-pink-600/30 to-purple-600/30 rounded-xl sm:rounded-2xl p-4 sm:p-5 mb-4 sm:mb-6 border-2 border-purple-500/50 shadow-lg shadow-purple-500/20 animate-pulse-slow"
+    class="rounded-xl sm:rounded-2xl p-4 sm:p-5 mb-4 sm:mb-6 border-2 border-pink-500/60 shadow-xl bg-gradient-to-r from-purple-700/50 via-pink-600/50 to-purple-700/50 backdrop-blur-sm animate-pulse-slow"
   >
     <div class="text-center">
-      <div class="text-xs sm:text-sm text-purple-200/80 mb-2 flex items-center justify-center gap-2">
+      <div class="text-xs sm:text-sm text-pink-200/90 mb-1 flex items-center justify-center gap-2">
         <Icon icon="mdi:account-star" class="w-4 h-4 sm:w-5 sm:h-5 animate-pulse" />
-        <span>It's</span>
+        <span>Current turn</span>
       </div>
-      <div class="text-xl sm:text-2xl md:text-3xl font-black flex items-center justify-center gap-3">
-        <span class="bg-gradient-to-r from-purple-300 via-pink-300 to-cyan-300 bg-clip-text text-transparent">
-          {{ currentPlayer.nickname }}'s
+      <div class="text-2xl sm:text-3xl md:text-4xl font-black flex items-center justify-center gap-2">
+        <span class="text-white drop-shadow-md">
+          {{ currentPlayer.nickname }}
         </span>
-        <span class="text-2xl sm:text-3xl md:text-4xl">{{ currentPlayer.gender === 'male' ? '♂' : currentPlayer.gender === 'female' ? '♀' : '⚧' }}</span>
-        <span class="text-lg sm:text-xl md:text-2xl text-purple-200">Turn</span>
+        <span class="text-lg sm:text-xl md:text-2xl text-pink-200">'s turn</span>
       </div>
     </div>
   </div>
@@ -25,7 +24,7 @@ import { Icon } from '@iconify/vue'
 interface Props {
   currentPlayer: {
     nickname: string
-    gender?: 'male' | 'female' | 'other'
+    socketId?: string
   } | null
 }
 

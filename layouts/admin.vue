@@ -64,7 +64,7 @@
           <div class="text-xs text-white/60">{{ user?.username || 'Admin' }}</div>
           <UButton 
             @click="handleLogout" 
-            color="red" 
+            color="error" 
             variant="ghost" 
             size="xs"
             :loading="loggingOut"
@@ -154,7 +154,7 @@ definePageMeta({
 const isSidebarOpen = ref(false)
 const route = useRoute()
 const router = useRouter()
-const user = ref(null)
+const user = ref<{ id: number; username: string; createdAt?: string } | null>(null)
 const loggingOut = ref(false)
 
 // Get current user info

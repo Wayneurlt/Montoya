@@ -131,7 +131,7 @@
           <div v-if="effectiveRealtime?.popularGames && Object.keys(effectiveRealtime.popularGames).length" class="space-y-3">
             <div v-for="(count, game) in effectiveRealtime.popularGames" :key="game" class="space-y-1">
               <div class="flex justify-between text-sm">
-                <span class="text-white/80 capitalize">{{ game.replace('-', ' ') }}</span>
+                <span class="text-white/80 capitalize">{{ String(game).replace('-', ' ') }}</span>
                 <span class="font-semibold">{{ count }}</span>
               </div>
               <div class="w-full h-2 bg-white/10 rounded-full overflow-hidden">
@@ -153,7 +153,7 @@
           <div v-if="stats && Object.keys(stats.popularGames || {}).length" class="space-y-3">
             <div v-for="(count, game) in stats.popularGames" :key="game" class="space-y-1">
               <div class="flex justify-between text-sm">
-                <span class="text-white/80 capitalize">{{ game.replace('-', ' ') }}</span>
+                <span class="text-white/80 capitalize">{{ String(game).replace('-', ' ') }}</span>
                 <span class="font-semibold">{{ count }}</span>
               </div>
               <div class="w-full h-2 bg-white/10 rounded-full overflow-hidden">

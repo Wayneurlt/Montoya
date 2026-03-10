@@ -21,6 +21,7 @@ export interface RoomState {
   currentGame: string | null
   gamePhase: 'lobby' | 'playing' | 'voting' | 'results'
   currentPrompt: any
+  nextUpPlayer?: { socketId: string; nickname: string } | null
 }
 
 export interface VoteData {
@@ -217,11 +218,33 @@ export const useMultiplayer = () => {
       currentGame: string | null
       gamePhase: 'lobby' | 'playing' | 'voting' | 'results'
       currentPrompt: any
+      nextUpPlayer?: { socketId: string; nickname: string } | null
     }) => {
       roomState.value.currentGame = data.currentGame
       roomState.value.gamePhase = data.gamePhase
       roomState.value.currentPrompt = data.currentPrompt
+      roomState.value.nextUpPlayer = data.nextUpPlayer ?? null
       console.log('🎮 Game state updated:', data)
+    })
+
+    // Private prompt delivery: only host + selected player receive the full question text.
+    socket.on('game:prompt:private', (prompt: any) => {
+      try {
+        const current = roomState.value.currentPrompt
+        if (!current || !prompt?.promptId) return
+        if (current.promptId !== prompt.promptId) return
+
+        // Merge the full prompt (including text) into local state for this client.
+        roomState.value.currentPrompt = {
+          ...current,
+          ...prompt,
+        }
+
+        // Acknowledge receipt so the room can "wait until player got it".
+        socket?.emit('game:prompt:received', { promptId: prompt.promptId })
+      } catch (e) {
+        console.error('Failed handling private prompt:', e)
+      }
     })
 
     socket.on('game:vote:update', (data: {
@@ -238,8 +261,9 @@ export const useMultiplayer = () => {
       playerName: string
       message: string
     }) => {
-      console.log('🔔 Ring notification:', data.message)
-      // Trigger visual/sound notification (handled in components)
+      // Only show notification to the host (event is broadcast to whole room)
+      if (!isHost.value) return
+      console.log('🔔 Ring notification (host):', data.message)
       if (typeof window !== 'undefined') {
         window.dispatchEvent(new CustomEvent('host-ring', { detail: data }))
       }

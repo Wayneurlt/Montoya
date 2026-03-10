@@ -58,8 +58,13 @@
       </p>
     </div>
 
-    <!-- Turn Indicator -->
-    <TurnIndicator :current-player="currentPlayer" />
+    <!-- Turn Indicator - always show when playing -->
+    <div v-if="roomState.gamePhase === 'playing'" class="mb-4 sm:mb-6">
+      <TurnIndicator v-if="currentPlayer" :current-player="currentPlayer" />
+      <div v-else class="bg-white/10 rounded-xl sm:rounded-2xl p-4 sm:p-5 border border-white/20 text-center">
+        <p class="text-white/70 text-sm sm:text-base">Waiting to see whose turn...</p>
+      </div>
+    </div>
     
     <!-- Target Player (if any) -->
     <div
@@ -68,15 +73,8 @@
     >
       <div class="text-center">
         <div class="text-xs sm:text-sm text-white/60 mb-1">Target</div>
-        <div class="text-lg sm:text-xl font-bold flex items-center justify-center gap-2">
-          <span>{{ targetPlayer.nickname }}</span>
-          <span v-if="targetPlayer.gender" class="text-xl sm:text-2xl">{{
-            targetPlayer.gender === "male"
-              ? "♂"
-              : targetPlayer.gender === "female"
-              ? "♀"
-              : "⚧"
-          }}</span>
+        <div class="text-lg sm:text-xl font-bold">
+          {{ targetPlayer.nickname }}
         </div>
       </div>
     </div>
@@ -253,7 +251,7 @@
           </span>
         </div>
 
-        <div class="flex gap-2 sm:gap-3 md:gap-4">
+        <div v-if="isHost" class="flex gap-2 sm:gap-3 md:gap-4">
           <button
             @click="completeAction"
             class="bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 px-3 sm:px-4 md:px-6 py-1.5 sm:py-2 rounded-lg font-medium flex items-center gap-1.5 sm:gap-2 text-xs sm:text-sm md:text-base"
@@ -269,6 +267,7 @@
             Failed
           </button>
         </div>
+        <p v-else class="text-white/60 text-sm">Waiting for host to mark Completed or Failed</p>
       </div>
     </div>
 
@@ -330,23 +329,23 @@
       <h3 class="font-bold mb-3 flex items-center gap-2">
         <Icon icon="mdi:account-group" class="w-5 h-5" />
         Players ({{ roomState.players.length }})
+        <span v-if="currentPlayer" class="text-purple-300 text-xs font-normal">— {{ currentPlayer.nickname }}'s turn</span>
       </h3>
       <div class="grid grid-cols-2 sm:grid-cols-3 gap-2">
         <div
           v-for="player in roomState.players"
           :key="player.socketId"
-          class="bg-white/5 rounded-lg p-2 text-center text-sm"
-          :class="{ 'ring-2 ring-purple-500': player.isHost }"
+          class="bg-white/5 rounded-lg p-2 text-center text-sm transition-all"
+          :class="{
+            'ring-2 ring-purple-500': player.isHost,
+            'ring-2 ring-pink-500 bg-pink-500/20 scale-105 shadow-lg shadow-pink-500/50': currentPlayer && player.socketId === currentPlayer.socketId,
+          }"
         >
-          {{ player.nickname }}
-          <span v-if="player.gender" class="text-xs">{{
-            player.gender === "male"
-              ? "♂"
-              : player.gender === "female"
-              ? "♀"
-              : "⚧"
-          }}</span>
-          <span v-if="player.isHost" class="text-xs text-purple-400">👑</span>
+          <div class="font-semibold">{{ player.nickname }}</div>
+          <div class="flex items-center justify-center gap-1 mt-1 flex-wrap">
+            <span v-if="player.isHost" class="text-xs text-purple-400">👑</span>
+            <span v-if="currentPlayer && player.socketId === currentPlayer.socketId" class="text-xs text-pink-400 animate-pulse font-medium">⭐ Their turn</span>
+          </div>
         </div>
       </div>
     </div>
@@ -432,16 +431,37 @@ const currentRoll = ref({ body: "", action: "" });
 const currentResult = ref("");
 const history = ref<any[]>([]);
 
-// Get current player - only use synced state, no random fallback
+// Who is up: from current prompt or server's nextUpPlayer (before host rolls)
 const currentPlayer = computed(() => {
-  // Only use the player from the synced prompt to ensure all devices show the same player
   if (props.roomState.currentPrompt?.player) {
     return props.roomState.currentPrompt.player;
   }
-
-  // Return null if no player is assigned yet (don't use random fallback)
+  const next = props.roomState.nextUpPlayer;
+  if (next) {
+    return { socketId: next.socketId, nickname: next.nickname };
+  }
   return null;
 });
+
+const lastTurnPlayerId = ref<string | null>(null);
+
+function getNextPlayerAfter(afterSocketId: string | null) {
+  const players = props.roomState.players;
+  if (!players?.length) return null;
+  const list = players.filter((p: any) => p.connected !== false).length ? players.filter((p: any) => p.connected !== false) : players;
+  if (!list.length) return null;
+  if (!afterSocketId) return { socketId: list[0].socketId, nickname: list[0].nickname, gender: list[0].gender };
+  const idx = list.findIndex((p: any) => p.socketId === afterSocketId);
+  if (idx === -1) return { socketId: list[0].socketId, nickname: list[0].nickname, gender: list[0].gender };
+  const next = list[(idx + 1) % list.length];
+  return { socketId: next.socketId, nickname: next.nickname, gender: next.gender };
+}
+
+function getPlayerForTurn() {
+  const players = props.roomState.players;
+  if (!players?.length) return null;
+  return getNextPlayerAfter(lastTurnPlayerId.value);
+}
 
 // Get host name
 const hostName = computed(() => {
@@ -545,10 +565,10 @@ const rollDice = async () => {
 
   currentResult.value = `${action} ${bodyPart}`;
 
-  const player = currentPlayer.value;
+  const player = getPlayerForTurn();
   const target = targetPlayer.value;
 
-  // Update game state
+  // Update game state (always send who must perform so all devices show same turn)
   props.multiplayer.nextRound({
     body: bodyPart,
     action: action,
@@ -607,10 +627,11 @@ const startTimer = (duration: number) => {
 
 const completeAction = () => {
   clearInterval(timer.value);
+  const current = props.roomState.currentPrompt?.player;
+  if (current?.socketId) lastTurnPlayerId.value = current.socketId;
   if (history.value.length > 0) {
     history.value[0].status = "completed";
   }
-  // Move to next turn
   props.multiplayer.nextRound(null);
   currentResult.value = "";
   specialEffect.value = "";
@@ -620,10 +641,11 @@ const completeAction = () => {
 
 const failAction = () => {
   clearInterval(timer.value);
+  const current = props.roomState.currentPrompt?.player;
+  if (current?.socketId) lastTurnPlayerId.value = current.socketId;
   if (history.value.length > 0) {
     history.value[0].status = "failed";
   }
-  // Move to next turn
   props.multiplayer.nextRound(null);
   currentResult.value = "";
   specialEffect.value = "";

@@ -88,12 +88,7 @@
           >
             <p class="text-sm sm:text-base font-medium flex items-center justify-center gap-2">
               <Icon icon="mdi:account-arrow-right" class="w-5 h-5 sm:w-6 sm:h-6" />
-              <span>
-                To: {{ currentCard.target.nickname }}
-                <span v-if="currentCard.target.gender" class="text-lg sm:text-xl">{{
-                  currentCard.target.gender === "male" ? "♂" : "♀"
-                }}</span>
-              </span>
+              To: {{ currentCard.target.nickname }}
             </p>
           </div>
 
@@ -135,9 +130,9 @@
         {{ isDrawing ? "Drawing..." : "Draw Card" }}
       </button>
       
-      <!-- Action Buttons (when card is revealed) -->
+      <!-- Action Buttons (Host only - when card is revealed) -->
       <div v-else-if="currentCard && cardFlipped" class="space-y-3 sm:space-y-4">
-        <div class="grid grid-cols-2 gap-3 sm:gap-4">
+        <div v-if="isHost" class="grid grid-cols-2 gap-3 sm:gap-4">
           <button
             @click="completeChallenge"
             class="group bg-gradient-to-r from-green-700 to-emerald-700 hover:from-green-600 hover:to-emerald-600 py-4 sm:py-5 rounded-xl sm:rounded-2xl font-black text-base sm:text-lg transition-all flex items-center justify-center gap-2 sm:gap-3 shadow-xl hover:shadow-green-600/50 border-2 border-green-500/30 hover:scale-105"
@@ -153,6 +148,7 @@
             Take Drink
           </button>
         </div>
+        <p v-else class="text-center text-white/60 text-sm">Waiting for host to mark Completed or Take Drink</p>
         <!-- Host: Skip Question Button -->
         <button
           v-if="isHost"
@@ -199,6 +195,7 @@
       <h3 class="font-bold mb-3 flex items-center gap-2 text-sm sm:text-base">
         <Icon icon="mdi:account-group" class="w-4 h-4 sm:w-5 sm:h-5" />
         Players ({{ roomState.players.length }})
+        <span v-if="currentPlayer" class="text-purple-300 text-xs font-normal">— {{ currentPlayer.nickname }}'s turn</span>
       </h3>
       <div class="grid grid-cols-2 sm:grid-cols-3 gap-2">
         <div
@@ -211,10 +208,9 @@
           }"
         >
           <div class="font-semibold">{{ player.nickname }}</div>
-          <div class="flex items-center justify-center gap-1 mt-1">
-            <span v-if="player.gender" class="text-xs">{{ player.gender === 'male' ? '♂' : player.gender === 'female' ? '♀' : '⚧' }}</span>
+          <div class="flex items-center justify-center gap-1 mt-1 flex-wrap">
             <span v-if="player.isHost" class="text-xs text-purple-400">👑</span>
-            <span v-if="currentPlayer && player.socketId === currentPlayer.socketId" class="text-xs text-pink-400 animate-pulse">⭐</span>
+            <span v-if="currentPlayer && player.socketId === currentPlayer.socketId" class="text-xs text-pink-400 animate-pulse font-medium">⭐ Their turn</span>
           </div>
         </div>
       </div>
@@ -278,16 +274,37 @@ const gameLevel = ref(1)
 // Question tracker
 let challengeTracker: any = null
 
-// Get current player - only use synced state, no random fallback
+// Who is up: from current prompt or server's nextUpPlayer (before host draws)
 const currentPlayer = computed(() => {
-  // Only use the player from the synced prompt to ensure all devices show the same player
   if (props.roomState.currentPrompt?.player) {
     return props.roomState.currentPrompt.player
   }
-  
-  // Return null if no player is assigned yet (don't use random fallback)
+  const next = props.roomState.nextUpPlayer
+  if (next) {
+    return { socketId: next.socketId, nickname: next.nickname }
+  }
   return null
 })
+
+const lastTurnPlayerId = ref<string | null>(null)
+
+function getNextPlayerAfter(afterSocketId: string | null) {
+  const players = props.roomState.players
+  if (!players?.length) return null
+  const list = players.filter((p: any) => p.connected !== false).length ? players.filter((p: any) => p.connected !== false) : players
+  if (!list.length) return null
+  if (!afterSocketId) return { socketId: list[0].socketId, nickname: list[0].nickname, gender: list[0].gender }
+  const idx = list.findIndex((p: any) => p.socketId === afterSocketId)
+  if (idx === -1) return { socketId: list[0].socketId, nickname: list[0].nickname, gender: list[0].gender }
+  const next = list[(idx + 1) % list.length]
+  return { socketId: next.socketId, nickname: next.nickname, gender: next.gender }
+}
+
+function getPlayerForTurn() {
+  const players = props.roomState.players
+  if (!players?.length) return null
+  return getNextPlayerAfter(lastTurnPlayerId.value)
+}
 
 // Get host name
 const hostName = computed(() => {
@@ -347,8 +364,8 @@ const getRandomChallenge = () => {
   return result.question
 }
 
-// Generate challenge
-const generateChallenge = () => {
+// Generate challenge (optionally exclude the player who will do the challenge)
+function generateChallenge(excludePlayer?: { socketId: string } | null) {
   const intensity = Math.min(
     Math.floor(Math.random() * 3) + 1 + Math.floor(gameLevel.value / 3),
     3
@@ -372,7 +389,7 @@ const generateChallenge = () => {
   }
 
   const players = props.roomState.players
-  const current = currentPlayer.value
+  const current = excludePlayer || currentPlayer.value
   const targets = players.filter((p: any) => p.socketId !== current?.socketId)
   const hasTarget = targets.length > 0 && Math.random() > 0.3
   const target = hasTarget ? targets[Math.floor(Math.random() * targets.length)] : null
@@ -398,12 +415,12 @@ const drawCard = () => {
   cardFlipped.value = false
 
   try {
-    const challenge = generateChallenge()
+    const player = getPlayerForTurn()
+    const challenge = generateChallenge(player)
     currentCard.value = challenge
     
-    const player = currentPlayer.value
     
-    // Update game state
+    // Update game state (always send who must do the challenge so all devices show same turn)
     props.multiplayer.nextRound({
       text: challenge.text,
       intensity: challenge.intensity,
@@ -489,19 +506,21 @@ const takeDrink = () => {
 const handleSkipQuestion = () => {
   if (!currentCard.value || !props.isHost) return
   clearInterval(hesitationTimer.value)
+  const current = props.roomState.currentPrompt?.player
+  if (current?.socketId) lastTurnPlayerId.value = current.socketId
   props.multiplayer.skipQuestion(null)
   currentCard.value = null
   cardFlipped.value = false
 }
 
 const nextTurn = () => {
+  const current = props.roomState.currentPrompt?.player
+  if (current?.socketId) lastTurnPlayerId.value = current.socketId
   currentCard.value = null
   cardFlipped.value = false
   hesitationPercent.value = 100
   hesitationTime.value = 15
   clearInterval(hesitationTimer.value)
-  
-  // Clear prompt to move to next turn
   props.multiplayer.nextRound(null)
 }
 

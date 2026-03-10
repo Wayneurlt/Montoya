@@ -23,8 +23,10 @@ type AnalyticsStore = {
   }
 }
 
-const DATA_DIR = path.join(process.cwd(), 'server', 'db')
+// Outside server/ so dev server doesn't reload on every analytics event
+const DATA_DIR = path.join(process.cwd(), '.data')
 const DATA_FILE = path.join(DATA_DIR, 'analytics.json')
+const OLD_DATA_FILE = path.join(process.cwd(), 'server', 'db', 'analytics.json')
 const MAX_EVENTS = 5000
 
 async function ensureStore(): Promise<AnalyticsStore> {
@@ -33,12 +35,20 @@ async function ensureStore(): Promise<AnalyticsStore> {
     const raw = await fs.readFile(DATA_FILE, 'utf-8')
     return JSON.parse(raw)
   } catch {
-    const initial: AnalyticsStore = {
-      events: [],
-      totals: { pageViews: 0, gameSelections: {}, users: {}, sessions: {} },
+    // One-time migration from old location
+    try {
+      const raw = await fs.readFile(OLD_DATA_FILE, 'utf-8')
+      const store = JSON.parse(raw)
+      await fs.writeFile(DATA_FILE, JSON.stringify(store, null, 2), 'utf-8')
+      return store
+    } catch {
+      const initial: AnalyticsStore = {
+        events: [],
+        totals: { pageViews: 0, gameSelections: {}, users: {}, sessions: {} },
+      }
+      await fs.writeFile(DATA_FILE, JSON.stringify(initial, null, 2), 'utf-8')
+      return initial
     }
-    await fs.writeFile(DATA_FILE, JSON.stringify(initial, null, 2), 'utf-8')
-    return initial
   }
 }
 

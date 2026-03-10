@@ -127,9 +127,19 @@
               </button>
               
               <!-- Helper messages -->
-              <div v-if="!isHost" class="text-center text-sm text-yellow-400">
-                <Icon icon="mdi:information" class="w-4 h-4 inline mr-1" />
-                Only the host can start the game
+              <div v-if="!isHost" class="text-center space-y-2">
+                <p class="text-sm text-yellow-400">
+                  <Icon icon="mdi:information" class="w-4 h-4 inline mr-1" />
+                  Only the host can start the game
+                </p>
+                <button
+                  @click="handleRingHost"
+                  :disabled="isRinging || ringHostCooldown > 0"
+                  class="inline-flex items-center gap-2 bg-gradient-to-r from-yellow-600/80 to-orange-600/80 hover:from-yellow-500 hover:to-orange-500 text-white px-4 py-2 rounded-lg font-semibold text-sm transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  <Icon icon="mdi:bell-ring" class="w-4 h-4" />
+                  {{ isRinging ? 'Ringing...' : ringHostCooldown > 0 ? `Ring Host (${ringHostCooldown}s)` : 'Ring Host' }}
+                </button>
               </div>
               <div v-else-if="!selectedGame" class="text-center text-sm text-yellow-400">
                 <Icon icon="mdi:information" class="w-4 h-4 inline mr-1" />
@@ -357,9 +367,11 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, watch } from 'vue'
+import { ref, computed, onMounted, onBeforeUnmount, watch } from 'vue'
 import { Icon } from '@iconify/vue'
+import { push } from 'notivue'
 import { useMultiplayer } from '~/composables/useMultiplayer'
+import { playRingSound, vibrateRing } from '~/composables/useRingSound'
 import { useGameStore } from '~/stores/game'
 
 const multiplayer = useMultiplayer()
@@ -379,7 +391,28 @@ const {
   leaveRoom,
   updateNickname,
   attemptAutoReconnect,
+  ringHost,
 } = multiplayer
+
+const isRinging = ref(false)
+const ringHostCooldown = ref(0)
+let ringCooldownTimer: ReturnType<typeof setInterval> | null = null
+
+const handleRingHost = () => {
+  if (isRinging.value || ringHostCooldown.value > 0) return
+  isRinging.value = true
+  ringHostCooldown.value = 10
+  ringHost()
+  setTimeout(() => { isRinging.value = false }, 1000)
+  if (ringCooldownTimer) clearInterval(ringCooldownTimer)
+  ringCooldownTimer = setInterval(() => {
+    ringHostCooldown.value--
+    if (ringHostCooldown.value <= 0 && ringCooldownTimer) {
+      clearInterval(ringCooldownTimer)
+      ringCooldownTimer = null
+    }
+  }, 1000)
+}
 
 // Form state
 const isCreating = ref(true)
@@ -618,9 +651,25 @@ watch(() => roomState.value.gamePhase, (newPhase) => {
   }
 })
 
+let hostRingHandler: ((e: Event) => void) | null = null
+
 onMounted(() => {
   connect()
-  
+
+  // Host ring: show toast + sound when a player rings (host is on lobby)
+  if (typeof window !== 'undefined') {
+    hostRingHandler = (event: Event) => {
+      const data = (event as CustomEvent<{ playerName: string; message: string }>).detail
+      vibrateRing()
+      playRingSound()
+      push.warning({ title: '🔔 Someone is waiting!', message: data.message, duration: 6000 })
+      if ('Notification' in window && Notification.permission === 'granted') {
+        new Notification('🔔 Players are waiting!', { body: data.message })
+      }
+    }
+    window.addEventListener('host-ring', hostRingHandler)
+  }
+
   // Watch for connection and auto-reconnect
   watch(isConnected, (connected) => {
     if (connected && typeof window !== 'undefined') {
@@ -648,6 +697,17 @@ onMounted(() => {
       }
     }
   }, { immediate: true })
+})
+
+onBeforeUnmount(() => {
+  if (ringCooldownTimer) {
+    clearInterval(ringCooldownTimer)
+    ringCooldownTimer = null
+  }
+  if (typeof window !== 'undefined' && hostRingHandler) {
+    window.removeEventListener('host-ring', hostRingHandler)
+    hostRingHandler = null
+  }
 })
 </script>
 

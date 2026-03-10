@@ -46,8 +46,13 @@
       <p class="text-purple-200/80 text-xs sm:text-sm font-medium">{{ roomState.answerVisibility === 'anonymous' ? 'Anonymous Mode' : 'Public Mode' }}</p>
     </div>
 
-    <!-- Turn Indicator -->
-    <TurnIndicator :current-player="currentPlayer" />
+    <!-- Turn Indicator - always show whose turn when playing -->
+    <div v-if="roomState.gamePhase === 'playing'" class="mb-4 sm:mb-6">
+      <TurnIndicator v-if="currentPlayer" :current-player="currentPlayer" />
+      <div v-else class="bg-white/10 rounded-xl sm:rounded-2xl p-4 sm:p-5 border border-white/20 text-center">
+        <p class="text-white/70 text-sm sm:text-base">Waiting to see whose turn...</p>
+      </div>
+    </div>
 
     <!-- Intensity Toggle (Host Only) -->
     <div v-if="isHost" class="mb-4 sm:mb-5 md:mb-6">
@@ -82,7 +87,7 @@
     </div>
 
     <!-- Current Card Display -->
-    <div v-if="roomState.currentPrompt && cardFlipped" class="mb-4 sm:mb-6">
+    <div v-if="roomState.currentPrompt && roomState.currentPrompt.text && cardFlipped" class="mb-4 sm:mb-6">
       <div class="bg-white/10 backdrop-blur-md rounded-xl sm:rounded-2xl p-4 sm:p-6 md:p-8 lg:p-10 border border-white/20 shadow-2xl">
         <div class="text-center">
           <!-- Type Badge -->
@@ -106,14 +111,13 @@
             <p class="text-xs sm:text-sm md:text-base font-medium flex items-center justify-center gap-1.5 sm:gap-2">
               <Icon icon="mdi:account-arrow-right" class="w-4 h-4 sm:w-5 sm:h-5" />
               To: {{ roomState.currentPrompt.target.nickname }}
-              <span v-if="roomState.currentPrompt.target.gender" class="text-lg sm:text-xl">{{ roomState.currentPrompt.target.gender === 'male' ? '♂' : roomState.currentPrompt.target.gender === 'female' ? '♀' : '⚧' }}</span>
             </p>
           </div>
         </div>
       </div>
 
       <!-- Hesitation Timer -->
-      <div v-if="roomState.currentPrompt && cardFlipped" class="mb-4 sm:mb-6 bg-white/5 rounded-lg sm:rounded-xl p-3 sm:p-4">
+      <div v-if="roomState.currentPrompt && roomState.currentPrompt.text && cardFlipped" class="mb-4 sm:mb-6 bg-white/5 rounded-lg sm:rounded-xl p-3 sm:p-4">
         <div class="flex justify-between items-center mb-2">
           <div class="flex items-center gap-2">
             <Icon icon="mdi:timer-sand" class="w-4 h-4 sm:w-5 sm:h-5 text-pink-300" />
@@ -134,8 +138,8 @@
         </div>
       </div>
 
-      <!-- Action Buttons (All Players) -->
-      <div v-if="roomState.currentPrompt && cardFlipped" class="grid grid-cols-2 gap-3 sm:gap-4 mb-4 sm:mb-6">
+      <!-- Action Buttons (Host only - host marks completed/failed) -->
+      <div v-if="roomState.currentPrompt && roomState.currentPrompt.text && cardFlipped && isHost" class="grid grid-cols-2 gap-3 sm:gap-4 mb-4 sm:mb-6">
         <button
           @click="completeChallenge"
           class="group bg-gradient-to-r from-green-700 to-emerald-700 hover:from-green-600 hover:to-emerald-600 py-3 sm:py-4 rounded-xl sm:rounded-2xl font-black text-sm sm:text-base md:text-lg transition-all flex items-center justify-center gap-2 sm:gap-3 shadow-xl hover:shadow-green-600/50 border-2 border-green-500/30 hover:scale-105"
@@ -151,18 +155,21 @@
           Failed
         </button>
       </div>
+      <p v-else-if="roomState.currentPrompt && roomState.currentPrompt.text && cardFlipped && !isHost" class="text-center text-white/60 text-sm mb-4">
+        Waiting for host to mark as Completed or Failed
+      </p>
     </div>
 
     <!-- Waiting for Host -->
     <WaitingForHost
-      v-else-if="!roomState.currentPrompt && roomState.gamePhase === 'playing' && !isHost"
+      v-else-if="roomState.gamePhase === 'playing' && (!roomState.currentPrompt || !roomState.currentPrompt.text) && !isHost"
       :host-name="hostName"
       :multiplayer="props.multiplayer"
     />
-    <div v-else-if="!roomState.currentPrompt && isHost" class="bg-white/10 backdrop-blur-md rounded-2xl p-8 mb-6 border border-white/20 text-center">
+    <div v-else-if="roomState.gamePhase === 'playing' && (!roomState.currentPrompt || !roomState.currentPrompt.text) && isHost" class="bg-white/10 backdrop-blur-md rounded-2xl p-8 mb-6 border border-white/20 text-center">
       <div class="animate-pulse">
         <Icon icon="mdi:cards" class="w-16 h-16 mx-auto mb-4 text-purple-400" />
-        <p class="text-xl font-semibold">Draw a card to start!</p>
+        <p class="text-xl font-semibold">{{ roomState.currentPrompt?.player?.nickname ? `Waiting for ${roomState.currentPrompt.player.nickname} to receive their question...` : 'Draw a card to start!' }}</p>
       </div>
     </div>
 
@@ -216,6 +223,7 @@
       <h3 class="font-bold mb-2 sm:mb-3 text-sm sm:text-base flex items-center gap-2">
         <Icon icon="mdi:account-group" class="w-4 h-4 sm:w-5 sm:h-5" />
         Players ({{ roomState.players.length }})
+        <span v-if="currentPlayer" class="text-purple-300 text-xs font-normal">— {{ currentPlayer.nickname }}'s turn</span>
       </h3>
       <div class="grid grid-cols-2 sm:grid-cols-3 gap-1.5 sm:gap-2">
         <div
@@ -228,10 +236,9 @@
           }"
         >
           <div class="font-semibold">{{ player.nickname }}</div>
-          <div class="flex items-center justify-center gap-1 mt-1">
-            <span v-if="player.gender" class="text-xs">{{ player.gender === 'male' ? '♂' : player.gender === 'female' ? '♀' : '⚧' }}</span>
+          <div class="flex items-center justify-center gap-1 mt-1 flex-wrap">
             <span v-if="player.isHost" class="text-xs text-purple-400">👑</span>
-            <span v-if="currentPlayer && player.socketId === currentPlayer.socketId" class="text-xs text-pink-400 animate-pulse">⭐</span>
+            <span v-if="currentPlayer && player.socketId === currentPlayer.socketId" class="text-xs text-pink-400 animate-pulse font-medium">⭐ Their turn</span>
           </div>
         </div>
       </div>
@@ -381,16 +388,40 @@ const getRandomQuestion = (type: 'TRUTH' | 'DARE') => {
   return result.question
 }
 
-// Get current player from prompt - only use synced state, no random fallback
+// Who is up now: from current card, or from server's nextUpPlayer (before host draws)
 const currentPlayer = computed(() => {
-  // Only use the player from the synced prompt to ensure all devices show the same player
   if (props.roomState.currentPrompt?.player) {
     return props.roomState.currentPrompt.player
   }
-  
-  // Return null if no player is assigned yet (don't use random fallback)
+  const next = props.roomState.nextUpPlayer
+  if (next) {
+    return { socketId: next.socketId, nickname: next.nickname }
+  }
   return null
 })
+
+// Track who just had their turn so we advance to the next player
+const lastTurnPlayerId = ref<string | null>(null)
+
+// Return the player after the given socketId in the list (round-robin), or first if not found
+function getNextPlayerAfter(afterSocketId: string | null): { socketId: string; nickname: string; gender?: string } | null {
+  const players = props.roomState.players
+  if (!players?.length) return null
+  const list = players.filter((p: any) => p.connected !== false).length ? players.filter((p: any) => p.connected !== false) : players
+  if (!list.length) return null
+  if (!afterSocketId) return { socketId: list[0].socketId, nickname: list[0].nickname, gender: list[0].gender }
+  const idx = list.findIndex((p: any) => p.socketId === afterSocketId)
+  if (idx === -1) return { socketId: list[0].socketId, nickname: list[0].nickname, gender: list[0].gender }
+  const next = list[(idx + 1) % list.length]
+  return { socketId: next.socketId, nickname: next.nickname, gender: next.gender }
+}
+
+// Who should do the next turn (for assigning when host draws a new card)
+function getPlayerForTurn(): { socketId: string; nickname: string; gender?: string } | null {
+  const players = props.roomState.players
+  if (!players?.length) return null
+  return getNextPlayerAfter(lastTurnPlayerId.value)
+}
 
 // Get host name
 const hostName = computed(() => {
@@ -398,17 +429,13 @@ const hostName = computed(() => {
   return host?.nickname || 'Host'
 })
 
-// Get random target player (for Dares)
-const getRandomTarget = () => {
+// Get random target player (for Dares), excluding the given player for this turn
+function getRandomTarget(forPlayer: { socketId: string } | null) {
   const players = props.roomState.players
   if (!players || players.length <= 1) return null
-  
-  // Get a random player that's not the current player
-  const current = currentPlayer.value
+  const current = forPlayer || currentPlayer.value
   const otherPlayers = players.filter((p: any) => p.socketId !== current?.socketId)
-  
   if (otherPlayers.length === 0) return null
-  
   const randomIndex = Math.floor(Math.random() * otherPlayers.length)
   return otherPlayers[randomIndex]
 }
@@ -422,14 +449,16 @@ const drawCard = async (type: 'TRUTH' | 'DARE') => {
   
   const content = getRandomQuestion(type)
   const player = currentPlayer.value
+    ? { socketId: currentPlayer.value.socketId, nickname: currentPlayer.value.nickname, gender: (props.roomState.players.find((p: any) => p.socketId === currentPlayer.value?.socketId) as any)?.gender }
+    : getPlayerForTurn()
   
-  // For Dares, optionally assign a target player
+  // For Dares, optionally assign a target player (different from who does the dare)
   let target = null
   if (type === 'DARE' && props.roomState.players.length > 1) {
-    target = getRandomTarget()
+    target = getRandomTarget(player)
   }
   
-  // Update game state with player assignment
+  // Update game state with player assignment (always send who must answer/do the dare)
   props.multiplayer.nextRound({
     type: type,
     text: content,
@@ -461,9 +490,9 @@ const drawRandomCard = async () => {
 // Complete challenge - move to next player
 const completeChallenge = () => {
   if (!props.roomState.currentPrompt) return
+  const current = props.roomState.currentPrompt.player
+  if (current?.socketId) lastTurnPlayerId.value = current.socketId
   resetHesitationTimer()
-  
-  // Clear current prompt to move to next turn
   props.multiplayer.nextRound(null)
   cardFlipped.value = false
 }
@@ -471,9 +500,9 @@ const completeChallenge = () => {
 // Fail challenge - move to next player
 const failChallenge = () => {
   if (!props.roomState.currentPrompt) return
+  const current = props.roomState.currentPrompt.player
+  if (current?.socketId) lastTurnPlayerId.value = current.socketId
   resetHesitationTimer()
-  
-  // Clear current prompt to move to next turn
   props.multiplayer.nextRound(null)
   cardFlipped.value = false
 }
@@ -481,8 +510,8 @@ const failChallenge = () => {
 // Skip question
 const handleSkipQuestion = () => {
   if (!props.roomState.currentPrompt || !props.isHost) return
-  
-  // Clear current prompt to move to next turn
+  const current = props.roomState.currentPrompt.player
+  if (current?.socketId) lastTurnPlayerId.value = current.socketId
   props.multiplayer.skipQuestion(null)
   cardFlipped.value = false
 }
