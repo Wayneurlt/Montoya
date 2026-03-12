@@ -33,9 +33,19 @@
       <!-- Error Message -->
       <transition name="fade">
         <div v-if="displayError" class="mb-6 bg-red-500/20 border-2 border-red-500/50 rounded-xl p-4 backdrop-blur-md">
-          <div class="flex items-center gap-2">
-            <Icon icon="mdi:alert-circle" class="w-6 h-6 text-red-400" />
-            <p class="text-red-200 font-semibold">{{ displayError }}</p>
+          <div class="flex items-center justify-between gap-2">
+            <div class="flex items-center gap-2 min-w-0">
+              <Icon icon="mdi:alert-circle" class="w-6 h-6 text-red-400 shrink-0" />
+              <p class="text-red-200 font-semibold">{{ displayError }}</p>
+            </div>
+            <button
+              type="button"
+              @click="localError = null; clearError()"
+              class="shrink-0 p-1 rounded-lg hover:bg-red-500/30 text-red-300 transition-colors"
+              aria-label="Dismiss"
+            >
+              <Icon icon="mdi:close" class="w-5 h-5" />
+            </button>
           </div>
         </div>
       </transition>
@@ -299,7 +309,7 @@
                 placeholder="ABCD12"
                 maxlength="6"
                 class="w-full bg-white/5 border border-white/20 rounded-lg px-4 py-3 text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-purple-500 text-center text-2xl font-black tracking-widest uppercase"
-                @input="joinForm.roomCode = joinForm.roomCode.toUpperCase().replace(/[^A-Z0-9]/g, '')"
+                @input="joinForm.roomCode = joinForm.roomCode.toUpperCase().replace(/[^A-Z0-9]/g, ''); localError = null; clearError()"
               />
             </div>
             <div>
@@ -392,6 +402,7 @@ const {
   updateNickname,
   attemptAutoReconnect,
   ringHost,
+  clearError,
 } = multiplayer
 
 const isRinging = ref(false)

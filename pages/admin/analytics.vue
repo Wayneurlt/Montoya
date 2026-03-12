@@ -122,16 +122,21 @@
     </div>
 
       <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6 mb-6">
-        <!-- Popular Games (Real-time) -->
+        <!-- Popular Games (Live or recent fallback) -->
         <div class="bg-white/10 border border-white/10 rounded-xl p-4 sm:p-5">
           <div class="flex items-center justify-between mb-4">
             <h2 class="text-lg sm:text-xl font-semibold">Popular Games (Live)</h2>
-            <div v-if="isConnected" class="w-2 h-2 bg-green-400 rounded-full animate-pulse" title="Live"></div>
+            <div class="flex items-center gap-2">
+              <span v-if="liveGamesSource === 'live'" class="text-xs text-green-400 font-medium flex items-center gap-1">
+                <span class="w-2 h-2 bg-green-400 rounded-full animate-pulse"></span> Live
+              </span>
+              <span v-else-if="liveGamesSource === 'recent'" class="text-xs text-amber-400/90">Last 15 min</span>
+            </div>
           </div>
-          <div v-if="effectiveRealtime?.popularGames && Object.keys(effectiveRealtime.popularGames).length" class="space-y-3">
-            <div v-for="(count, game) in effectiveRealtime.popularGames" :key="game" class="space-y-1">
+          <div v-if="popularGamesForLive && Object.keys(popularGamesForLive).length" class="space-y-3">
+            <div v-for="(count, game) in popularGamesForLive" :key="game" class="space-y-1">
               <div class="flex justify-between text-sm">
-                <span class="text-white/80 capitalize">{{ String(game).replace('-', ' ') }}</span>
+                <span class="text-white/80 capitalize">{{ String(game).replace(/-/g, ' ') }}</span>
                 <span class="font-semibold">{{ count }}</span>
               </div>
               <div class="w-full h-2 bg-white/10 rounded-full overflow-hidden">
@@ -142,7 +147,10 @@
               </div>
             </div>
           </div>
-          <div v-else class="text-white/60 text-sm text-center py-4">No active games</div>
+          <div v-else class="text-white/60 text-sm text-center py-4">
+            <p>No active games right now.</p>
+            <p class="text-white/50 text-xs mt-1">Open the site in another tab to see live counts, or refresh after visitors load game pages.</p>
+          </div>
         </div>
 
         <!-- Popular Games (Historical) -->
@@ -189,6 +197,71 @@
         </div>
       </div>
 
+    <!-- Day-by-day comparison -->
+    <div class="mb-6 p-4 sm:p-6 bg-white/10 border border-white/10 rounded-xl">
+      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-4">
+        <div>
+          <h2 class="text-lg sm:text-xl font-semibold">Daily comparison</h2>
+          <p class="text-white/60 text-sm mt-1">Users and game performance by day for analysis</p>
+        </div>
+        <div class="flex items-center gap-2">
+          <span class="text-white/60 text-sm">Last</span>
+          <select
+            v-model.number="dailyDays"
+            @change="fetchDaily"
+            :disabled="dailyLoading"
+            class="rounded-lg bg-white/10 border border-white/20 text-white px-3 py-2 text-sm focus:ring-2 focus:ring-violet-400 focus:border-transparent disabled:opacity-50"
+          >
+            <option :value="7">7 days</option>
+            <option :value="30">30 days</option>
+            <option :value="90">90 days</option>
+          </select>
+          <button
+            v-if="dailyLoading"
+            class="p-2 text-white/60"
+            disabled
+          >
+            <Icon name="mdi:loading" class="w-4 h-4 animate-spin" />
+          </button>
+          <button
+            v-else-if="dailyError || dailyData?.error"
+            @click="fetchDaily"
+            class="px-3 py-2 rounded-lg bg-amber-500/20 border border-amber-500/40 text-amber-200 text-sm font-medium hover:bg-amber-500/30"
+          >
+            Retry
+          </button>
+        </div>
+      </div>
+      <p v-if="dailyError || dailyData?.error" class="text-amber-200/90 text-sm mb-3">{{ dailyError || dailyData?.error }}</p>
+      <div class="overflow-x-auto -mx-2">
+        <table class="w-full min-w-[640px] text-sm">
+          <thead>
+            <tr class="text-left text-white/70 border-b border-white/20">
+              <th class="pb-2 pr-4 font-semibold">Date</th>
+              <th class="pb-2 pr-4 font-semibold text-right">Users</th>
+              <th class="pb-2 pr-4 font-semibold text-right">Page views</th>
+              <th v-for="slug in dailyGameColumns" :key="slug" class="pb-2 pr-4 font-semibold text-right capitalize">{{ slug.replace(/-/g, ' ') }}</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr
+              v-for="row in dailyRowsReversed"
+              :key="row.date"
+              class="border-b border-white/10 hover:bg-white/5"
+            >
+              <td class="py-2 pr-4 text-white/90">{{ formatDailyDate(row.date) }}</td>
+              <td class="py-2 pr-4 text-right text-amber-300 font-medium">{{ row.uniqueUsers }}</td>
+              <td class="py-2 pr-4 text-right text-white/80">{{ row.pageViews }}</td>
+              <td v-for="slug in dailyGameColumns" :key="slug" class="py-2 pr-4 text-right text-white/70">{{ row.games && row.games[slug] != null ? row.games[slug] : '—' }}</td>
+            </tr>
+            <tr v-if="!dailyRowsReversed.length && !dailyLoading" class="text-white/60 text-center py-6">
+              <td :colspan="3 + dailyGameColumns.length">No daily data yet</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
       <!-- Actions -->
       <div class="flex flex-col sm:flex-row gap-3">
         <button 
@@ -227,6 +300,11 @@ const backgroundRefreshing = ref(false)
 const lastUpdated = ref<string | null>(null)
 const statsError = ref<string | null>(null)
 
+const dailyData = ref<{ days: { date: string; uniqueUsers: number; pageViews: number; games: Record<string, number> }[]; gameSlugs: string[]; error?: string } | null>(null)
+const dailyLoading = ref(false)
+const dailyError = ref<string | null>(null)
+const dailyDays = ref(30)
+
 // All-time unique users: from stored analytics (DB or file backup). Always available.
 const allTimeUniqueUsers = computed(() =>
   stats.value?.allTimeUniqueUsers ?? stats.value?.totalUsers ?? 0
@@ -234,6 +312,21 @@ const allTimeUniqueUsers = computed(() =>
 
 // Prefer live socket stats; fall back to stats.realtime from API (e.g. after refresh)
 const effectiveRealtime = computed(() => realtimeStats.value ?? stats.value?.realtime ?? null)
+
+// Popular Games (Live): use socket data when present, else fall back to recent 15-min activity from API
+const popularGamesForLive = computed(() => {
+  const live = effectiveRealtime.value?.popularGames
+  if (live && Object.keys(live).length > 0) return live
+  const recent = stats.value?.recentGameActivity
+  if (recent && Object.keys(recent).length > 0) return recent
+  return null
+})
+const liveGamesSource = computed(() => {
+  const live = effectiveRealtime.value?.popularGames
+  if (live && Object.keys(live).length > 0) return 'live'
+  if (stats.value?.recentGameActivity && Object.keys(stats.value.recentGameActivity).length > 0) return 'recent'
+  return null
+})
 
 const fetchStats = async (silent = false) => {
   if (silent) backgroundRefreshing.value = true
@@ -265,12 +358,48 @@ const maxGameCount = computed(() => {
 })
 
 const maxRealtimeGameCount = computed(() => {
-  const vals = Object.values(effectiveRealtime.value?.popularGames || {}) as number[]
+  const source = popularGamesForLive.value
+  const vals = source ? (Object.values(source) as number[]) : []
   return Math.max(1, ...(vals.length ? vals : [1]))
 })
 
+const fetchDaily = async () => {
+  dailyLoading.value = true
+  dailyError.value = null
+  try {
+    const res = await $fetch<{ days: unknown[]; gameSlugs: string[]; error?: string }>('/api/analytics/daily', { query: { days: dailyDays.value } })
+    dailyData.value = res && Array.isArray(res.days) ? { days: res.days as any, gameSlugs: Array.isArray(res.gameSlugs) ? res.gameSlugs : [], error: res.error } : { days: [], gameSlugs: [], error: res?.error }
+  } catch (e: any) {
+    console.error('Failed to fetch daily analytics:', e)
+    dailyError.value = e?.data?.message || e?.message || 'Failed to load daily data'
+    dailyData.value = null
+  } finally {
+    dailyLoading.value = false
+  }
+}
+
+const dailyGameColumns = computed(() => {
+  if (!dailyData.value?.gameSlugs?.length) return []
+  const fromSlugs = dailyData.value.gameSlugs
+  const fromRows = new Set<string>()
+  dailyData.value.days?.forEach(d => Object.keys(d.games || {}).forEach(g => fromRows.add(g)))
+  return [...new Set([...fromSlugs, ...fromRows])]
+})
+
+const dailyRowsReversed = computed(() => {
+  const days = dailyData.value?.days
+  if (!days?.length) return []
+  return [...days].reverse()
+})
+
+function formatDailyDate(iso: string) {
+  const d = new Date(iso + 'T00:00:00')
+  return d.toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric', year: d.getFullYear() !== new Date().getFullYear() ? 'numeric' : undefined })
+}
+
 const refresh = () => {
   fetchStats()
+  fetchDaily()
 }
 
 const exportJson = () => {
@@ -290,6 +419,7 @@ const exportJson = () => {
 
 onMounted(() => {
   fetchStats()
+  fetchDaily()
   // Refresh all-time unique users and historical stats every 5 seconds
   statsInterval = setInterval(() => fetchStats(true), 5000)
 })

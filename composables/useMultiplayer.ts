@@ -279,7 +279,10 @@ export const useMultiplayer = () => {
     })
 
     socket.on('room:error', (data: { message: string }) => {
-      error.value = data.message
+      const msg = data.message === 'Room not found'
+        ? "That room code doesn't exist. Double-check the code with the host or create your own room."
+        : data.message
+      error.value = msg
       console.error('❌ Room error:', data.message)
     })
 
@@ -427,6 +430,11 @@ export const useMultiplayer = () => {
     }
   }
 
+  // Clear the last room error (e.g. when user edits form or switches tab)
+  const clearError = () => {
+    error.value = null
+  }
+
   // Auto-reconnect helper - call this after socket connects
   const attemptAutoReconnect = () => {
     if (typeof window !== 'undefined' && isConnected.value && !roomState.value.roomCode) {
@@ -472,6 +480,7 @@ export const useMultiplayer = () => {
     endGame,
     leaveRoom,
     ringHost,
+    clearError,
     attemptAutoReconnect,
     socket, // Export socket for analytics
   }

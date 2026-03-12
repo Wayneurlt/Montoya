@@ -12,6 +12,8 @@
 
 <script setup lang="ts">
 import { useAnalytics } from '~/composables/useAnalytics'
+import { useMultiplayer } from '~/composables/useMultiplayer'
+
 const { trackPageView } = useAnalytics()
 
 function shouldBlurActiveInput(target: EventTarget | null): boolean {
@@ -34,6 +36,8 @@ function handleDismissKeyboard(e: Event) {
 }
 
 onMounted(() => {
+  // Connect socket early so analytics:page-view is sent from every page (Popular Games Live)
+  useMultiplayer().connect()
   console.log(window.innerHeight, window.innerWidth)
   trackPageView('app')
 

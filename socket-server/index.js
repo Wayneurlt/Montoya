@@ -548,6 +548,41 @@ io.on('connection', (socket) => {
     }
   })
 
+  // Ring host - notify host that players are waiting
+  socket.on('room:ring-host', () => {
+    try {
+      const room = findRoomBySocketId(socket.id)
+      if (!room) {
+        socket.emit('room:error', { message: 'Not in a room' })
+        return
+      }
+
+      const player = room.players.get(socket.id)
+      if (!player) {
+        socket.emit('room:error', { message: 'Player not found' })
+        return
+      }
+
+      if (room.gamePhase === 'playing' || room.gamePhase === 'voting' || room.gamePhase === 'results') {
+        return
+      }
+
+      const now = Date.now()
+      if (!player.lastRingTime) player.lastRingTime = 0
+      if (now - player.lastRingTime < 10000) return
+      player.lastRingTime = now
+
+      const payload = {
+        playerName: player.nickname,
+        message: `${player.nickname} is waiting for you to start the game`,
+      }
+      io.to(room.roomId).emit('ring:notify', payload)
+      console.log(`🔔 ${player.nickname} rang host in room ${room.roomCode}`)
+    } catch (error) {
+      console.error('❌ Error ringing host:', error)
+    }
+  })
+
   // Leave room
   socket.on('room:leave', () => {
     try {

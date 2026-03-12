@@ -180,15 +180,18 @@ export const useAnalytics = () => {
       page: pageName,
     })
 
-    // Also send to Socket.IO for real-time tracking when in multiplayer flow
+    // Also send to Socket.IO for real-time tracking (Popular Games Live)
     try {
       const { socket } = useMultiplayer()
-      if (socket && typeof socket.emit === 'function' && socket.connected) {
-        socket.emit('analytics:page-view', {
-          page: pageName,
-          userId,
-          sessionId,
-        })
+      if (socket && typeof socket.emit === 'function') {
+        const payload = { page: pageName, userId, sessionId }
+        if (socket.connected) {
+          socket.emit('analytics:page-view', payload)
+        } else {
+          socket.once('connect', () => {
+            socket.emit('analytics:page-view', payload)
+          })
+        }
       }
     } catch {
       // Socket not available; API is source of truth

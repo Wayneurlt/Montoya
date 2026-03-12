@@ -3,6 +3,11 @@ import { requireAdmin } from '~/server/utils/adminAuth'
 import { realtimeAnalytics } from '~/server/utils/realtimeAnalytics'
 import { getStats as getFileStats } from '~/server/utils/analyticsStore'
 
+const RECENT_GAME_PAGE_SLUGS = [
+  'truth-or-dare', 'would-you-rather', 'most-likely-to', 'never-have-i-ever',
+  'charades', 'imposter', 'mr-white',
+] as const
+
 function getRealtimePayload() {
   const realtimeStats = realtimeAnalytics.getStats()
   const peakUsers = realtimeAnalytics.getPeakUsers()
@@ -91,6 +96,20 @@ export default defineEventHandler(async (event) => {
     })
     const activePlayers = activePlayersResult.length
 
+    const fifteenMinAgo = new Date(Date.now() - 15 * 60 * 1000)
+    const recentGameEvents = await prisma.analytics.findMany({
+      where: {
+        timestamp: { gte: fifteenMinAgo },
+        eventType: 'page_view',
+        page: { in: [...RECENT_GAME_PAGE_SLUGS] },
+      },
+      select: { page: true },
+    })
+    const recentGameActivity: Record<string, number> = {}
+    recentGameEvents.forEach(ev => {
+      if (ev.page) recentGameActivity[ev.page] = (recentGameActivity[ev.page] || 0) + 1
+    })
+
     return {
       totalAnalytics,
       pageViews,
@@ -104,6 +123,7 @@ export default defineEventHandler(async (event) => {
       popularGames,
       recentEvents: recentEvents.map(ev => ({ ...ev, type: ev.eventType })),
       realtime,
+      recentGameActivity,
       dbAvailable: true,
       lastUpdated: new Date().toISOString()
     }
@@ -134,6 +154,7 @@ export default defineEventHandler(async (event) => {
         popularGames: fileStats.popularGames || realtime.popularGames,
         recentEvents,
         realtime,
+        recentGameActivity: {},
         dbAvailable: false
       }
     } catch (fileErr) {
@@ -151,6 +172,7 @@ export default defineEventHandler(async (event) => {
         popularGames: realtime.popularGames,
         recentEvents: [],
         realtime,
+        recentGameActivity: {},
         dbAvailable: false,
         lastUpdated: new Date().toISOString()
       }

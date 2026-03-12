@@ -922,12 +922,21 @@ export default defineNitroPlugin((nitroApp) => {
       }
     })
 
+    // Known game page slugs – treat as "current game" for Popular Games (Live)
+    const GAME_PAGE_SLUGS = new Set([
+      'truth-or-dare', 'would-you-rather', 'most-likely-to', 'never-have-i-ever',
+      'charades', 'imposter', 'mr-white',
+    ])
     // Track page views and navigation
     socket.on('analytics:page-view', (data: { page: string, userId?: string, sessionId?: string }) => {
+      const page = data.page || 'unknown'
+      const isGamePage = GAME_PAGE_SLUGS.has(page)
       realtimeAnalytics.updateUserActivity(socket.id, {
-        page: data.page,
+        page,
         userId: data.userId || null,
         sessionId: data.sessionId || null,
+        // Set game for Live when on a game page; don't clear on non-game so multiplayer room state persists
+        ...(isGamePage ? { isInGame: true, currentGame: page } : {}),
       })
     })
 
