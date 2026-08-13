@@ -419,7 +419,6 @@ const history = ref([]);
 
 // Load players from game store
 const players = computed(() => gameStore.players);
-const currentPlayerIndex = ref(gameStore.currentPlayerIndex || 0);
 
 // Set game mode from store
 watch(() => gameStore.gameMode, (newMode) => {
@@ -429,9 +428,7 @@ watch(() => gameStore.gameMode, (newMode) => {
 }, { immediate: true });
 
 // Computed Properties
-const currentPlayer = computed(
-  () => players.value[currentPlayerIndex.value] || {}
-);
+const currentPlayer = computed(() => gameStore.currentPlayer || {});
 const targetPlayer = computed(() => {
   if (players.value.length === 0) return {};
 
@@ -594,9 +591,7 @@ const startTimer = (duration) => {
 };
 
 const switchRoles = () => {
-  currentPlayerIndex.value =
-    (currentPlayerIndex.value + 1) % players.value.length;
-  gameStore.currentPlayerIndex = currentPlayerIndex.value;
+  gameStore.nextTurn();
 };
 
 const nextTurn = () => {

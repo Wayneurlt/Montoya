@@ -1,42 +1,12 @@
 <template>
   <div class="max-w-3xl mx-auto relative z-10 pt-2 sm:pt-4 md:pt-6 lg:pt-8 pb-4 sm:pb-6">
     <!-- Header -->
-    <div class="flex justify-between items-center mb-6">
-      <button
-        @click="handleBackToLobby"
-        class="bg-white/10 hover:bg-white/20 backdrop-blur-md px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg transition-all flex items-center gap-2 border border-white/20 hover:scale-105"
-      >
-        <Icon icon="mdi:arrow-left" class="w-5 h-5" />
-        <span class="font-medium hidden sm:inline">Back to Lobby</span>
-      </button>
-      <div class="text-center">
-        <div class="text-xs text-white/60 mb-1">Room Code</div>
-        <button
-          @click="copyRoomCode"
-          class="group relative cursor-pointer transition-all hover:scale-105"
-          :title="copied ? 'Copied!' : 'Click to copy'"
-        >
-          <div class="text-2xl sm:text-3xl font-black bg-gradient-to-r from-purple-400 via-pink-500 to-cyan-400 bg-clip-text text-transparent flex items-center justify-center gap-2">
-            {{ roomState.roomCode }}
-            <Icon icon="mdi:content-copy" class="w-4 h-4 sm:w-5 sm:h-5 text-purple-400 opacity-70 group-hover:opacity-100 transition-opacity" />
-          </div>
-          <transition name="fade">
-            <div v-if="copied" class="absolute -bottom-8 left-1/2 transform -translate-x-1/2 bg-green-500 text-white px-3 py-1 rounded-lg text-xs whitespace-nowrap">
-              Copied!
-            </div>
-          </transition>
-        </button>
-      </div>
-      <div v-if="isHost" class="flex">
-        <button
-          @click="handleChangeGame"
-          class="bg-yellow-500/20 hover:bg-yellow-500/30 backdrop-blur-md px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg transition-all flex items-center gap-2 border border-yellow-500/30 hover:scale-105"
-        >
-          <Icon icon="mdi:gamepad-variant" class="w-5 h-5" />
-          <span class="font-medium hidden sm:inline">Change Game</span>
-        </button>
-      </div>
-    </div>
+    <MultiplayerGameHeader
+      :room-code="roomState.roomCode"
+      :is-host="isHost"
+      @back-to-lobby="handleBackToLobby"
+      @change-game="handleChangeGame"
+    />
 
     <!-- Game Title -->
     <div class="text-center mb-4 sm:mb-6 md:mb-8">
@@ -219,30 +189,7 @@
     </div>
 
     <!-- Player List -->
-    <div class="bg-white/10 backdrop-blur-md rounded-lg sm:rounded-xl p-3 sm:p-4 border border-white/20 mt-4 sm:mt-5 md:mt-6">
-      <h3 class="font-bold mb-2 sm:mb-3 text-sm sm:text-base flex items-center gap-2">
-        <Icon icon="mdi:account-group" class="w-4 h-4 sm:w-5 sm:h-5" />
-        Players ({{ roomState.players.length }})
-        <span v-if="currentPlayer" class="text-purple-300 text-xs font-normal">— {{ currentPlayer.nickname }}'s turn</span>
-      </h3>
-      <div class="grid grid-cols-2 sm:grid-cols-3 gap-1.5 sm:gap-2">
-        <div
-          v-for="player in roomState.players"
-          :key="player.socketId"
-          class="bg-white/5 rounded-lg p-1.5 sm:p-2 text-center text-xs sm:text-sm transition-all"
-          :class="{
-            'ring-2 ring-purple-500': player.isHost,
-            'ring-2 ring-pink-500 bg-pink-500/20 scale-105 shadow-lg shadow-pink-500/50': currentPlayer && player.socketId === currentPlayer.socketId,
-          }"
-        >
-          <div class="font-semibold">{{ player.nickname }}</div>
-          <div class="flex items-center justify-center gap-1 mt-1 flex-wrap">
-            <span v-if="player.isHost" class="text-xs text-purple-400">👑</span>
-            <span v-if="currentPlayer && player.socketId === currentPlayer.socketId" class="text-xs text-pink-400 animate-pulse font-medium">⭐ Their turn</span>
-          </div>
-        </div>
-      </div>
-    </div>
+    <MultiplayerPlayerList :players="roomState.players" :current-turn-socket-id="currentPlayer?.socketId" />
   </div>
 </template>
 
@@ -253,7 +200,10 @@ import { useRouter } from 'vue-router'
 import { navigateTo } from '#app'
 import TurnIndicator from './TurnIndicator.vue'
 import WaitingForHost from './WaitingForHost.vue'
+import MultiplayerGameHeader from './MultiplayerGameHeader.vue'
+import MultiplayerPlayerList from './MultiplayerPlayerList.vue'
 import { useMultiplayer, type RoomState } from '~/composables/useMultiplayer'
+import { useMultiplayerQuestions } from '~/composables/useMultiplayerQuestions'
 
 interface Props {
   roomState: DeepReadonly<RoomState>
@@ -286,24 +236,11 @@ const handleBackToLobby = () => {
 const isSpicyMode = ref(false)
 const isDrawing = ref(false)
 const cardFlipped = ref(false)
-const questionsLoading = ref(false)
-const copied = ref(false)
 const hesitationTime = ref(60) // 1 minute in seconds
 const hesitationTimer = ref<number | null>(null)
 const hesitationPercent = ref(100)
 
-const copyRoomCode = async () => {
-  if (!props.roomState.roomCode) return
-  try {
-    await navigator.clipboard.writeText(props.roomState.roomCode)
-    copied.value = true
-    setTimeout(() => {
-      copied.value = false
-    }, 2000)
-  } catch (err) {
-    console.error('Failed to copy:', err)
-  }
-}
+const { questionsLoading, loadInitialQuestions, notifyIfRepeat } = useMultiplayerQuestions(props.multiplayer)
 
 // Question trackers (same as single-player)
 let normalTruthTracker: any = null
@@ -313,62 +250,59 @@ let spicyDareTracker: any = null
 
 // Load questions from database (same as single-player)
 async function loadQuestions() {
-  questionsLoading.value = true
-  
-  try {
-    const truthResponse = await $fetch('/api/questions/truth-or-dare?type=TRUTH&limit=200')
-    const dareResponse = await $fetch('/api/questions/truth-or-dare?type=DARE&limit=200')
-    
-    const allTruthQuestions = truthResponse.questions || []
-    const allDareQuestions = dareResponse.questions || []
-    
-    const normalTruths = allTruthQuestions
-      .filter((q: any) => {
-        const intensity = q.intensity ?? 2
-        return intensity <= 3
-      })
-      .map((q: any) => q.text || String(q))
-    
-    const spicyTruths = allTruthQuestions
-      .filter((q: any) => {
-        const intensity = q.intensity ?? 2
-        return intensity >= 4
-      })
-      .map((q: any) => q.text || String(q))
-    
-    const normalDares = allDareQuestions
-      .filter((q: any) => {
-        const intensity = q.intensity ?? 2
-        return intensity <= 3
-      })
-      .map((q: any) => q.text || String(q))
-    
-    const spicyDares = allDareQuestions
-      .filter((q: any) => {
-        const intensity = q.intensity ?? 2
-        return intensity >= 4
-      })
-      .map((q: any) => q.text || String(q))
-    
-    // Use trackers (import from composables if available, or create simple ones)
-    const { useTruthTracker, useDareTracker } = await import('~/composables/useQuestionTracker')
-    
-    normalTruthTracker = useTruthTracker(normalTruths.length > 0 ? normalTruths : (spicyTruths.length > 0 ? spicyTruths : []), false)
-    spicyTruthTracker = useTruthTracker(spicyTruths.length > 0 ? spicyTruths : (normalTruths.length > 0 ? normalTruths : []), true)
-    normalDareTracker = useDareTracker(normalDares.length > 0 ? normalDares : (spicyDares.length > 0 ? spicyDares : []), false)
-    spicyDareTracker = useDareTracker(spicyDares.length > 0 ? spicyDares : (normalDares.length > 0 ? normalDares : []), true)
-    
-    console.log('✅ Questions loaded:', {
-      normalTruths: normalTruths.length,
-      spicyTruths: spicyTruths.length,
-      normalDares: normalDares.length,
-      spicyDares: spicyDares.length,
+  const truthResponse = await $fetch('/api/questions/truth-or-dare?type=TRUTH&limit=1000')
+  const dareResponse = await $fetch('/api/questions/truth-or-dare?type=DARE&limit=1000')
+
+  const allTruthQuestions = truthResponse.questions || []
+  const allDareQuestions = dareResponse.questions || []
+
+  const normalTruths = allTruthQuestions
+    .filter((q: any) => {
+      const intensity = q.intensity ?? 2
+      return intensity <= 3
     })
-  } catch (error) {
-    console.error('Error loading questions:', error)
-  } finally {
-    questionsLoading.value = false
-  }
+    .map((q: any) => q.text || String(q))
+
+  const spicyTruths = allTruthQuestions
+    .filter((q: any) => {
+      const intensity = q.intensity ?? 2
+      return intensity >= 4
+    })
+    .map((q: any) => q.text || String(q))
+
+  const normalDares = allDareQuestions
+    .filter((q: any) => {
+      const intensity = q.intensity ?? 2
+      return intensity <= 3
+    })
+    .map((q: any) => q.text || String(q))
+
+  const spicyDares = allDareQuestions
+    .filter((q: any) => {
+      const intensity = q.intensity ?? 2
+      return intensity >= 4
+    })
+    .map((q: any) => q.text || String(q))
+
+  // Use trackers (import from composables if available, or create simple ones)
+  const { useTruthTracker, useDareTracker } = await import('~/composables/useQuestionTracker')
+
+  normalTruthTracker = useTruthTracker(normalTruths.length > 0 ? normalTruths : (spicyTruths.length > 0 ? spicyTruths : []), false)
+  spicyTruthTracker = useTruthTracker(spicyTruths.length > 0 ? spicyTruths : (normalTruths.length > 0 ? normalTruths : []), true)
+  normalDareTracker = useDareTracker(normalDares.length > 0 ? normalDares : (spicyDares.length > 0 ? spicyDares : []), false)
+  spicyDareTracker = useDareTracker(spicyDares.length > 0 ? spicyDares : (normalDares.length > 0 ? normalDares : []), true)
+
+  normalTruthTracker.initializeTracker()
+  spicyTruthTracker.initializeTracker()
+  normalDareTracker.initializeTracker()
+  spicyDareTracker.initializeTracker()
+
+  console.log('✅ Questions loaded:', {
+    normalTruths: normalTruths.length,
+    spicyTruths: spicyTruths.length,
+    normalDares: normalDares.length,
+    spicyDares: spicyDares.length,
+  })
 }
 
 // Get random question (same logic as single-player)
@@ -384,8 +318,9 @@ const getRandomQuestion = (type: 'TRUTH' | 'DARE') => {
   if (!tracker) {
     return 'Questions are loading... Please try again in a moment.'
   }
-  
+
   const result = tracker.getNextQuestion()
+  notifyIfRepeat(result)
   return result.question
 }
 
@@ -561,7 +496,7 @@ onBeforeUnmount(() => {
 })
 
 onMounted(() => {
-  loadQuestions()
+  loadInitialQuestions(loadQuestions)
 })
 </script>
 

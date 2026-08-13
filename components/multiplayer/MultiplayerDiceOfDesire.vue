@@ -1,50 +1,12 @@
 <template>
   <div class="max-w-3xl mx-auto relative z-10 pt-4 sm:pt-6 md:pt-8">
     <!-- Header -->
-    <div class="flex justify-between items-center mb-6">
-      <button
-        @click="handleBackToLobby"
-        class="bg-white/10 hover:bg-white/20 backdrop-blur-md px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg transition-all flex items-center gap-2 border border-white/20 hover:scale-105"
-      >
-        <Icon icon="mdi:arrow-left" class="w-5 h-5" />
-        <span class="font-medium hidden sm:inline">Back to Lobby</span>
-      </button>
-      <div class="text-center">
-        <div class="text-xs text-white/60 mb-1">Room Code</div>
-        <button
-          @click="copyRoomCode"
-          class="group relative cursor-pointer transition-all hover:scale-105"
-          :title="copied ? 'Copied!' : 'Click to copy'"
-        >
-          <div
-            class="text-2xl sm:text-3xl font-black bg-gradient-to-r from-purple-400 via-pink-500 to-cyan-400 bg-clip-text text-transparent flex items-center justify-center gap-2"
-          >
-            {{ roomState.roomCode }}
-            <Icon
-              icon="mdi:content-copy"
-              class="w-4 h-4 sm:w-5 sm:h-5 text-purple-400 opacity-70 group-hover:opacity-100 transition-opacity"
-            />
-          </div>
-          <transition name="fade">
-            <div
-              v-if="copied"
-              class="absolute -bottom-8 left-1/2 transform -translate-x-1/2 bg-green-500 text-white px-3 py-1 rounded-lg text-xs whitespace-nowrap"
-            >
-              Copied!
-            </div>
-          </transition>
-        </button>
-      </div>
-      <div v-if="isHost" class="flex">
-        <button
-          @click="handleChangeGame"
-          class="bg-yellow-500/20 hover:bg-yellow-500/30 backdrop-blur-md px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg transition-all flex items-center gap-2 border border-yellow-500/30 hover:scale-105"
-        >
-          <Icon icon="mdi:gamepad-variant" class="w-5 h-5" />
-          <span class="font-medium hidden sm:inline">Change Game</span>
-        </button>
-      </div>
-    </div>
+    <MultiplayerGameHeader
+      :room-code="roomState.roomCode"
+      :is-host="isHost"
+      @back-to-lobby="handleBackToLobby"
+      @change-game="handleChangeGame"
+    />
 
     <!-- Game Title -->
     <div class="text-center mb-8">
@@ -169,6 +131,7 @@
         />
         {{ isRolling ? "Rolling..." : "Roll Dice" }}
       </button>
+      <p v-else class="text-center text-white/60 text-sm mt-3 sm:mt-4">Waiting for host to roll the dice...</p>
     </div>
 
     <!-- Result Display -->
@@ -323,32 +286,7 @@
     </div>
 
     <!-- Player List -->
-    <div
-      class="bg-white/10 backdrop-blur-md rounded-xl p-4 border border-white/20 mt-6"
-    >
-      <h3 class="font-bold mb-3 flex items-center gap-2">
-        <Icon icon="mdi:account-group" class="w-5 h-5" />
-        Players ({{ roomState.players.length }})
-        <span v-if="currentPlayer" class="text-purple-300 text-xs font-normal">— {{ currentPlayer.nickname }}'s turn</span>
-      </h3>
-      <div class="grid grid-cols-2 sm:grid-cols-3 gap-2">
-        <div
-          v-for="player in roomState.players"
-          :key="player.socketId"
-          class="bg-white/5 rounded-lg p-2 text-center text-sm transition-all"
-          :class="{
-            'ring-2 ring-purple-500': player.isHost,
-            'ring-2 ring-pink-500 bg-pink-500/20 scale-105 shadow-lg shadow-pink-500/50': currentPlayer && player.socketId === currentPlayer.socketId,
-          }"
-        >
-          <div class="font-semibold">{{ player.nickname }}</div>
-          <div class="flex items-center justify-center gap-1 mt-1 flex-wrap">
-            <span v-if="player.isHost" class="text-xs text-purple-400">👑</span>
-            <span v-if="currentPlayer && player.socketId === currentPlayer.socketId" class="text-xs text-pink-400 animate-pulse font-medium">⭐ Their turn</span>
-          </div>
-        </div>
-      </div>
-    </div>
+    <MultiplayerPlayerList :players="roomState.players" :current-turn-socket-id="currentPlayer?.socketId" />
   </div>
 </template>
 
@@ -359,6 +297,8 @@ import { useRouter } from "vue-router";
 import { navigateTo } from "#app";
 import TurnIndicator from './TurnIndicator.vue';
 import WaitingForHost from './WaitingForHost.vue';
+import MultiplayerGameHeader from './MultiplayerGameHeader.vue';
+import MultiplayerPlayerList from './MultiplayerPlayerList.vue';
 import { useMultiplayer, type RoomState } from '~/composables/useMultiplayer';
 
 interface Props {
@@ -470,20 +410,6 @@ const hostName = computed(() => {
   return host?.nickname || 'Host';
 });
 
-const copied = ref(false);
-
-const copyRoomCode = async () => {
-  if (!props.roomState.roomCode) return;
-  try {
-    await navigator.clipboard.writeText(props.roomState.roomCode);
-    copied.value = true;
-    setTimeout(() => {
-      copied.value = false;
-    }, 2000);
-  } catch (err) {
-    console.error("Failed to copy:", err);
-  }
-};
 
 // Get target player (opposite gender if available)
 const targetPlayer = computed(() => {

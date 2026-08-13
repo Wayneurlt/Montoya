@@ -2,7 +2,7 @@
   <div class="bg-white/10 backdrop-blur-md rounded-2xl p-6 sm:p-8 border border-white/20 text-center">
     <div class="animate-pulse mb-6">
       <Icon icon="mdi:clock-outline" class="w-16 h-16 sm:w-20 sm:h-20 mx-auto mb-4 text-purple-400" />
-      <p class="text-xl sm:text-2xl font-semibold mb-2">Waiting for host to start...</p>
+      <p class="text-xl sm:text-2xl font-semibold mb-2">{{ message }}</p>
       <p class="text-sm sm:text-base text-white/70 mb-4">
         Host: <span class="font-bold text-purple-300">{{ hostName }}</span>
       </p>
@@ -32,9 +32,12 @@ import { Icon } from '@iconify/vue'
 interface Props {
   hostName: string
   multiplayer: any
+  message?: string
 }
 
-const props = defineProps<Props>()
+const props = withDefaults(defineProps<Props>(), {
+  message: 'Waiting for host to start...',
+})
 
 const isRinging = ref(false)
 const lastRingTime = ref(0)

@@ -3,7 +3,9 @@ import prisma from '~/lib/prisma'
 export default defineEventHandler(async (event) => {
   const query = getQuery(event)
   const gameType = query.gameType as 'NEVER_HAVE_I_EVER' | 'MOST_LIKELY_TO' | 'WOULD_YOU_RATHER'
-  const limit = query.limit ? parseInt(query.limit as string) : 50
+  // High default so a caller that omits `limit` still gets the whole pool
+  // (avoids the client-side no-repeat tracker running out early and cycling).
+  const limit = query.limit ? parseInt(query.limit as string) : 1000
 
   if (!gameType) {
     throw createError({

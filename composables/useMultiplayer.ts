@@ -35,6 +35,8 @@ let socket: Socket | null = null
 
 // Reactive state
 const isConnected = ref(false)
+const isReconnecting = ref(false)
+const connectionLost = ref(false)
 const roomState = ref<RoomState>({
   roomId: null,
   roomCode: null,
@@ -98,22 +100,47 @@ export const useMultiplayer = () => {
     socket.on('connect', () => {
       console.log('✅ Connected to server:', socket?.id)
       isConnected.value = true
+      isReconnecting.value = false
+      connectionLost.value = false
       error.value = null
-      
+
       // Trigger auto-reconnect check (will be handled by pages or watchers)
       // We can't call joinRoom here as it's not defined yet, so we'll rely on
       // the page-level reconnection logic
     })
 
-    socket.on('disconnect', () => {
-      console.log('❌ Disconnected from server')
+    socket.on('disconnect', (reason) => {
+      console.log('❌ Disconnected from server:', reason)
       isConnected.value = false
+      // A manual disconnect() call won't auto-retry; anything else
+      // (network drop, server restart) will, so reflect that in the UI.
+      if (reason !== 'io client disconnect') {
+        isReconnecting.value = true
+      }
     })
 
     socket.on('connect_error', (err) => {
       console.error('❌ Connection error:', err)
-      error.value = 'Failed to connect to server. Please refresh the page.'
       isConnected.value = false
+    })
+
+    // Manager-level reconnection lifecycle (distinct from the socket's own
+    // connect/disconnect events) — this is what lets the UI show "reconnecting..."
+    // instead of an indefinite spinner, and a clear dead-end once retries are exhausted.
+    socket.io.on('reconnect_attempt', () => {
+      isReconnecting.value = true
+    })
+
+    socket.io.on('reconnect', () => {
+      isReconnecting.value = false
+      connectionLost.value = false
+      error.value = null
+    })
+
+    socket.io.on('reconnect_failed', () => {
+      isReconnecting.value = false
+      connectionLost.value = true
+      error.value = 'Lost connection to the server. Check your internet connection and try again.'
     })
 
     socket.on('room:created', (data: {
@@ -309,12 +336,25 @@ export const useMultiplayer = () => {
     return socket
   }
 
+  // Manually retry after the automatic reconnection attempts have been exhausted
+  const retryConnection = () => {
+    connectionLost.value = false
+    error.value = null
+    if (socket) {
+      socket.connect()
+    } else {
+      connect()
+    }
+  }
+
   // Disconnect socket
   const disconnect = () => {
     if (socket) {
       socket.disconnect()
       socket = null
       isConnected.value = false
+      isReconnecting.value = false
+      connectionLost.value = false
       roomState.value = {
         roomId: null,
         roomCode: null,
@@ -467,6 +507,8 @@ export const useMultiplayer = () => {
   return {
     // State
     isConnected: readonly(isConnected),
+    isReconnecting: readonly(isReconnecting),
+    connectionLost: readonly(connectionLost),
     roomState: readonly(roomState),
     votes: readonly(votes),
     error: readonly(error),
@@ -481,6 +523,7 @@ export const useMultiplayer = () => {
     // Methods
     connect,
     disconnect,
+    retryConnection,
     createRoom,
     joinRoom,
     updateNickname,

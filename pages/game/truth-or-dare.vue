@@ -251,6 +251,7 @@
 <script setup>
 import { ref, computed, onMounted, onBeforeUnmount, watch } from "vue";
 import { Icon } from "@iconify/vue";
+import { push } from "notivue";
 import { useTruthTracker, useDareTracker } from "~/composables/useQuestionTracker";
 import { useAnalytics } from "~/composables/useAnalytics";
 import { useGameStore } from "~/stores/game";
@@ -324,7 +325,11 @@ const getRandomQuestion = (type) => {
   
   const result = tracker.getNextQuestion();
   let question = result.question;
-  
+
+  if (result.isRepeat) {
+    push.info({ title: 'Fresh round!', message: "You've seen every question — shuffling for a new round.", duration: 4000 });
+  }
+
   console.log(`✅ Got question from ${type} tracker:`, question.substring(0, 50) + '...')
   
   // DON'T ADAPT QUESTIONS - Use them exactly as they are from the database
@@ -353,7 +358,7 @@ const drawSpecificCard = async (type) => {
   cardFlipped.value = false;
 
   let target = null;
-  if (type === "DARE" && gameStore.gameMode !== 'connection' && players.value.length > 1) {
+  if (type === "DARE" && players.value.length > 1) {
     target = getRandomTarget();
     console.log(`🎯 Dare target selected:`, target?.name)
   }
@@ -439,7 +444,7 @@ async function loadQuestions() {
   try {
     console.log('🔄 Loading questions from database...')
     
-    const truthResponse = await $fetch('/api/questions/truth-or-dare?type=TRUTH&limit=200')
+    const truthResponse = await $fetch('/api/questions/truth-or-dare?type=TRUTH&limit=1000')
       .catch(error => {
         console.error('❌ Truth API call failed:', error)
         throw new Error(`Failed to fetch truth questions: ${error.message || 'Unknown error'}`)
@@ -462,7 +467,7 @@ async function loadQuestions() {
       throw new Error('No truth questions returned from API')
     }
     
-    const dareResponse = await $fetch('/api/questions/truth-or-dare?type=DARE&limit=200')
+    const dareResponse = await $fetch('/api/questions/truth-or-dare?type=DARE&limit=1000')
       .catch(error => {
         console.error('❌ Dare API call failed:', error)
         throw new Error(`Failed to fetch dare questions: ${error.message || 'Unknown error'}`)
@@ -668,11 +673,6 @@ onMounted(async () => {
     }
     
     await loadQuestions();
-    
-    if (gameStore.isTwoPlayerMode) {
-      gameLogic.checkMirrorRound();
-      gameLogic.checkGuessMode();
-    }
   }
 });
 

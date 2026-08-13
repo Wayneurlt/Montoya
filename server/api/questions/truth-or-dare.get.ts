@@ -3,7 +3,9 @@ import prisma from '~/lib/prisma'
 export default defineEventHandler(async (event) => {
   const query = getQuery(event)
   const type = query.type as 'TRUTH' | 'DARE' | undefined
-  const limit = query.limit ? parseInt(query.limit as string) : 50
+  // High default so a caller that omits `limit` still gets the whole pool
+  // (avoids the client-side no-repeat tracker running out early and cycling).
+  const limit = query.limit ? parseInt(query.limit as string) : 1000
 
   try {
     const where: any = {

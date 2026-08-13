@@ -352,6 +352,7 @@
 <script setup>
 import { ref, computed, onMounted, onBeforeUnmount } from "vue";
 import { Icon } from "@iconify/vue";
+import { push } from "notivue";
 import { useGameStore } from "~/stores/game";
 import { navigateTo } from "#app";
 // Questions are now loaded from database via API
@@ -393,11 +394,10 @@ const gameLevel = ref(1);
 // Players - use gameStore with local drinks tracking
 const storePlayers = computed(() => gameStore.players);
 const playerDrinks = ref({}); // Track drinks separately
-const players = computed(() => storePlayers.value.map((p) => ({ 
-  ...p, 
-  drinks: playerDrinks.value[p.id] || 0 
+const players = computed(() => storePlayers.value.map((p) => ({
+  ...p,
+  drinks: playerDrinks.value[p.id] || 0
 })));
-const currentPlayerIndex = ref(gameStore.currentPlayerIndex || 0);
 
 // Gameplay
 const currentCard = ref(null);
@@ -410,7 +410,7 @@ const isDrawing = ref(false);
 
 // Computed Properties
 const currentPlayer = computed(
-  () => players.value[currentPlayerIndex.value] || {}
+  () => players.value[gameStore.currentPlayerIndex] || {}
 );
 
 const cardColor = computed(() => {
@@ -445,7 +445,11 @@ const getRandomChallenge = () => {
   
   const result = challengeTracker.getNextQuestion();
   console.log('📋 Tracker result:', result)
-  
+
+  if (result.isRepeat) {
+    push.info({ title: 'Fresh round!', message: "You've seen every question — shuffling for a new round.", duration: 4000 });
+  }
+
   // Log usage stats for debugging
   const stats = challengeTracker.getUsageStats.value;
   console.log(`Do or Drink - Used: ${stats.usedCount}/${stats.totalQuestions} (${stats.usagePercentage}%)`);
@@ -615,7 +619,7 @@ const takeDrink = () => {
   }
 
   // Update drinks count
-  const player = players.value[currentPlayerIndex.value];
+  const player = players.value[gameStore.currentPlayerIndex];
   if (player) {
     playerDrinks.value[player.id] = (playerDrinks.value[player.id] || 0) + drinkCount;
   }
@@ -643,7 +647,7 @@ const applyPenalty = () => {
   }
 
   // Update drinks count
-  const player = players.value[currentPlayerIndex.value];
+  const player = players.value[gameStore.currentPlayerIndex];
   if (player) {
     playerDrinks.value[player.id] = (playerDrinks.value[player.id] || 0) + drinkCount;
   }
@@ -688,8 +692,7 @@ const nextTurn = () => {
     return;
   }
 
-  currentPlayerIndex.value =
-    (currentPlayerIndex.value + 1) % players.value.length;
+  gameStore.nextTurn();
 };
 
 // Helper functions
@@ -745,7 +748,7 @@ async function loadQuestions() {
     console.log('🔄 Loading Do or Drink questions from database...')
     
     // Removed intensity filter - get all questions
-    const data = await $fetch('/api/questions/do-or-drink?limit=200')
+    const data = await $fetch('/api/questions/do-or-drink?limit=1000')
       .catch(error => {
         console.error('❌ API call failed:', error)
         console.error('Error details:', error.message, error.data, error.statusCode)

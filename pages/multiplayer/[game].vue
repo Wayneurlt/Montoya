@@ -18,11 +18,31 @@
       </button>
     </div>
 
+    <!-- Connection Lost - reconnection attempts exhausted, or our own reconnect poll gave up -->
+    <div v-else-if="connectionLost || reconnectGaveUp" class="max-w-3xl mx-auto mt-8 text-center py-12">
+      <Icon icon="mdi:wifi-off" class="w-16 h-16 mx-auto mb-4 text-red-400" />
+      <p class="text-xl font-semibold mb-4">Lost connection to the room.</p>
+      <div class="flex items-center justify-center gap-3">
+        <button
+          @click="handleRetryConnection"
+          class="bg-purple-600 hover:bg-purple-500 px-4 py-2 rounded-lg transition-all font-semibold"
+        >
+          Retry
+        </button>
+        <button
+          @click="handleLeaveRoom"
+          class="bg-white/10 hover:bg-white/20 px-4 py-2 rounded-lg transition-all"
+        >
+          Back to Lobby
+        </button>
+      </div>
+    </div>
+
     <!-- Loading State -->
     <div v-else-if="!isConnected || !safeRoomState.roomCode" class="max-w-3xl mx-auto mt-8 text-center py-12">
       <div class="animate-pulse">
         <Icon icon="mdi:loading" class="w-16 h-16 mx-auto mb-4 text-purple-400 animate-spin" />
-        <p class="text-xl font-semibold">Connecting to room...</p>
+        <p class="text-xl font-semibold">{{ isReconnecting ? 'Reconnecting to room...' : 'Connecting to room...' }}</p>
         <button
           @click="handleLeaveRoom"
           class="mt-4 bg-white/10 hover:bg-white/20 px-4 py-2 rounded-lg transition-all"
@@ -110,10 +130,13 @@ const multiplayer = useMultiplayer()
 
 const {
   isConnected,
+  isReconnecting,
+  connectionLost,
   roomState,
   error,
   isHost,
   connect,
+  retryConnection,
   leaveRoom,
   attemptAutoReconnect,
 } = multiplayer
@@ -124,6 +147,16 @@ let isComponentMounted = true
 onBeforeUnmount(() => {
   isComponentMounted = false
 })
+
+// Our own local reconnect poll (below) gives up after this long even if the
+// socket itself never reports connectionLost, so a stuck join doesn't spin forever.
+const RECONNECT_POLL_TIMEOUT_MS = 15_000
+const reconnectGaveUp = ref(false)
+
+const handleRetryConnection = () => {
+  reconnectGaveUp.value = false
+  retryConnection()
+}
 
 const safeRoomState = computed(() => {
   if (!roomState || !roomState.value) {
@@ -182,14 +215,19 @@ onMounted(() => {
       try {
         const info = JSON.parse(roomInfo)
         if (info.roomCode && info.nickname) {
-          // Wait for connection, then rejoin
+          // Wait for connection, then rejoin — capped so a socket that never
+          // connects doesn't leave the user staring at an infinite spinner.
+          const reconnectDeadline = Date.now() + RECONNECT_POLL_TIMEOUT_MS
           const attemptReconnect = () => {
             if (!isComponentMounted) return
             if (isConnected.value) {
               console.log('🔄 Reconnecting to room from game page:', info.roomCode)
               attemptAutoReconnect()
-            } else {
+            } else if (Date.now() < reconnectDeadline) {
               setTimeout(attemptReconnect, 200)
+            } else {
+              console.warn('⏱️ Gave up waiting to reconnect to room:', info.roomCode)
+              reconnectGaveUp.value = true
             }
           }
           setTimeout(attemptReconnect, 500)

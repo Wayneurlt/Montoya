@@ -70,6 +70,15 @@ function generateRoomCode(): string {
   return code
 }
 
+// Generate a room code guaranteed not to collide with an existing live room
+function generateUniqueRoomCode(): string {
+  let code = generateRoomCode()
+  while (getRoom(code)) {
+    code = generateRoomCode()
+  }
+  return code
+}
+
 // Get or create room
 function getRoom(roomCode: string): RoomState | null {
   for (const room of rooms.values()) {
@@ -78,6 +87,63 @@ function getRoom(roomCode: string): RoomState | null {
     }
   }
   return null
+}
+
+// Broadcast the current room state to every socket in the room
+function broadcastRoomSync(room: RoomState) {
+  if (!io) return
+  const playersList = Array.from(room.players.values()).map(p => ({
+    socketId: p.socketId,
+    nickname: p.nickname,
+    gender: p.gender,
+    isHost: p.isHost,
+    connected: p.connected,
+  }))
+  io.to(room.roomId).emit('room:sync', {
+    roomId: room.roomId,
+    roomCode: room.roomCode,
+    roomName: room.roomName,
+    maxPlayers: room.maxPlayers,
+    answerVisibility: room.answerVisibility,
+    hostSocketId: room.hostSocketId,
+    players: playersList,
+    currentGame: room.currentGame,
+    gamePhase: room.gamePhase,
+    currentPrompt: room.currentPrompt,
+    nextUpPlayer: room.nextUpPlayer ?? null,
+  })
+}
+
+// Advance the room's current prompt/turn for game:next and game:skip.
+// Returns the full (un-redacted) turn-based prompt payload to deliver privately, if any.
+function applyNextPrompt(room: RoomState, data?: { prompt?: any }): any | null {
+  if (data?.prompt) {
+    const isTurnBasedPrompt = !!data.prompt?.player?.socketId
+    if (isTurnBasedPrompt) {
+      const promptId = makePromptId()
+      // Public state: only reveal whose turn (and optional target/type).
+      // Full prompt content is delivered privately.
+      room.currentPrompt = {
+        promptId,
+        deliveredToPlayer: false,
+        player: data.prompt?.player ?? null,
+        target: data.prompt?.target ?? null,
+        type: data.prompt?.type ?? null,
+      }
+      room.nextUpPlayer = null
+      return { ...data.prompt, promptId }
+    } else {
+      // Voting / public prompts: broadcast normally
+      room.currentPrompt = data.prompt
+      room.nextUpPlayer = null
+      return null
+    }
+  } else {
+    const lastSocketId = room.currentPrompt?.player?.socketId ?? null
+    room.nextUpPlayer = getNextPlayerInRoom(room, lastSocketId)
+    room.currentPrompt = null
+    return null
+  }
 }
 
 // Find room by socket ID
@@ -117,11 +183,17 @@ function getNextPlayerInRoom(room: RoomState, afterSocketId: string | null): { s
   return { socketId: next.socketId, nickname: next.nickname }
 }
 
-// Migrate host if host disconnects
+// Migrate host if host disconnects. Clears isHost on every player first so a
+// stale flag on the old (now-disconnected) host can never let them silently
+// reclaim host status if they later reconnect (see room:join reconnection branch).
 function migrateHost(room: RoomState) {
   if (room.players.size === 0) {
     cleanupRoom(room.roomId)
     return null
+  }
+
+  for (const player of room.players.values()) {
+    player.isHost = false
   }
 
   // Find new host (first connected player)
@@ -134,6 +206,27 @@ function migrateHost(room: RoomState) {
   }
 
   return null
+}
+
+// Grace period before reassigning host after a disconnect, so a quick refresh
+// or brief network blip doesn't hand host control to someone else.
+const HOST_MIGRATION_GRACE_MS = 8_000
+
+function scheduleHostMigration(roomId: string, disconnectedSocketId: string) {
+  setTimeout(() => {
+    const room = rooms.get(roomId)
+    if (!room) return
+    const stillThere = room.players.get(disconnectedSocketId)
+    // If their record is gone or they've reconnected, there's nothing to migrate —
+    // reconnection under a new socket id deletes the old record (see room:join).
+    if (!stillThere || stillThere.connected) return
+
+    const newHost = migrateHost(room)
+    if (newHost) {
+      console.log(`👑 Host migrated (after grace period) to ${newHost.nickname} in room ${room.roomCode}`)
+      broadcastRoomSync(room)
+    }
+  }, HOST_MIGRATION_GRACE_MS)
 }
 
 // Global Socket.IO instance
@@ -228,8 +321,8 @@ export default defineNitroPlugin((nitroApp) => {
           return
         }
 
-        const roomCode = generateRoomCode()
-        const roomId = `room_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
+        const roomCode = generateUniqueRoomCode()
+        const roomId = `room_${Date.now()}_${Math.random().toString(36).slice(2, 11)}`
 
         const room: RoomState = {
           roomId,
@@ -237,7 +330,7 @@ export default defineNitroPlugin((nitroApp) => {
           roomName: data.roomName,
           hostSocketId: socket.id,
           players: new Map(),
-          maxPlayers: data.maxPlayers || 999, // Unlimited players
+          maxPlayers: data.maxPlayers || 8,
           answerVisibility: data.answerVisibility || 'anonymous',
           currentGame: null,
           gamePhase: 'lobby',
@@ -314,6 +407,16 @@ export default defineNitroPlugin((nitroApp) => {
           room.lastUpdated = Date.now()
           console.log(`🔄 Reconnected: ${existing.nickname} in room ${room.roomCode}`)
         } else {
+          // New join (not a reconnection): enforce the room's player cap
+          const connectedCount = Array.from(room.players.values()).filter(p => p.connected).length
+          if (connectedCount >= room.maxPlayers) {
+            socket.emit('room:error', {
+              message: `This room is full (max ${room.maxPlayers} players).`,
+              code: 'ROOM_FULL',
+            })
+            return
+          }
+
           // New join: check duplicate nicknames among connected only
           let finalNickname = data.nickname.trim()
           let nicknameCounter = 1
@@ -358,21 +461,7 @@ export default defineNitroPlugin((nitroApp) => {
           connected: p.connected,
         }))
 
-        if (io) {
-          io.to(room.roomId).emit('room:sync', {
-            roomId: room.roomId,
-            roomCode: room.roomCode,
-            roomName: room.roomName,
-            maxPlayers: room.maxPlayers,
-            answerVisibility: room.answerVisibility,
-            hostSocketId: room.hostSocketId,
-            players: playersList,
-            currentGame: room.currentGame,
-            gamePhase: room.gamePhase,
-            currentPrompt: room.currentPrompt,
-            nextUpPlayer: room.nextUpPlayer ?? null,
-          })
-        }
+        broadcastRoomSync(room)
 
         socket.emit('room:joined', {
           roomId: room.roomId,
@@ -409,31 +498,7 @@ export default defineNitroPlugin((nitroApp) => {
             player.gender = data.gender
           }
           room.lastUpdated = Date.now()
-
-          // Broadcast update
-          const playersList = Array.from(room.players.values()).map(p => ({
-            socketId: p.socketId,
-            nickname: p.nickname,
-            gender: p.gender,
-            isHost: p.isHost,
-            connected: p.connected,
-          }))
-
-          if (io) {
-            io.to(room.roomId).emit('room:sync', {
-              roomId: room.roomId,
-              roomCode: room.roomCode,
-              roomName: room.roomName,
-              maxPlayers: room.maxPlayers,
-              answerVisibility: room.answerVisibility,
-              hostSocketId: room.hostSocketId,
-              players: playersList,
-              currentGame: room.currentGame,
-              gamePhase: room.gamePhase,
-              currentPrompt: room.currentPrompt,
-              nextUpPlayer: room.nextUpPlayer ?? null,
-            })
-          }
+          broadcastRoomSync(room)
         }
       } catch (error) {
         console.error('❌ Error updating player:', error)
@@ -452,6 +517,16 @@ export default defineNitroPlugin((nitroApp) => {
         const player = room.players.get(socket.id)
         if (!player || !player.isHost) {
           socket.emit('room:error', { message: 'Only host can start game' })
+          return
+        }
+
+        // Re-check the host's multiplayer pass here too (not just at room:create) so
+        // a pass that expired since the room was created can't be used to start a new game.
+        if (!hasValidMultiplayerPass(socket.request)) {
+          socket.emit('room:error', {
+            message: 'Your multiplayer pass has expired. Renew it to start a game.',
+            code: 'PAYMENT_REQUIRED',
+          })
           return
         }
 
@@ -536,13 +611,16 @@ export default defineNitroPlugin((nitroApp) => {
           }
         })
 
-        const allPlayersVoted = room.votes.size >= room.players.size
+        // Only count currently-connected players so a dropped connection can't
+        // block the room from ever reaching "everyone voted" (they'd never vote again).
+        const connectedPlayerCount = Array.from(room.players.values()).filter(p => p.connected).length
+        const allPlayersVoted = connectedPlayerCount > 0 && room.votes.size >= connectedPlayerCount
 
         if (io) {
           io.to(room.roomId).emit('game:vote:update', {
             votes: votesData,
             totalVotes: room.votes.size,
-            totalPlayers: room.players.size,
+            totalPlayers: connectedPlayerCount,
             allVoted: allPlayersVoted,
           })
 
@@ -612,30 +690,8 @@ export default defineNitroPlugin((nitroApp) => {
           io.to(room.roomId).emit('game:ended', {
             message: 'Game ended. Returning to lobby.',
           })
-          
-          // Also sync room state
-          const playersList = Array.from(room.players.values()).map(p => ({
-            socketId: p.socketId,
-            nickname: p.nickname,
-            gender: p.gender,
-            isHost: p.isHost,
-            connected: p.connected,
-          }))
-
-          io.to(room.roomId).emit('room:sync', {
-            roomId: room.roomId,
-            roomCode: room.roomCode,
-            roomName: room.roomName,
-            maxPlayers: room.maxPlayers,
-            answerVisibility: room.answerVisibility,
-            hostSocketId: room.hostSocketId,
-            players: playersList,
-            currentGame: room.currentGame,
-            gamePhase: room.gamePhase,
-            currentPrompt: room.currentPrompt,
-            nextUpPlayer: room.nextUpPlayer ?? null,
-          })
         }
+        broadcastRoomSync(room)
       } catch (error) {
         console.error('❌ Error ending game:', error)
         socket.emit('room:error', { message: 'Failed to end game' })
@@ -697,30 +753,7 @@ export default defineNitroPlugin((nitroApp) => {
         }
 
         room.gamePhase = 'playing'
-        if (data?.prompt) {
-          const isTurnBasedPrompt = !!data.prompt?.player?.socketId
-          if (isTurnBasedPrompt) {
-            const promptId = makePromptId()
-            // Public state: only reveal whose turn (and optional target/type).
-            // Full prompt content is delivered privately.
-            const publicPrompt = {
-              promptId,
-              deliveredToPlayer: false,
-              player: data.prompt?.player ?? null,
-              target: data.prompt?.target ?? null,
-              type: data.prompt?.type ?? null,
-            }
-            room.currentPrompt = publicPrompt
-          } else {
-            // Voting / public prompts: broadcast normally
-            room.currentPrompt = data.prompt
-          }
-          room.nextUpPlayer = null
-        } else {
-          const lastSocketId = room.currentPrompt?.player?.socketId ?? null
-          room.nextUpPlayer = getNextPlayerInRoom(room, lastSocketId)
-          room.currentPrompt = null
-        }
+        const privatePrompt = applyNextPrompt(room, data)
         room.votes.clear()
         room.lastUpdated = Date.now()
 
@@ -740,15 +773,13 @@ export default defineNitroPlugin((nitroApp) => {
           })
 
           // Deliver full prompt privately to the selected player and the host.
-          if (data?.prompt && data.prompt?.player?.socketId) {
-            const playerSocketId = room.currentPrompt?.player?.socketId
-            const promptId = room.currentPrompt?.promptId
-            const payload = { ...data.prompt, promptId }
+          if (privatePrompt) {
+            const playerSocketId = privatePrompt.player?.socketId
             if (room.hostSocketId) {
-              io.to(room.hostSocketId).emit('game:prompt:private', payload)
+              io.to(room.hostSocketId).emit('game:prompt:private', privatePrompt)
             }
             if (playerSocketId) {
-              io.to(playerSocketId).emit('game:prompt:private', payload)
+              io.to(playerSocketId).emit('game:prompt:private', privatePrompt)
             }
           }
         }
@@ -802,16 +833,11 @@ export default defineNitroPlugin((nitroApp) => {
           return
         }
 
-        // Skip to next question - same as next round
+        // Skip to next question - same as next round, including private delivery
+        // for turn-based prompts (previously missing here, which broke Truth-or-Dare
+        // style skip: the target player never received the actual question text).
         room.gamePhase = 'playing'
-        if (data?.prompt) {
-          room.currentPrompt = data.prompt
-          room.nextUpPlayer = null
-        } else {
-          const lastSocketId = room.currentPrompt?.player?.socketId ?? null
-          room.nextUpPlayer = getNextPlayerInRoom(room, lastSocketId)
-          room.currentPrompt = null
-        }
+        const privatePrompt = applyNextPrompt(room, data)
         room.votes.clear()
         room.lastUpdated = Date.now()
 
@@ -829,6 +855,16 @@ export default defineNitroPlugin((nitroApp) => {
             currentPrompt: room.currentPrompt,
             nextUpPlayer: room.nextUpPlayer,
           })
+
+          if (privatePrompt) {
+            const playerSocketId = privatePrompt.player?.socketId
+            if (room.hostSocketId) {
+              io.to(room.hostSocketId).emit('game:prompt:private', privatePrompt)
+            }
+            if (playerSocketId) {
+              io.to(playerSocketId).emit('game:prompt:private', privatePrompt)
+            }
+          }
         }
       } catch (error) {
         console.error('❌ Error skipping question:', error)
@@ -929,30 +965,7 @@ export default defineNitroPlugin((nitroApp) => {
           return
         }
 
-        // Broadcast update
-        const playersList = Array.from(room.players.values()).map(p => ({
-          socketId: p.socketId,
-          nickname: p.nickname,
-          gender: p.gender,
-          isHost: p.isHost,
-          connected: p.connected,
-        }))
-
-        if (io) {
-          io.to(room.roomId).emit('room:sync', {
-          roomId: room.roomId,
-          roomCode: room.roomCode,
-          roomName: room.roomName,
-          maxPlayers: room.maxPlayers,
-          answerVisibility: room.answerVisibility,
-          hostSocketId: room.hostSocketId,
-          players: playersList,
-          currentGame: room.currentGame,
-          gamePhase: room.gamePhase,
-          currentPrompt: room.currentPrompt,
-          nextUpPlayer: room.nextUpPlayer ?? null,
-        })
-        }
+        broadcastRoomSync(room)
       } catch (error) {
         console.error('❌ Error leaving room:', error)
       }
@@ -1007,37 +1020,12 @@ export default defineNitroPlugin((nitroApp) => {
         console.log(`📴 Player ${player?.nickname || socket.id} disconnected from room ${room.roomCode} (can reconnect)`)
 
         if (wasHost) {
-          const newHost = migrateHost(room)
-          if (newHost) {
-            console.log(`👑 Host migrated to ${newHost.nickname} in room ${room.roomCode}`)
-          } else {
-            // No connected players left; room stays for reconnection, cleanup via timer
-          }
+          // Don't migrate immediately — give them HOST_MIGRATION_GRACE_MS to reconnect
+          // (e.g. a page refresh) before handing host control to someone else.
+          scheduleHostMigration(room.roomId, socket.id)
         }
 
-        const playersList = Array.from(room.players.values()).map(p => ({
-          socketId: p.socketId,
-          nickname: p.nickname,
-          gender: p.gender,
-          isHost: p.isHost,
-          connected: p.connected,
-        }))
-
-        if (io) {
-          io.to(room.roomId).emit('room:sync', {
-            roomId: room.roomId,
-            roomCode: room.roomCode,
-            roomName: room.roomName,
-            maxPlayers: room.maxPlayers,
-            answerVisibility: room.answerVisibility,
-            hostSocketId: room.hostSocketId,
-            players: playersList,
-            currentGame: room.currentGame,
-            gamePhase: room.gamePhase,
-            currentPrompt: room.currentPrompt,
-            nextUpPlayer: room.nextUpPlayer ?? null,
-          })
-        }
+        broadcastRoomSync(room)
       } catch (error) {
         console.error('❌ Error handling disconnect:', error)
       }
@@ -1064,27 +1052,8 @@ export default defineNitroPlugin((nitroApp) => {
         }
         if (room.players.size === 0) {
           roomIdsToCleanup.push(room.roomId)
-        } else if (toDelete.length > 0 && io) {
-          const playersList = Array.from(room.players.values()).map(p => ({
-            socketId: p.socketId,
-            nickname: p.nickname,
-            gender: p.gender,
-            isHost: p.isHost,
-            connected: p.connected,
-          }))
-          io.to(room.roomId).emit('room:sync', {
-            roomId: room.roomId,
-            roomCode: room.roomCode,
-            roomName: room.roomName,
-            maxPlayers: room.maxPlayers,
-            answerVisibility: room.answerVisibility,
-            hostSocketId: room.hostSocketId,
-            players: playersList,
-            currentGame: room.currentGame,
-            gamePhase: room.gamePhase,
-            currentPrompt: room.currentPrompt,
-            nextUpPlayer: room.nextUpPlayer ?? null,
-          })
+        } else if (toDelete.length > 0) {
+          broadcastRoomSync(room)
         }
       }
       for (const id of roomIdsToCleanup) {

@@ -27,7 +27,7 @@
             👨‍👩‍👧‍👦 Family
           </span>
           <span class="text-xs sm:text-sm px-2 sm:px-3 py-1 sm:py-1.5 rounded-full bg-purple-500/20 text-purple-300 border border-purple-400/30 shadow-md whitespace-nowrap">
-            Round {{ roundNumber }}
+            Round {{ gameStore.currentRound + 1 }}
           </span>
         </div>
       </div>
@@ -249,7 +249,6 @@ const gamePhase = ref('setup'); // setup, reveal, playing, voting, result
 const imposterPlayer = ref(null);
 const revealIndex = ref(0);
 const currentReveal = ref(null);
-const roundNumber = ref(1);
 const resultMessage = ref("");
 const resultEmoji = ref("");
 const playerTasks = ref({});
@@ -384,7 +383,7 @@ function playAgain() {
   playerTasks.value = {};
   playerWords.value = {};
   wordRevealed.value = false;
-  roundNumber.value++;
+  gameStore.nextTurn();
   stopTimer();
 }
 

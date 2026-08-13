@@ -30,6 +30,23 @@
         </div>
       </div>
 
+      <!-- Connection Lost - distinct from dismissible room errors: reconnection is exhausted -->
+      <transition name="fade">
+        <div v-if="connectionLost" class="mb-6 bg-red-500/20 border-2 border-red-500/50 rounded-xl p-4 backdrop-blur-md flex items-center justify-between gap-3">
+          <div class="flex items-center gap-2 min-w-0">
+            <Icon icon="mdi:wifi-off" class="w-6 h-6 text-red-400 shrink-0" />
+            <p class="text-red-200 font-semibold">Lost connection to the server.</p>
+          </div>
+          <button
+            type="button"
+            @click="retryConnection"
+            class="shrink-0 bg-red-500/30 hover:bg-red-500/50 text-white px-4 py-2 rounded-lg font-semibold text-sm transition-colors"
+          >
+            Retry
+          </button>
+        </div>
+      </transition>
+
       <!-- Error Message -->
       <transition name="fade">
         <div v-if="displayError" class="mb-6 bg-red-500/20 border-2 border-red-500/50 rounded-xl p-4 backdrop-blur-md">
@@ -129,11 +146,11 @@
             <div class="space-y-2">
               <button
                 @click="handleStartGame"
-                :disabled="!canStartGame || !selectedGame || !isHost"
+                :disabled="!canStartGame || !selectedGame || !isHost || isStartingGame"
                 class="w-full bg-gradient-to-r from-purple-600 via-pink-600 to-purple-600 hover:from-purple-500 hover:via-pink-500 hover:to-purple-500 text-white px-8 py-4 rounded-xl font-black text-lg shadow-2xl hover:shadow-pink-600/50 transition-all duration-300 transform hover:scale-105 border-2 border-pink-500/50 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 flex items-center justify-center gap-2"
               >
-                <Icon icon="mdi:play-circle" class="w-6 h-6" />
-                <span>Start Game</span>
+                <Icon :icon="isStartingGame ? 'mdi:loading' : 'mdi:play-circle'" :class="['w-6 h-6', { 'animate-spin': isStartingGame }]" />
+                <span>{{ isStartingGame ? 'Starting...' : 'Start Game' }}</span>
               </button>
               
               <!-- Helper messages -->
@@ -398,12 +415,14 @@ const gameStore = useGameStore()
 
 const {
   isConnected,
+  connectionLost,
   roomState,
   error,
   isHost,
   playerCount,
   canStartGame,
   connect,
+  retryConnection,
   createRoom,
   joinRoom,
   startGame,
@@ -456,8 +475,12 @@ const joinForm = ref({
 
 const selectedGame = ref<string | null>(null)
 const isConnecting = ref(false)
+const isStartingGame = ref(false)
 const copied = ref(false)
 const localError = ref<string | null>(null)
+// Tracks which action the paywall was opened for, so a successful payment
+// retries the right thing instead of always re-attempting room creation.
+const pendingPaywallAction = ref<'create' | 'start'>('create')
 
 // Use local error instead of readonly error from composable
 const displayError = computed(() => localError.value || error.value)
@@ -507,6 +530,7 @@ const multiplayerGames = [
 const handleCreateRoom = async () => {
   if (!createForm.value.nickname.trim() || isConnecting.value) return
 
+  pendingPaywallAction.value = 'create'
   if (!passActive.value) {
     openPaywall()
     return
@@ -628,34 +652,17 @@ const handleJoinRoom = async () => {
 
 const handleStartGame = () => {
   if (!selectedGame.value || !canStartGame.value) return
-  
-  // Set game in store
+
+  pendingPaywallAction.value = 'start'
+  isStartingGame.value = true
   gameStore.setSelectedGame(selectedGame.value as any)
-  
-  // Store room info for game pages (preserve nickname)
-  if (roomState.value.roomCode) {
-    const existingInfo = localStorage.getItem('multiplayer_room')
-    let roomInfo: any = {}
-    if (existingInfo) {
-      try {
-        roomInfo = JSON.parse(existingInfo)
-      } catch (e) {
-        roomInfo = {}
-      }
-    }
-    localStorage.setItem('multiplayer_room', JSON.stringify({
-      ...roomInfo,
-      roomCode: roomState.value.roomCode,
-      isHost: isHost.value,
-      answerVisibility: roomState.value.answerVisibility,
-    }))
-  }
-  
-  // Start game
   startGame(selectedGame.value)
-  
-  // Navigate to multiplayer game
-  navigateTo(`/multiplayer/${selectedGame.value}`)
+
+  // Navigation happens reactively once the server confirms gamePhase → 'playing'
+  // (see the roomState.gamePhase watcher below). Every client — host included —
+  // goes through that single path instead of the host also firing its own
+  // immediate navigateTo, which used to race the server round-trip and could
+  // flash the game screen before bouncing back if the start was rejected.
 }
 
 const handleLeaveRoom = () => {
@@ -693,14 +700,27 @@ watch(() => roomState.value.gamePhase, (newPhase) => {
 let hostRingHandler: ((e: Event) => void) | null = null
 
 const handlePaywallSuccess = () => {
-  handleCreateRoom()
+  if (pendingPaywallAction.value === 'start') {
+    handleStartGame()
+  } else {
+    handleCreateRoom()
+  }
 }
 
 watch(paymentRequired, (blocked) => {
   if (blocked) {
     isConnecting.value = false
+    isStartingGame.value = false
     clearPaymentRequired()
     openPaywall()
+  }
+})
+
+// Any room:error (start rejected, room full, etc.) means "Start Game" didn't
+// go through — clear the pending state so the button doesn't stay stuck.
+watch(error, (message) => {
+  if (message) {
+    isStartingGame.value = false
   }
 })
 

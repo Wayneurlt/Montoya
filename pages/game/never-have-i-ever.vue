@@ -24,12 +24,6 @@
               <span class="font-semibold text-xs sm:text-sm md:text-base">Round {{ roundCount }}</span>
             </div>
           </div>
-          <span
-            v-if="gameStore.gameMode === 'connection'"
-            class="text-xs sm:text-sm px-2 sm:px-3 py-1 sm:py-1.5 rounded-full bg-green-500/20 text-green-300 border border-green-400/30 whitespace-nowrap"
-          >
-            Connection
-          </span>
         </div>
       </div>
 
@@ -207,6 +201,7 @@
 <script setup lang="ts">
 import { ref, onMounted, computed, watch } from 'vue';
 import { Icon } from '@iconify/vue';
+import { push } from 'notivue';
 import { useAnalytics } from '~/composables/useAnalytics';
 // Questions are now loaded from database via API
 import { useNeverHaveIEverTracker } from '~/composables/useQuestionTracker';
@@ -280,6 +275,15 @@ const questionKey = computed(() => {
 // Initialize analytics
 const { trackPageView, updateActivity } = useAnalytics();
 
+// Shared across every call site that pulls a question from the tracker: once the
+// whole pool has been shown, the tracker resets and picks a repeat — tell the
+// player that's happening instead of silently repeating a question.
+const notifyIfRepeat = (result: { isRepeat: boolean } | null | undefined) => {
+  if (result?.isRepeat) {
+    push.info({ title: 'Fresh round!', message: "You've seen every question — shuffling for a new round.", duration: 4000 });
+  }
+};
+
 const fetchAnother = () => {
   showPenalty.value = false;
   
@@ -293,7 +297,8 @@ const fetchAnother = () => {
   
   const result = questionTracker.getNextQuestion();
   let questionText = result.question;
-  
+  notifyIfRepeat(result);
+
   // Don't adapt Never Have I Ever questions - they should stay as-is
   // The adaptQuestion function was replacing them with Truth-style icebreakers
   // questionText = groupGame.adaptQuestion(questionText, intensity);
@@ -334,6 +339,7 @@ const handleNextRound = () => {
   
   const result = questionTracker?.getNextQuestion();
   if (result) {
+    notifyIfRepeat(result);
     nextRound({ prompt: { text: result.question } });
     hasVoted.value = false;
     myVote.value = null;
@@ -351,6 +357,7 @@ watch(() => roomState.value.gamePhase, (newPhase) => {
     // If host, fetch next question
     if (isHost.value && questionTracker) {
       const result = questionTracker.getNextQuestion();
+      notifyIfRepeat(result);
       question.value = { text: result.question };
       questionCount.value++;
     } else if (roomState.value.currentPrompt) {
@@ -402,7 +409,7 @@ async function loadQuestions() {
     console.log('🔄 Loading Never Have I Ever questions from database...')
     
     // Removed intensity filter - get all questions
-    const response = await $fetch(`/api/questions/group-game?gameType=NEVER_HAVE_I_EVER&limit=200`)
+    const response = await $fetch(`/api/questions/group-game?gameType=NEVER_HAVE_I_EVER&limit=1000`)
       .catch(error => {
         console.error('❌ API call failed:', error)
         console.error('Error details:', error.message, error.data, error.statusCode)
@@ -504,6 +511,7 @@ onMounted(async () => {
       if (isMultiplayer.value) {
         if (isHost.value && roomState.value.gamePhase === 'playing') {
           const result = questionTracker.getNextQuestion();
+          notifyIfRepeat(result);
           question.value = { text: result.question };
           questionCount.value++;
         } else if (roomState.value.currentPrompt) {

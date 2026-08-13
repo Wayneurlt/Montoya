@@ -1,42 +1,12 @@
 <template>
   <div class="max-w-3xl mx-auto relative z-10 pt-4 sm:pt-6 md:pt-8">
     <!-- Header -->
-    <div class="flex justify-between items-center mb-6">
-      <button
-        @click="handleBackToLobby"
-        class="bg-white/10 hover:bg-white/20 backdrop-blur-md px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg transition-all flex items-center gap-2 border border-white/20 hover:scale-105"
-      >
-        <Icon icon="mdi:arrow-left" class="w-5 h-5" />
-        <span class="font-medium hidden sm:inline">Back to Lobby</span>
-      </button>
-      <div class="text-center">
-        <div class="text-xs text-white/60 mb-1">Room Code</div>
-        <button
-          @click="copyRoomCode"
-          class="group relative cursor-pointer transition-all hover:scale-105"
-          :title="copied ? 'Copied!' : 'Click to copy'"
-        >
-          <div class="text-2xl sm:text-3xl font-black bg-gradient-to-r from-purple-400 via-pink-500 to-cyan-400 bg-clip-text text-transparent flex items-center justify-center gap-2">
-            {{ roomState.roomCode }}
-            <Icon icon="mdi:content-copy" class="w-4 h-4 sm:w-5 sm:h-5 text-purple-400 opacity-70 group-hover:opacity-100 transition-opacity" />
-          </div>
-          <transition name="fade">
-            <div v-if="copied" class="absolute -bottom-8 left-1/2 transform -translate-x-1/2 bg-green-500 text-white px-3 py-1 rounded-lg text-xs whitespace-nowrap">
-              Copied!
-            </div>
-          </transition>
-        </button>
-      </div>
-      <div v-if="isHost" class="flex">
-        <button
-          @click="handleChangeGame"
-          class="bg-yellow-500/20 hover:bg-yellow-500/30 backdrop-blur-md px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg transition-all flex items-center gap-2 border border-yellow-500/30 hover:scale-105"
-        >
-          <Icon icon="mdi:gamepad-variant" class="w-5 h-5" />
-          <span class="font-medium hidden sm:inline">Change Game</span>
-        </button>
-      </div>
-    </div>
+    <MultiplayerGameHeader
+      :room-code="roomState.roomCode"
+      :is-host="isHost"
+      @back-to-lobby="handleBackToLobby"
+      @change-game="handleChangeGame"
+    />
 
     <!-- Game Title -->
     <div class="text-center mb-8">
@@ -44,6 +14,14 @@
         🙅 Never Have I Ever
       </h1>
       <p class="text-purple-200/80 text-sm font-medium">{{ roomState.answerVisibility === 'anonymous' ? 'Anonymous Mode' : 'Public Mode' }}</p>
+    </div>
+
+    <!-- Loading State -->
+    <div v-if="questionsLoading" class="mb-6 bg-blue-500/20 border border-blue-400/30 rounded-xl p-4 text-center">
+      <div class="flex items-center justify-center gap-3">
+        <Icon icon="svg-spinners:3-dots-fade" class="w-6 h-6" />
+        <span class="font-medium">Loading questions from database...</span>
+      </div>
     </div>
 
     <!-- Playing Phase: Show Question and Voting -->
@@ -154,6 +132,12 @@
           {{ isLoading ? 'Loading...' : 'Next Question' }}
         </button>
       </div>
+      <WaitingForHost
+        v-else
+        :host-name="hostName"
+        :multiplayer="multiplayer"
+        message="Waiting for host to continue..."
+      />
     </div>
 
     <!-- Game Started but No Question Yet -->
@@ -185,33 +169,21 @@
     />
 
     <!-- Player List -->
-    <div class="bg-white/10 backdrop-blur-md rounded-xl p-4 border border-white/20 mt-6">
-      <h3 class="font-bold mb-3 flex items-center gap-2">
-        <Icon icon="mdi:account-group" class="w-5 h-5" />
-        Players ({{ roomState.players.length }})
-      </h3>
-      <div class="grid grid-cols-2 sm:grid-cols-3 gap-2">
-        <div
-          v-for="player in roomState.players"
-          :key="player.socketId"
-          class="bg-white/5 rounded-lg p-2 text-center text-sm"
-          :class="{ 'ring-2 ring-purple-500': player.isHost }"
-        >
-          {{ player.nickname }}
-          <span v-if="player.isHost" class="text-xs text-purple-400">👑</span>
-        </div>
-      </div>
-    </div>
+    <MultiplayerPlayerList :players="roomState.players" />
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch, onMounted, type DeepReadonly } from 'vue'
+import { ref, computed, onMounted, type DeepReadonly } from 'vue'
 import { Icon } from '@iconify/vue'
 import { useRouter } from 'vue-router'
 import { navigateTo } from '#app'
 import WaitingForHost from './WaitingForHost.vue'
+import MultiplayerGameHeader from './MultiplayerGameHeader.vue'
+import MultiplayerPlayerList from './MultiplayerPlayerList.vue'
 import { useMultiplayer, type RoomState } from '~/composables/useMultiplayer'
+import { useMultiplayerVoting } from '~/composables/useMultiplayerVoting'
+import { useMultiplayerQuestions } from '~/composables/useMultiplayerQuestions'
 
 interface Props {
   roomState: DeepReadonly<RoomState>
@@ -242,24 +214,7 @@ const handleBackToLobby = () => {
   navigateTo('/lobby')
 }
 
-const isLoading = ref(false)
 const isSubmitting = ref(false)
-const hasVoted = ref(false)
-const myVote = ref<string | null>(null)
-const copied = ref(false)
-
-const copyRoomCode = async () => {
-  if (!roomState.value.roomCode) return
-  try {
-    await navigator.clipboard.writeText(roomState.value.roomCode)
-    copied.value = true
-    setTimeout(() => {
-      copied.value = false
-    }, 2000)
-  } catch (err) {
-    console.error('Failed to copy:', err)
-  }
-}
 
 const votes = computed(() => multiplayer.votes.value || [])
 
@@ -280,29 +235,11 @@ const hostName = computed(() => {
   return host?.nickname || 'Host'
 })
 
-// Watch for vote updates to check if we've voted
-watch(() => [multiplayer.votes.value, multiplayer.myPlayer.value] as const, ([newVotes, myPlayer]) => {
-  if (myPlayer && newVotes) {
-    const myVoteData = newVotes.find((v: any) => v.socketId === myPlayer.socketId)
-    if (myVoteData) {
-      hasVoted.value = true
-      myVote.value = myVoteData.vote
-    } else {
-      hasVoted.value = false
-      myVote.value = null
-    }
-  }
-}, { immediate: true })
-
-// Reset vote status when new question starts
-watch(() => roomState.value.currentPrompt, () => {
-  hasVoted.value = false
-  myVote.value = null
-})
+const { hasVoted, myVote, submitVote: castVote } = useMultiplayerVoting(multiplayer)
 
 const submitVote = async (vote: 'I Have' | 'I Have Not') => {
   if (isSubmitting.value || hasVoted.value) return
-  
+
   // Set submitting immediately to prevent double clicks
   isSubmitting.value = true
   hasVoted.value = true
@@ -310,7 +247,7 @@ const submitVote = async (vote: 'I Have' | 'I Have Not') => {
 
   try {
     // Submit vote - server will auto-transition to results when all players vote
-    multiplayer.submitVote(vote)
+    castVote(vote)
   } catch (error) {
     console.error('Error submitting vote:', error)
     // Reset on error
@@ -333,66 +270,49 @@ let questionTracker: any = null
 
 // Load questions from database
 async function loadQuestions() {
-  try {
-    const response = await $fetch('/api/questions/group-game?gameType=NEVER_HAVE_I_EVER&limit=200')
-    const questions = response.questions || []
-    const questionTexts = questions.map((q: any) => q.text || String(q))
-    
-    const { useNeverHaveIEverTracker } = await import('~/composables/useQuestionTracker')
-    questionTracker = useNeverHaveIEverTracker(questionTexts)
-  } catch (error) {
-    console.error('Error loading questions:', error)
-  }
+  const response = await $fetch('/api/questions/group-game?gameType=NEVER_HAVE_I_EVER&limit=1000')
+  const questions = response.questions || []
+  const questionTexts = questions.map((q: any) => q.text || String(q))
+
+  const { useNeverHaveIEverTracker } = await import('~/composables/useQuestionTracker')
+  questionTracker = useNeverHaveIEverTracker(questionTexts)
+  questionTracker.initializeTracker()
 }
 
-const getNextQuestion = async () => {
-  if (isLoading.value || !isHost.value) return
-  isLoading.value = true
+const { questionsLoading, isLoading, loadInitialQuestions, withHostLoading } = useMultiplayerQuestions(multiplayer)
 
-  try {
-    if (!questionTracker) {
-      await loadQuestions()
-    }
-    
-    if (questionTracker) {
-      const result = questionTracker.getNextQuestion()
-      multiplayer.nextRound({
-        text: result.question,
-        intensity: 2,
-      })
-    }
-  } catch (error) {
-    console.error('Error fetching question:', error)
-  } finally {
-    isLoading.value = false
+const getNextQuestion = () => withHostLoading(async () => {
+  if (!questionTracker) {
+    await loadQuestions()
   }
-}
 
-const handleSkipQuestion = async () => {
-  if (isLoading.value || !isHost.value) return
-  isLoading.value = true
-
-  try {
-    if (!questionTracker) {
-      await loadQuestions()
-    }
-    
-    if (questionTracker) {
-      const result = questionTracker.getNextQuestion()
-      multiplayer.skipQuestion({
-        text: result.question,
-        intensity: 2,
-      })
-    }
-  } catch (error) {
-    console.error('Error skipping question:', error)
-  } finally {
-    isLoading.value = false
+  if (questionTracker) {
+    const result = questionTracker.getNextQuestion()
+    multiplayer.nextRound({
+      text: result.question,
+      intensity: 2,
+    })
+    return result
   }
-}
+})
+
+const handleSkipQuestion = () => withHostLoading(async () => {
+  if (!questionTracker) {
+    await loadQuestions()
+  }
+
+  if (questionTracker) {
+    const result = questionTracker.getNextQuestion()
+    multiplayer.skipQuestion({
+      text: result.question,
+      intensity: 2,
+    })
+    return result
+  }
+})
 
 onMounted(() => {
-  loadQuestions()
+  loadInitialQuestions(loadQuestions)
 })
 </script>
 

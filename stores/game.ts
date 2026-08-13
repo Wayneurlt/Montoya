@@ -1,6 +1,6 @@
 import { defineStore } from 'pinia'
 
-export type GameMode = 'free-for-all' | 'relationship' | 'connection'
+export type GameMode = 'free-for-all' | 'relationship'
 export type GameType = 
   // Family games
   | 'charades' 
@@ -36,12 +36,12 @@ export interface GameState {
   
   // Two-player specific
   isTwoPlayerMode: boolean
-  mirrorRoundActive: boolean
-  guessModeActive: boolean
-  
+
   // Dynamic escalation
   intensityLevel: number // 1-5, starts at 1, escalates based on rounds/skips
 }
+
+const MAX_INTENSITY = 5
 
 export const useGameStore = defineStore('game', {
   state: (): GameState => ({
@@ -54,8 +54,6 @@ export const useGameStore = defineStore('game', {
     promptHistory: [],
     skipsUsed: 0,
     isTwoPlayerMode: false,
-    mirrorRoundActive: false,
-    guessModeActive: false,
     intensityLevel: 1,
   }),
 
@@ -87,25 +85,25 @@ export const useGameStore = defineStore('game', {
       )
     },
     
-    maxIntensity: (state): number => {
+    maxIntensity: (): number => {
       // Default to maximum intensity (wild)
-      return 5
+      return MAX_INTENSITY
     },
-    
+
     targetIntensity: (state): number => {
       // Calculate target intensity based on rounds, skips, and comfort level
       const baseIntensity = Math.min(
         state.intensityLevel,
-        state.maxIntensity
+        MAX_INTENSITY
       )
-      
+
       // Escalate based on rounds
       const roundBonus = Math.floor(state.currentRound / 5)
-      
+
       // Escalate based on skips (more skips = more comfortable = can handle more)
       const skipBonus = Math.min(Math.floor(state.skipsUsed / 3), 1)
-      
-      return Math.min(baseIntensity + roundBonus + skipBonus, state.maxIntensity)
+
+      return Math.min(baseIntensity + roundBonus + skipBonus, MAX_INTENSITY)
     },
   },
 
@@ -114,11 +112,6 @@ export const useGameStore = defineStore('game', {
     setPlayers(players: Player[]) {
       this.players = players
       this.isTwoPlayerMode = players.length === 2
-      
-      // Auto-enable connection mode for 2 players
-      if (players.length === 2 && !this.gameMode) {
-        this.gameMode = 'connection'
-      }
     },
     
     addPlayer(player: Player) {
@@ -175,31 +168,12 @@ export const useGameStore = defineStore('game', {
       }
     },
     
-    // Two-player specific actions
-    activateMirrorRound() {
-      this.mirrorRoundActive = true
-    },
-    
-    deactivateMirrorRound() {
-      this.mirrorRoundActive = false
-    },
-    
-    activateGuessMode() {
-      this.guessModeActive = true
-    },
-    
-    deactivateGuessMode() {
-      this.guessModeActive = false
-    },
-    
     // Reset and initialization
     resetGame() {
       this.currentRound = 0
       this.currentPlayerIndex = 0
       this.promptHistory = []
       this.skipsUsed = 0
-      this.mirrorRoundActive = false
-      this.guessModeActive = false
       this.intensityLevel = 1
     },
     

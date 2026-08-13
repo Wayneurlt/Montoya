@@ -334,6 +334,7 @@ function playAgain() {
   currentReveal.value = null;
   playerWords.value = {};
   wordRevealed.value = false;
+  gameStore.nextTurn();
 }
 
 onMounted(() => {

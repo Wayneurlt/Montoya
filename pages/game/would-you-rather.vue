@@ -229,6 +229,7 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, watch } from 'vue';
 import { Icon } from '@iconify/vue';
+import { push } from 'notivue';
 import { useAnalytics } from '~/composables/useAnalytics';
 import { useGameStore } from '~/stores/game';
 // Questions are now loaded from database via API
@@ -266,6 +267,15 @@ const penaltyCount = ref(0);
 
 // Initialize analytics
 const { trackPageView, updateActivity } = useAnalytics();
+
+// Shared across every call site that pulls a question from the tracker: once the
+// whole pool has been shown, the tracker resets and picks a repeat — tell the
+// player that's happening instead of silently repeating a question.
+const notifyIfRepeat = (result: { isRepeat: boolean } | null | undefined) => {
+  if (result?.isRepeat) {
+    push.info({ title: 'Fresh round!', message: "You've seen every question — shuffling for a new round.", duration: 4000 });
+  }
+};
 
 // Multiplayer vote counts
 const optionACount = computed(() => {
@@ -358,6 +368,7 @@ const handleNextRound = () => {
   
   const result = questionTracker?.getNextQuestion();
   if (result) {
+    notifyIfRepeat(result);
     nextRound({ prompt: { text: result.question } });
     hasVoted.value = false;
     selectedOption.value = null;
@@ -376,6 +387,7 @@ watch(() => roomState.value.gamePhase, (newPhase) => {
     // If host, fetch next question
     if (isHost.value && questionTracker) {
       const result = questionTracker.getNextQuestion();
+      notifyIfRepeat(result);
       question.value = { text: result.question };
       questionCount.value++;
       roundCount.value++;
@@ -411,7 +423,8 @@ const fetchAnother = () => {
   }
   
   const result = questionTracker.getNextQuestion();
-  
+  notifyIfRepeat(result);
+
   // Log usage stats for debugging
   const stats = questionTracker.getUsageStats.value;
   console.log(`Would You Rather - Used: ${stats.usedCount}/${stats.totalQuestions} (${stats.usagePercentage}%)`);
@@ -449,7 +462,7 @@ const applyPenalty = () => {
 async function loadQuestions() {
   try {
     console.log('🔄 Loading Would You Rather questions from database...')
-    const response = await $fetch('/api/questions/group-game?gameType=WOULD_YOU_RATHER&limit=100')
+    const response = await $fetch('/api/questions/group-game?gameType=WOULD_YOU_RATHER&limit=1000')
     console.log('Would You Rather API response:', response)
     const questions = response.questions || []
     
@@ -504,6 +517,7 @@ onMounted(async () => {
     if (isMultiplayer.value) {
       if (isHost.value && roomState.value.gamePhase === 'playing') {
         const result = questionTracker.getNextQuestion();
+        notifyIfRepeat(result);
         question.value = { text: result.question };
         questionCount.value++;
         roundCount.value++;

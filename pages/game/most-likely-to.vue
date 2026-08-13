@@ -212,6 +212,7 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, watch } from 'vue';
 import { Icon } from '@iconify/vue';
+import { push } from 'notivue';
 import { useAnalytics } from '~/composables/useAnalytics';
 import { useGameStore } from '~/stores/game';
 // Questions are now loaded from database via API
@@ -250,6 +251,15 @@ const selectedPlayer = ref<string | null>(null);
 
 // Initialize analytics
 const { trackPageView, updateActivity } = useAnalytics();
+
+// Shared across every call site that pulls a question from the tracker: once the
+// whole pool has been shown, the tracker resets and picks a repeat — tell the
+// player that's happening instead of silently repeating a question.
+const notifyIfRepeat = (result: { isRepeat: boolean } | null | undefined) => {
+  if (result?.isRepeat) {
+    push.info({ title: 'Fresh round!', message: "You've seen every question — shuffling for a new round.", duration: 4000 });
+  }
+};
 
 // Available players (excluding self)
 const availablePlayers = computed(() => {
@@ -315,7 +325,8 @@ const fetchAnother = () => {
   }
   
   const result = questionTracker.getNextQuestion();
-  
+  notifyIfRepeat(result);
+
   // Log usage stats for debugging
   const stats = questionTracker.getUsageStats.value;
   console.log(`Most Likely To - Used: ${stats.usedCount}/${stats.totalQuestions} (${stats.usagePercentage}%)`);
@@ -341,6 +352,7 @@ const handleNextRound = () => {
   
   const result = questionTracker?.getNextQuestion();
   if (result) {
+    notifyIfRepeat(result);
     nextRound({ prompt: { text: result.question } });
     hasVoted.value = false;
     selectedPlayer.value = null;
@@ -359,6 +371,7 @@ watch(() => roomState.value.gamePhase, (newPhase) => {
     // If host, fetch next question
     if (isHost.value && questionTracker) {
       const result = questionTracker.getNextQuestion();
+      notifyIfRepeat(result);
       question.value = { text: result.question };
       questionCount.value++;
       roundCount.value++;
@@ -409,7 +422,7 @@ const applyPenalty = () => {
 async function loadQuestions() {
   try {
     console.log('🔄 Loading Most Likely To questions from database...')
-    const response = await $fetch('/api/questions/group-game?gameType=MOST_LIKELY_TO&limit=100')
+    const response = await $fetch('/api/questions/group-game?gameType=MOST_LIKELY_TO&limit=1000')
       .catch(error => {
         console.error('❌ API call failed:', error)
         throw new Error(`Failed to fetch questions: ${error.message || 'Unknown error'}`)
@@ -479,6 +492,7 @@ onMounted(async () => {
       if (isMultiplayer.value) {
         if (isHost.value && roomState.value.gamePhase === 'playing') {
           const result = questionTracker.getNextQuestion();
+          notifyIfRepeat(result);
           question.value = { text: result.question };
           questionCount.value++;
           roundCount.value++;
