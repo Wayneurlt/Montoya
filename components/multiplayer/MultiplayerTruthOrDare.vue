@@ -7,7 +7,7 @@
         class="bg-white/10 hover:bg-white/20 backdrop-blur-md px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg transition-all flex items-center gap-2 border border-white/20 hover:scale-105"
       >
         <Icon icon="mdi:arrow-left" class="w-5 h-5" />
-        <span class="font-medium">Back to Lobby</span>
+        <span class="font-medium hidden sm:inline">Back to Lobby</span>
       </button>
       <div class="text-center">
         <div class="text-xs text-white/60 mb-1">Room Code</div>
@@ -247,17 +247,18 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, onBeforeUnmount, watch } from 'vue'
+import { ref, computed, onMounted, onBeforeUnmount, watch, type DeepReadonly } from 'vue'
 import { Icon } from '@iconify/vue'
 import { useRouter } from 'vue-router'
 import { navigateTo } from '#app'
 import TurnIndicator from './TurnIndicator.vue'
 import WaitingForHost from './WaitingForHost.vue'
+import { useMultiplayer, type RoomState } from '~/composables/useMultiplayer'
 
 interface Props {
-  roomState: any
+  roomState: DeepReadonly<RoomState>
   isHost: boolean
-  multiplayer: any
+  multiplayer: ReturnType<typeof useMultiplayer>
 }
 
 const props = defineProps<Props>()

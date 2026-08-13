@@ -8,6 +8,7 @@ export default defineNuxtConfig({
     "@nuxt/fonts",
     "@nuxt/icon",
     "nuxt-auth-utils",
+    "@vite-pwa/nuxt",
   ],
   compatibilityDate: "2024-11-01",
   devtools: { enabled: true },
@@ -37,11 +38,18 @@ export default defineNuxtConfig({
     },
     environment: process.env.ENVIROMENT,
 
+    // IntaSend (M-Pesa) — server-only, never exposed to the client
+    intasendPublishableKey: process.env.INTASEND_PUBLISHABLE_KEY,
+    intasendSecretKey: process.env.INTASEND_SECRET_KEY,
+    intasendTestMode: process.env.INTASEND_TEST_MODE !== "false",
+
     // --- NEW CONFIGURATION ADDED HERE ---
     // Keys inside 'public' are available on the client-side
     public: {
       geminiApiKey: process.env.GEMINI_API_KEY,
       socketUrl: process.env.NUXT_PUBLIC_SOCKET_URL,
+      multiplayerPassAmount: Number(process.env.MULTIPLAYER_PASS_AMOUNT || 20),
+      multiplayerPassHours: Number(process.env.MULTIPLAYER_PASS_HOURS || 24),
     },
     // --- END OF NEW CONFIGURATION ---
   },
@@ -65,6 +73,15 @@ export default defineNuxtConfig({
       },
     },
   },
+  nitro: {
+    // Prisma's generated client re-exports via bare specifiers like ".prisma/client/default"
+    // that Rollup's resolver rejects as invalid package names. Leave them external so
+    // Node's own module resolution (which handles the real node_modules/.prisma folder
+    // fine) takes over at runtime instead of Nitro trying to bundle them.
+    rollupConfig: {
+      external: [/^\.prisma\/client/],
+    },
+  },
   notivue: {
     limit: 3,
     avoidDuplicates: true,
@@ -72,6 +89,43 @@ export default defineNuxtConfig({
       global: {
         duration: 5000,
       },
+    },
+  },
+  pwa: {
+    registerType: "autoUpdate",
+    includeAssets: ["favicon.ico", "robots.txt", "logo.webp"],
+    manifest: {
+      name: "Montoya",
+      short_name: "Montoya",
+      description: "Montoya — multiplayer Truth or Dare and party games.",
+      theme_color: "#9333ea",
+      background_color: "#3b0764",
+      display: "standalone",
+      start_url: "/",
+      icons: [
+        { src: "pwa-64x64.png", sizes: "64x64", type: "image/png" },
+        { src: "pwa-192x192.png", sizes: "192x192", type: "image/png" },
+        { src: "pwa-512x512.png", sizes: "512x512", type: "image/png" },
+        {
+          src: "maskable-icon-512x512.png",
+          sizes: "512x512",
+          type: "image/png",
+          purpose: "maskable",
+        },
+      ],
+    },
+    workbox: {
+      globPatterns: ["**/*.{js,css,html,png,svg,ico,webp}"],
+    },
+    client: {
+      installPrompt: true,
+    },
+    devOptions: {
+      // Enabled so the install prompt / button can actually be tested with `npm run dev` —
+      // Chrome only fires `beforeinstallprompt` once a service worker is registered and
+      // controlling the page, and that never happens with this left disabled.
+      enabled: true,
+      type: "module",
     },
   },
 });

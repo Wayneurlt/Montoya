@@ -1,4 +1,5 @@
 import prisma from '~/lib/prisma'
+import { requireAdmin } from '~/server/utils/adminAuth'
 import { wouldYouRatherQuestions } from '~/data/questions/wouldyourather'
 import { neverHaveIEverQuestions } from '~/data/questions/neverhaveiever'
 import { mostLikelyToQuestions } from '~/data/questions/mostlikelyto'
@@ -8,7 +9,9 @@ import { spicyTruthQuestions } from '~/data/questions/spicytruth'
 import { spicyDareQuestions } from '~/data/questions/spicydare'
 import { doOrDrinkQuestions } from '~/data/questions/doordrink'
 
-export default defineEventHandler(async () => {
+export default defineEventHandler(async (event) => {
+  requireAdmin(event)
+
   // Group game questions
   const groupQuestions: Array<{
     gameType: 'NEVER_HAVE_I_EVER' | 'MOST_LIKELY_TO' | 'WOULD_YOU_RATHER'

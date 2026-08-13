@@ -391,7 +391,13 @@ const ACTIONS = [
 const getLocalStorage = (key, defaultValue) => {
   if (typeof window !== "undefined" && window.localStorage) {
     const value = window.localStorage.getItem(key);
-    return value ? JSON.parse(value) : defaultValue;
+    if (!value) return defaultValue;
+    try {
+      return JSON.parse(value);
+    } catch (e) {
+      console.error(`Failed to parse localStorage key "${key}":`, e);
+      return defaultValue;
+    }
   }
   return defaultValue;
 };

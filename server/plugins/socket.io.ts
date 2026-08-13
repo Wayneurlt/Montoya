@@ -1,6 +1,28 @@
 import { Server } from 'socket.io'
-import type { Server as HTTPServer } from 'http'
+import type { Server as HTTPServer, IncomingMessage } from 'http'
+import jwt from 'jsonwebtoken'
 import { realtimeAnalytics } from '~/server/utils/realtimeAnalytics'
+import { JWT_SECRET } from '~/server/utils/jwtSecret'
+import { extractMultiplayerPassFromCookieHeader } from '~/server/utils/multiplayerPass'
+
+function isRequestFromAdmin(request: IncomingMessage): boolean {
+  const cookieHeader = request.headers.cookie
+  if (!cookieHeader) return false
+
+  const match = cookieHeader.match(/(?:^|;\s*)admin-token=([^;]+)/)
+  if (!match) return false
+
+  try {
+    jwt.verify(decodeURIComponent(match[1]), JWT_SECRET)
+    return true
+  } catch {
+    return false
+  }
+}
+
+function hasValidMultiplayerPass(request: IncomingMessage): boolean {
+  return extractMultiplayerPassFromCookieHeader(request.headers.cookie) !== null
+}
 
 // Room state management
 interface RoomPlayer {
@@ -138,14 +160,16 @@ export default defineNitroPlugin((nitroApp) => {
       address: httpServer.address(),
     })
 
+    const corsOrigin = process.env.SOCKET_CORS_ORIGIN ||
+      (process.env.NODE_ENV === 'production' ? 'https://www.montoya.ke' : '*')
+
     io = new Server(httpServer, {
       cors: {
-        origin: '*',
+        origin: corsOrigin,
         methods: ['GET', 'POST'],
       },
       transports: ['websocket', 'polling'],
       path: '/socket.io/',
-      allowEIO3: true,
     })
 
     console.log('🎉 Socket.IO server created successfully!')
@@ -169,8 +193,12 @@ export default defineNitroPlugin((nitroApp) => {
       roomCode: null,
     })
 
-    // Admin analytics room
+    // Admin analytics room (admin-only: verify the admin-token cookie on the handshake)
     socket.on('admin:join-analytics', () => {
+      if (!isRequestFromAdmin(socket.request)) {
+        console.warn(`Rejected admin:join-analytics from unauthenticated socket ${socket.id}`)
+        return
+      }
       socket.join('admin:analytics')
       console.log(`📊 Admin client ${socket.id} joined analytics room`)
       // Send immediate stats
@@ -192,6 +220,14 @@ export default defineNitroPlugin((nitroApp) => {
       gender?: 'male' | 'female' | 'other'
     }) => {
       try {
+        if (!hasValidMultiplayerPass(socket.request)) {
+          socket.emit('room:error', {
+            message: 'Payment required to host a room',
+            code: 'PAYMENT_REQUIRED',
+          })
+          return
+        }
+
         const roomCode = generateRoomCode()
         const roomId = `room_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
 

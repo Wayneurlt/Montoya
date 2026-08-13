@@ -1,6 +1,7 @@
 // This endpoint seeds ~200 curated cards across games.
 // Call once in dev: POST /api/cards/seed-default
 import prisma from "~/lib/prisma";
+import { requireAdmin } from "~/server/utils/adminAuth";
 
 type C = { type: 'TRUTH' | 'DARE' | 'DO'; gameType: 'TRUTH_OR_DARE' | 'DO_OR_DRINK' | 'DICE_OF_DESIRE'; text: string; intensity?: number; drinkAmount?: string };
 
@@ -18,7 +19,9 @@ const dos: C[] = Array.from({ length: 70 }).map((_, i) => ({
 
 const payload: C[] = [...truths, ...dares, ...dos];
 
-export default defineEventHandler(async () => {
+export default defineEventHandler(async (event) => {
+  requireAdmin(event);
+
   const created = await prisma.gameCard.createMany({
     data: payload,
     skipDuplicates: true,

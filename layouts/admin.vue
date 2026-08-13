@@ -77,7 +77,7 @@
 
     <!-- Mobile sidebar drawer -->
     <transition name="fade">
-      <div v-if="isSidebarOpen" class="fixed inset-0 z-40 lg:hidden">
+      <div v-if="isSidebarOpen" class="fixed inset-0 z-40 md:hidden">
         <div class="absolute inset-0 bg-black/60" @click="isSidebarOpen = false"></div>
         <div class="absolute inset-y-0 left-0 w-72 bg-gradient-to-b from-slate-900 to-black backdrop-blur-sm border-r border-white/10 p-4 z-50">
           <div class="flex items-center justify-between h-12">

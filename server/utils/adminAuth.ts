@@ -1,5 +1,6 @@
 import jwt from 'jsonwebtoken'
 import type { EventHandlerRequest, H3Event } from 'h3'
+import { JWT_SECRET } from './jwtSecret'
 
 export interface AdminUser {
   adminId: number
@@ -17,7 +18,7 @@ export function requireAdmin(event: H3Event<EventHandlerRequest>): AdminUser {
   }
 
   try {
-    const decoded = jwt.verify(token, process.env.JWT_SECRET || 'fallback-secret') as AdminUser
+    const decoded = jwt.verify(token, JWT_SECRET) as AdminUser
     return decoded
   } catch (error) {
     throw createError({

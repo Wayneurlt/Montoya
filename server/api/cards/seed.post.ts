@@ -1,6 +1,9 @@
 import prisma from "~/lib/prisma";
+import { requireAdmin } from "~/server/utils/adminAuth";
 
 export default defineEventHandler(async (event) => {
+  requireAdmin(event);
+
   const body = await readBody<{ cards: Array<{
     type: 'TRUTH' | 'DARE' | 'DO',
     gameType: 'TRUTH_OR_DARE' | 'DO_OR_DRINK' | 'DICE_OF_DESIRE',

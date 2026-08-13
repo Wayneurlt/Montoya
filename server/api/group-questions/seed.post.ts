@@ -1,6 +1,9 @@
 import prisma from "~/lib/prisma";
+import { requireAdmin } from "~/server/utils/adminAuth";
 
 export default defineEventHandler(async (event) => {
+  requireAdmin(event);
+
   const body = await readBody<{
     questions: Array<{ gameType: "NEVER_HAVE_I_EVER" | "MOST_LIKELY_TO" | "WOULD_YOU_RATHER"; text: string; intensity?: number; isActive?: boolean }>;
   }>(event);

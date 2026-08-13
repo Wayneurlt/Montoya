@@ -50,6 +50,7 @@ const roomState = ref<RoomState>({
 
 const votes = ref<VoteData[]>([])
 const error = ref<string | null>(null)
+const paymentRequired = ref(false)
 const isHost = computed(() => {
   // Get socket from the connect function's closure
   const currentSocket = socket
@@ -278,7 +279,13 @@ export const useMultiplayer = () => {
       console.log('📊 Results:', data)
     })
 
-    socket.on('room:error', (data: { message: string }) => {
+    socket.on('room:error', (data: { message: string; code?: string }) => {
+      if (data.code === 'PAYMENT_REQUIRED') {
+        paymentRequired.value = true
+        console.warn('💳 Room creation blocked: payment required')
+        return
+      }
+
       const msg = data.message === 'Room not found'
         ? "That room code doesn't exist. Double-check the code with the host or create your own room."
         : data.message
@@ -435,6 +442,10 @@ export const useMultiplayer = () => {
     error.value = null
   }
 
+  const clearPaymentRequired = () => {
+    paymentRequired.value = false
+  }
+
   // Auto-reconnect helper - call this after socket connects
   const attemptAutoReconnect = () => {
     if (typeof window !== 'undefined' && isConnected.value && !roomState.value.roomCode) {
@@ -459,6 +470,7 @@ export const useMultiplayer = () => {
     roomState: readonly(roomState),
     votes: readonly(votes),
     error: readonly(error),
+    paymentRequired: readonly(paymentRequired),
     isHost,
     myPlayer: readonly(myPlayer),
     
@@ -481,6 +493,7 @@ export const useMultiplayer = () => {
     leaveRoom,
     ringHost,
     clearError,
+    clearPaymentRequired,
     attemptAutoReconnect,
     socket, // Export socket for analytics
   }

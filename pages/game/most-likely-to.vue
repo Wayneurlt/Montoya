@@ -218,6 +218,11 @@ import { useGameStore } from '~/stores/game';
 import { useMostLikelyToTracker } from '~/composables/useQuestionTracker';
 import { useMultiplayer } from '~/composables/useMultiplayer';
 
+// Multiplayer room state lives in a process-wide singleton (see useMultiplayer.ts),
+// not per-request — rendering it during SSR could leak one user's live room into
+// another user's server-rendered HTML, so this page is client-only.
+definePageMeta({ ssr: false });
+
 const gameStore = useGameStore();
 const currentPlayer = computed(() => gameStore.currentPlayer);
 

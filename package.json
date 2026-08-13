@@ -14,8 +14,7 @@
     "prisma:schema": "npx prisma db push",
     "prisma": "npm run prisma:generate && npm run prisma:migrate && npm run prisma:schema",
     "db:seed": "node seed-database.js",
-    "db:seed:full": "npx tsc --project tsconfig.seed.json && npm run db:seed",
-    "start:socket": "node socket-server/index.js"
+    "db:seed:full": "npx tsc --project tsconfig.seed.json && npm run db:seed"
   },
   "dependencies": {
     "@iconify/vue": "^5.0.0",
@@ -26,9 +25,10 @@
     "@prisma/nuxt": "^0.3.0",
     "@types/bcryptjs": "^2.4.6",
     "@types/jsonwebtoken": "^9.0.10",
-    "@vercel/analytics": "^1.5.0",
+    "@vite-pwa/nuxt": "^1.1.1",
     "bcryptjs": "^3.0.2",
     "gsap": "^3.13.0",
+    "intasend-node": "^1.1.2",
     "jsonwebtoken": "^9.0.2",
     "morgan": "^1.10.0",
     "notivue": "^2.4.5",
@@ -42,6 +42,9 @@
   },
   "devDependencies": {
     "@types/morgan": "^1.9.9",
-    "prisma": "^6.0.0"
+    "@vite-pwa/assets-generator": "^1.0.2",
+    "prisma": "^6.0.0",
+    "sharp": "^0.35.3",
+    "sharp-ico": "^0.1.5"
   }
 }

@@ -373,6 +373,8 @@
         </div>
       </div>
     </div>
+
+    <MultiplayerPaywallModal @success="handlePaywallSuccess" />
   </div>
 </template>
 
@@ -382,7 +384,14 @@ import { Icon } from '@iconify/vue'
 import { push } from 'notivue'
 import { useMultiplayer } from '~/composables/useMultiplayer'
 import { playRingSound, vibrateRing } from '~/composables/useRingSound'
+import { usePayment } from '~/composables/usePayment'
 import { useGameStore } from '~/stores/game'
+import MultiplayerPaywallModal from '~/components/payment/MultiplayerPaywallModal.vue'
+
+// Multiplayer room state lives in a process-wide singleton (see useMultiplayer.ts),
+// not per-request — rendering it during SSR could leak one user's live room into
+// another user's server-rendered HTML, so this page is client-only.
+definePageMeta({ ssr: false })
 
 const multiplayer = useMultiplayer()
 const gameStore = useGameStore()
@@ -403,11 +412,17 @@ const {
   attemptAutoReconnect,
   ringHost,
   clearError,
+  paymentRequired,
+  clearPaymentRequired,
 } = multiplayer
+
+const { passActive, checkEntitlement, openPaywall } = usePayment()
 
 const isRinging = ref(false)
 const ringHostCooldown = ref(0)
 let ringCooldownTimer: ReturnType<typeof setInterval> | null = null
+let isComponentMounted = true
+let pendingConnectTimeout: ReturnType<typeof setTimeout> | null = null
 
 const handleRingHost = () => {
   if (isRinging.value || ringHostCooldown.value > 0) return
@@ -491,10 +506,15 @@ const multiplayerGames = [
 
 const handleCreateRoom = async () => {
   if (!createForm.value.nickname.trim() || isConnecting.value) return
-  
+
+  if (!passActive.value) {
+    openPaywall()
+    return
+  }
+
   isConnecting.value = true
   localError.value = null
-  
+
   try {
     // Connect first
     const socket = connect()
@@ -506,17 +526,19 @@ const handleCreateRoom = async () => {
     
     // Wait for connection to be established (max 3 seconds)
     let attempts = 0
-    while (!isConnected.value && attempts < 15) {
+    while (!isConnected.value && attempts < 15 && isComponentMounted) {
       await new Promise(resolve => setTimeout(resolve, 200))
       attempts++
     }
-    
+
+    if (!isComponentMounted) return
+
     if (!isConnected.value) {
       localError.value = 'Connection timeout. Please refresh and try again.'
       isConnecting.value = false
       return
     }
-    
+
     // Create room
     createRoom({
       roomName: createForm.value.roomName || undefined,
@@ -524,13 +546,16 @@ const handleCreateRoom = async () => {
       nickname: createForm.value.nickname,
       gender: createForm.value.gender,
     })
-    
+
     // Store room info for reconnection (will be updated when room is created)
     // Update nickname and gender after room is created
-    setTimeout(() => {
-      updateNickname(createForm.value.nickname, createForm.value.gender)
-      // Store room info once we have the room code
+    pendingConnectTimeout = setTimeout(() => {
+      if (!isComponentMounted) return
+      // Only update nickname / persist room info if the room actually got created —
+      // room:create can be rejected server-side (e.g. payment required), in which case
+      // roomCode is never set and there's no room to update.
       if (roomState.value.roomCode) {
+        updateNickname(createForm.value.nickname, createForm.value.gender)
         localStorage.setItem('multiplayer_room', JSON.stringify({
           roomCode: roomState.value.roomCode,
           nickname: createForm.value.nickname,
@@ -565,29 +590,32 @@ const handleJoinRoom = async () => {
     
     // Wait for connection to be established (max 3 seconds)
     let attempts = 0
-    while (!isConnected.value && attempts < 15) {
+    while (!isConnected.value && attempts < 15 && isComponentMounted) {
       await new Promise(resolve => setTimeout(resolve, 200))
       attempts++
     }
-    
+
+    if (!isComponentMounted) return
+
     if (!isConnected.value) {
       localError.value = 'Connection timeout. Please refresh and try again.'
       isConnecting.value = false
       return
     }
-    
+
     // Join room
     joinRoom(joinForm.value.roomCode, joinForm.value.nickname, joinForm.value.gender)
-    
+
     // Store room info for reconnection
     localStorage.setItem('multiplayer_room', JSON.stringify({
       roomCode: joinForm.value.roomCode,
       nickname: joinForm.value.nickname,
       gender: joinForm.value.gender,
     }))
-    
+
     // Update nickname and gender after joining (in case joinRoom doesn't accept gender)
-    setTimeout(() => {
+    pendingConnectTimeout = setTimeout(() => {
+      if (!isComponentMounted) return
       updateNickname(joinForm.value.nickname, joinForm.value.gender)
       isConnecting.value = false
     }, 500)
@@ -664,8 +692,21 @@ watch(() => roomState.value.gamePhase, (newPhase) => {
 
 let hostRingHandler: ((e: Event) => void) | null = null
 
+const handlePaywallSuccess = () => {
+  handleCreateRoom()
+}
+
+watch(paymentRequired, (blocked) => {
+  if (blocked) {
+    isConnecting.value = false
+    clearPaymentRequired()
+    openPaywall()
+  }
+})
+
 onMounted(() => {
   connect()
+  checkEntitlement()
 
   // Host ring: show toast + sound when a player rings (host is on lobby)
   if (typeof window !== 'undefined') {
@@ -697,6 +738,7 @@ onMounted(() => {
             
             // Rejoin room using the composable method
             setTimeout(() => {
+              if (!isComponentMounted) return
               console.log('🔄 Auto-reconnecting to room from lobby:', info.roomCode)
               attemptAutoReconnect()
             }, 300)
@@ -711,6 +753,11 @@ onMounted(() => {
 })
 
 onBeforeUnmount(() => {
+  isComponentMounted = false
+  if (pendingConnectTimeout) {
+    clearTimeout(pendingConnectTimeout)
+    pendingConnectTimeout = null
+  }
   if (ringCooldownTimer) {
     clearInterval(ringCooldownTimer)
     ringCooldownTimer = null

@@ -47,8 +47,8 @@
       <!-- Main Question Card with Split Display -->
       <div class="mb-8">
         <div class="bg-gradient-to-br from-red-950/60 to-black/90 backdrop-blur-xl rounded-3xl p-6 md:p-8 shadow-2xl border-2 border-red-700/30 relative overflow-hidden">
-          <!-- Decorative VS badge -->
-          <div class="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 z-20">
+          <!-- Decorative VS badge (only shown once options sit side-by-side, md+) -->
+          <div class="hidden md:block absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 z-20">
             <div class="bg-gradient-to-r from-red-700 to-orange-700 px-6 py-3 rounded-full shadow-2xl border-4 border-amber-500/40 rotate-12 animate-pulse-slow">
               <span class="text-2xl font-black">VS</span>
             </div>
@@ -203,7 +203,7 @@
       </transition>
 
       <!-- Game Stats Grid -->
-      <div class="grid grid-cols-3 gap-4">
+      <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
         <div class="bg-black/40 backdrop-blur-md rounded-xl p-4 border border-red-700/20 text-center hover:bg-red-950/30 transition-all hover:scale-105">
           <Icon icon="mdi:thought-bubble" class="w-8 h-8 mx-auto mb-2 text-red-500" />
           <p class="text-2xl font-bold text-white">{{ questionCount }}</p>
@@ -234,6 +234,11 @@ import { useGameStore } from '~/stores/game';
 // Questions are now loaded from database via API
 import { useWouldYouRatherTracker } from '~/composables/useQuestionTracker';
 import { useMultiplayer } from '~/composables/useMultiplayer';
+
+// Multiplayer room state lives in a process-wide singleton (see useMultiplayer.ts),
+// not per-request — rendering it during SSR could leak one user's live room into
+// another user's server-rendered HTML, so this page is client-only.
+definePageMeta({ ssr: false });
 
 const gameStore = useGameStore();
 const currentPlayer = computed(() => gameStore.currentPlayer);

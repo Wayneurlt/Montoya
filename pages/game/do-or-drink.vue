@@ -10,21 +10,21 @@
       class="max-w-3xl mx-auto bg-white/10 backdrop-blur-md rounded-xl sm:rounded-2xl p-4 sm:p-5 md:p-6 lg:p-8 shadow-2xl relative z-10"
     >
       <!-- Home Button & Info -->
-      <div class="flex justify-between items-center mb-6">
-        <div class="flex gap-2">
-          <NuxtLink to="/" class="bg-white/10 hover:bg-white/20 backdrop-blur-md px-4 py-2 rounded-xl transition-all duration-300 flex items-center gap-2 border border-white/20 hover:scale-105 shadow-lg">
-            <Icon icon="mdi:home" class="w-5 h-5" />
+      <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 sm:gap-0 mb-6">
+        <div class="flex gap-2 w-full sm:w-auto">
+          <NuxtLink to="/" class="bg-white/10 hover:bg-white/20 backdrop-blur-md px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg sm:rounded-xl transition-all duration-300 flex items-center gap-1.5 sm:gap-2 border border-white/20 hover:scale-105 shadow-lg text-sm sm:text-base flex-1 sm:flex-initial justify-center sm:justify-start">
+            <Icon icon="mdi:home" class="w-4 h-4 sm:w-5 sm:h-5" />
             <span class="font-medium">Home</span>
           </NuxtLink>
-          <NuxtLink to="/setup?step=game-selection" class="bg-white/10 hover:bg-white/20 backdrop-blur-md px-4 py-2 rounded-xl transition-all duration-300 flex items-center gap-2 border border-white/20 hover:scale-105 shadow-lg">
-            <Icon icon="mdi:arrow-left" class="w-5 h-5" />
+          <NuxtLink to="/setup?step=game-selection" class="bg-white/10 hover:bg-white/20 backdrop-blur-md px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg sm:rounded-xl transition-all duration-300 flex items-center gap-1.5 sm:gap-2 border border-white/20 hover:scale-105 shadow-lg text-sm sm:text-base flex-1 sm:flex-initial justify-center sm:justify-start">
+            <Icon icon="mdi:arrow-left" class="w-4 h-4 sm:w-5 sm:h-5" />
             <span class="font-medium">Back</span>
           </NuxtLink>
         </div>
-        
-        <div class="flex items-center gap-2">
+
+        <div class="flex items-center gap-2 w-full sm:w-auto justify-center sm:justify-end">
           <span
-            class="text-sm px-3 py-1.5 rounded-full border shadow-md"
+            class="text-xs sm:text-sm px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-full border shadow-md"
             :class="
               gameMode === 'individual'
                 ? 'bg-pink-500/20 text-pink-300 border-pink-400/30'
@@ -42,17 +42,17 @@
             }}
           </span>
           <span
-            class="text-sm px-3 py-1.5 rounded-full bg-purple-500/20 text-purple-300 border border-purple-400/30 shadow-md"
+            class="text-xs sm:text-sm px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-full bg-purple-500/20 text-purple-300 border border-purple-400/30 shadow-md"
           >
             Level {{ gameLevel }}
           </span>
         </div>
       </div>
-      
+
       <!-- Game Header -->
       <div class="text-center mb-8">
         <h1
-          class="text-5xl md:text-6xl font-black mb-2 bg-clip-text text-transparent bg-gradient-to-r from-purple-400 via-pink-500 to-cyan-400 drop-shadow-2xl"
+          class="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-black mb-2 bg-clip-text text-transparent bg-gradient-to-r from-purple-400 via-pink-500 to-cyan-400 drop-shadow-2xl"
         >
           Do or Drink
         </h1>
@@ -131,11 +131,11 @@
       <div
         class="flex justify-between items-center mb-8 p-6 bg-gradient-to-r from-white/10 to-white/5 rounded-2xl border-2 border-white/20 shadow-xl backdrop-blur-lg"
       >
-        <div>
+        <div class="min-w-0">
           <h3 class="text-xs font-bold text-white/60 uppercase tracking-wider mb-1">Current Turn</h3>
-          <p class="text-2xl font-black flex items-center gap-2">
-            <span>{{ currentPlayer?.name }}</span>
-            <span class="text-3xl">{{
+          <p class="text-2xl font-black flex items-center gap-2 min-w-0">
+            <span class="truncate">{{ currentPlayer?.name }}</span>
+            <span class="text-3xl flex-shrink-0">{{
               currentPlayer?.gender === "male" ? "♂" : "♀"
             }}</span>
           </p>
@@ -151,7 +151,7 @@
 
       <!-- Main Game Card -->
       <div
-        class="relative w-full h-80 mb-8 cursor-pointer perspective-1000 group"
+        class="relative w-full h-[26rem] sm:h-96 md:h-80 mb-8 cursor-pointer perspective-1000 group"
         @click="flipCard"
       >
         <div
@@ -203,7 +203,7 @@
 
           <!-- Back of Card -->
           <div
-            class="absolute w-full h-full backface-hidden bg-white text-gray-900 rounded-3xl flex flex-col justify-center items-center p-8 shadow-2xl rotate-y-180 border-4 border-white/40"
+            class="absolute w-full h-full backface-hidden bg-white text-gray-900 rounded-3xl flex flex-col justify-center items-center p-6 sm:p-8 shadow-2xl rotate-y-180 border-4 border-white/40 overflow-y-auto"
           >
             <div v-if="currentCard" class="text-center w-full">
               <span

@@ -26,3 +26,6 @@ logs
 # Compiled question data files
 data/questions/js/
 tsconfig.seed.json
+
+# Generated Prisma client
+generated/

@@ -156,22 +156,30 @@ async function main() {
     totalCreated++
   }
 
-  // Create default admin user
-  console.log('👤 Creating default admin user...')
+  // Create admin user from required env vars (never hardcode credentials)
+  const adminUsername = process.env.ADMIN_USERNAME
+  const adminPassword = process.env.ADMIN_PASSWORD
+
+  if (!adminUsername || !adminPassword) {
+    throw new Error(
+      'ADMIN_USERNAME and ADMIN_PASSWORD environment variables must be set to seed the admin account'
+    )
+  }
+
+  console.log(`👤 Creating admin user "${adminUsername}"...`)
   const bcrypt = await import('bcryptjs')
-  const hashedPassword = await bcrypt.hash('admin123', 10)
-  
+  const hashedPassword = await bcrypt.hash(adminPassword, 10)
+
   await prisma.admin.upsert({
-    where: { username: 'admin' },
+    where: { username: adminUsername },
     update: {},
     create: {
-      username: 'admin',
+      username: adminUsername,
       password: hashedPassword
     }
   })
 
-  console.log(`✅ Seeded ${totalCreated} questions and created admin user`)
-  console.log('🔑 Admin credentials: username=admin, password=admin123')
+  console.log(`✅ Seeded ${totalCreated} questions and ensured admin user "${adminUsername}" exists`)
 }
 
 main()

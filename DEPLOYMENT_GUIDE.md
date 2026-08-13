@@ -1,98 +1,43 @@
-# Deployment Guide for Socket.IO with Vercel
+# Deployment Guide
 
-## Problem
-Vercel is a serverless platform and **does not support persistent WebSocket connections** required by Socket.IO. This means Socket.IO cannot run directly on Vercel.
+## Current setup
 
-## Solution: Separate Socket.IO Server
+Montoya is a single Nuxt 3 app deployed as one process — there is no separate
+Socket.IO server. Real-time multiplayer is handled by the Nitro server plugin
+at `server/plugins/socket.io.ts`, which runs in the same process as the HTTP
+server and listens on the same port.
 
-A standalone Socket.IO server has been created in the `socket-server/` directory. You need to deploy this separately on a platform that supports WebSockets.
+- **Host:** GCP VM, managed by PM2 (see `.github/workflows/temi.yaml`)
+- **Port:** `3200` (set via `PORT` / `NITRO_PORT`)
+- **Reverse proxy:** nginx forwards both normal HTTP traffic and the
+  `/socket.io/` path to port 3200 — see `nginx-websocket-config.example`.
+- **Deploy trigger:** push to `main` runs the `Deploy Remotely` GitHub Action,
+  which builds the app, rsyncs `.output/` to the VM, and restarts the PM2
+  process.
 
-### Quick Start (Recommended: Railway)
+### Required environment variables
 
-1. **Deploy the Socket.IO Server:**
-   - Go to [Railway](https://railway.app) and sign up
-   - Click "New Project" → "Deploy from GitHub repo"
-   - Select the `socket-server` folder (or create a new repo with just that folder)
-   - Railway will auto-detect and deploy
-   - Copy the deployment URL (e.g., `https://your-app.railway.app`)
+Set these on the VM (or in the CI workflow's generated PM2 ecosystem file):
 
-2. **Configure Vercel:**
-   - Go to your Vercel project settings
-   - Navigate to "Environment Variables"
-   - Add: `NUXT_PUBLIC_SOCKET_URL` = `https://your-app.railway.app`
-   - Redeploy your Vercel app
-
-3. **Test:**
-   - Your app should now connect to the separate Socket.IO server
-   - Check browser console - you should see successful WebSocket connections
-
-### Alternative Platforms
-
-#### Render
-1. Go to [Render](https://render.com)
-2. New → Web Service
-3. Connect repo, set Root Directory to `socket-server`
-4. Start Command: `node index.js`
-5. Deploy and use the URL in Vercel env vars
-
-#### Fly.io
-1. Install: `npm install -g flyctl`
-2. In `socket-server/` folder: `fly launch`
-3. Deploy: `fly deploy`
-4. Use the URL in Vercel env vars
-
-#### Your GCP VM
-1. Upload `socket-server/` folder to your VM
-2. Run `npm install` and `npm start`
-3. Set up reverse proxy if needed
-4. Use your VM URL in Vercel env vars
-
-### Environment Variables
-
-**In Vercel:**
 ```
-NUXT_PUBLIC_SOCKET_URL=https://your-socket-server.com
+DATABASE_URL=postgresql://...
+NUXT_SESSION_PASSWORD=...
+JWT_SECRET=...
+ADMIN_USERNAME=...   # used only by db:seed to provision the admin account
+ADMIN_PASSWORD=...   # used only by db:seed to provision the admin account
 ```
 
-**In Socket.IO Server (optional):**
+`NUXT_PUBLIC_SOCKET_URL` is intentionally left unset in production — the
+client falls back to `window.location.origin` (see `composables/useMultiplayer.ts`),
+which is correct since the socket server and the web app are the same process.
+Only set it if you deliberately split the socket server out again.
+
+### Local development
+
+```bash
+npm install
+npm run dev
 ```
-PORT=3001  # Defaults to 3001 if not set
-```
 
-### Testing Locally
-
-1. Start the Socket.IO server:
-   ```bash
-   cd socket-server
-   npm install
-   npm start
-   ```
-
-2. Set local environment variable:
-   ```bash
-   # In your .env file or Vercel local dev
-   NUXT_PUBLIC_SOCKET_URL=http://localhost:3001
-   ```
-
-3. Start your Nuxt app and test the connection
-
-### Important Notes
-
-- The Socket.IO server is stateless - rooms reset on server restart
-- CORS is configured to allow all origins (you may want to restrict this in production)
-- The client code has been updated to use `useRuntimeConfig()` for proper Nuxt 3 compatibility
-- Make sure the Socket.IO server URL is accessible from your Vercel deployment
-
-### Troubleshooting
-
-**Connection still failing?**
-- Verify `NUXT_PUBLIC_SOCKET_URL` is set correctly in Vercel
-- Check that the Socket.IO server is running and accessible
-- Ensure CORS is properly configured on the Socket.IO server
-- Check browser console for specific error messages
-
-**Still connecting to Vercel?**
-- Clear browser cache and hard refresh
-- Verify the environment variable is set in Vercel (not just locally)
-- Redeploy your Vercel app after setting the env var
-
+The dev server serves both HTTP routes and the Socket.IO endpoint on the same
+port, matching production.

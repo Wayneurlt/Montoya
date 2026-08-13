@@ -1,6 +1,9 @@
 import prisma from '~/lib/prisma'
+import { requireAdmin } from '~/server/utils/adminAuth'
 
-export default defineEventHandler(async () => {
+export default defineEventHandler(async (event) => {
+  requireAdmin(event)
+
   try {
     console.log('🗑️ Clearing all questions from database...')
     

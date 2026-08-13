@@ -10,21 +10,21 @@
       class="max-w-3xl mx-auto bg-white/10 backdrop-blur-md rounded-xl sm:rounded-2xl p-4 sm:p-5 md:p-6 lg:p-8 shadow-2xl relative z-10"
     >
       <!-- Header -->
-      <div class="flex justify-between items-center mb-6">
-        <div class="flex gap-2">
-          <NuxtLink to="/" class="bg-white/10 hover:bg-white/20 backdrop-blur-md px-4 py-2 rounded-xl transition-all duration-300 flex items-center gap-2 border border-white/20 hover:scale-105 shadow-lg">
-            <Icon icon="mdi:home" class="w-5 h-5" />
+      <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 sm:gap-0 mb-6">
+        <div class="flex gap-2 w-full sm:w-auto">
+          <NuxtLink to="/" class="bg-white/10 hover:bg-white/20 backdrop-blur-md px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg sm:rounded-xl transition-all duration-300 flex items-center gap-1.5 sm:gap-2 border border-white/20 hover:scale-105 shadow-lg text-sm sm:text-base flex-1 sm:flex-initial justify-center sm:justify-start">
+            <Icon icon="mdi:home" class="w-4 h-4 sm:w-5 sm:h-5" />
             <span class="font-medium">Home</span>
           </NuxtLink>
-          <NuxtLink to="/setup?step=game-selection" class="bg-white/10 hover:bg-white/20 backdrop-blur-md px-4 py-2 rounded-xl transition-all duration-300 flex items-center gap-2 border border-white/20 hover:scale-105 shadow-lg">
-            <Icon icon="mdi:arrow-left" class="w-5 h-5" />
+          <NuxtLink to="/setup?step=game-selection" class="bg-white/10 hover:bg-white/20 backdrop-blur-md px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg sm:rounded-xl transition-all duration-300 flex items-center gap-1.5 sm:gap-2 border border-white/20 hover:scale-105 shadow-lg text-sm sm:text-base flex-1 sm:flex-initial justify-center sm:justify-start">
+            <Icon icon="mdi:arrow-left" class="w-4 h-4 sm:w-5 sm:h-5" />
             <span class="font-medium">Back</span>
           </NuxtLink>
         </div>
-        
-        <div class="flex items-center gap-2">
+
+        <div class="flex items-center gap-2 w-full sm:w-auto justify-center sm:justify-end">
           <span
-            class="text-sm px-3 py-1.5 rounded-full border shadow-md"
+            class="text-xs sm:text-sm px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-full border shadow-md"
             :class="
               gameMode === 'free-for-all'
                 ? 'bg-purple-500/20 text-purple-300 border-purple-400/30'
@@ -52,9 +52,9 @@
       <div class="bg-white/5 rounded-xl p-4 mb-6 border border-white/10">
         <div class="text-center">
           <div class="text-sm text-white/60 mb-1">Current Turn</div>
-          <div class="text-xl font-bold flex items-center justify-center gap-2">
-            <span>{{ currentPlayer?.name }}</span>
-            <span class="text-2xl">{{ currentPlayer?.gender === 'male' ? '♂' : '♀' }}</span>
+          <div class="text-xl font-bold flex items-center justify-center gap-2 min-w-0">
+            <span class="truncate">{{ currentPlayer?.name }}</span>
+            <span class="text-2xl flex-shrink-0">{{ currentPlayer?.gender === 'male' ? '♂' : '♀' }}</span>
           </div>
         </div>
       </div>
@@ -641,8 +641,15 @@ onMounted(async () => {
     
     if (gameStore.players.length === 0) {
       const savedSession = localStorage.getItem("gameSession");
+      let session = null;
       if (savedSession) {
-        const session = JSON.parse(savedSession);
+        try {
+          session = JSON.parse(savedSession);
+        } catch (e) {
+          console.error("Failed to parse saved game session:", e);
+        }
+      }
+      if (session) {
         gameStore.setGameMode(session.mode || "free-for-all");
         gameStore.setPlayers(session.players || []);
       } else {

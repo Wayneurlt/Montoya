@@ -1,4 +1,5 @@
 import prisma from '~/lib/prisma'
+import { requireAdmin } from '~/server/utils/adminAuth'
 import { wouldYouRatherQuestions } from '~/data/questions/wouldyourather'
 import { neverHaveIEverQuestions } from '~/data/questions/neverhaveiever'
 import { mostLikelyToQuestions } from '~/data/questions/mostlikelyto'
@@ -8,10 +9,11 @@ import { spicyTruthQuestions } from '~/data/questions/spicytruth'
 import { spicyDareQuestions } from '~/data/questions/spicydare'
 import { doOrDrinkQuestions } from '~/data/questions/doordrink'
 
-export default defineEventHandler(async () => {
+export default defineEventHandler(async (event) => {
+  requireAdmin(event)
+
   try {
-    console.log('🌱 Starting database seeding...')
-    
+
     // Group game questions
     const groupQuestions: Array<{
       gameType: 'NEVER_HAVE_I_EVER' | 'MOST_LIKELY_TO' | 'WOULD_YOU_RATHER'
@@ -92,12 +94,11 @@ export default defineEventHandler(async () => {
       message: `Successfully seeded ${groupInserted + cardsInserted} questions`
     }
   } catch (error) {
-    console.error('❌ Seeding failed:', error)
-    return {
-      success: false,
-      error: error.message,
-      message: 'Failed to seed database'
-    }
+    console.error('Seeding failed:', error)
+    throw createError({
+      statusCode: 500,
+      statusMessage: 'Failed to seed database'
+    })
   }
 })
 

@@ -200,6 +200,26 @@ model Admin {
   updatedAt   DateTime @updatedAt
 }
 
+model MultiplayerPass {
+  id          Int        @id @default(autoincrement())
+  phoneNumber String
+  apiRef      String     @unique
+  invoiceId   String?
+  status      PassStatus @default(PENDING)
+  amount      Int
+  expiresAt   DateTime?
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+
+  @@index([phoneNumber])
+}
+
+enum PassStatus {
+  PENDING
+  ACTIVE
+  FAILED
+}
+
 model Analytics {
   id          Int      @id @default(autoincrement())
   eventType   String   // page_view, game_start, game_end, etc.

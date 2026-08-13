@@ -109,7 +109,48 @@
             💋 Couples Mode
           </span>
         </div>
+
+        <div v-if="showInstallButton" class="flex justify-center px-4">
+          <button
+            type="button"
+            @click="handleInstallClick"
+            class="inline-flex items-center gap-1.5 sm:gap-2 bg-white/5 hover:bg-white/10 backdrop-blur-md px-3 sm:px-4 py-1.5 sm:py-2 rounded-full text-[10px] sm:text-xs md:text-sm border border-white/20 text-white/70 hover:text-white transition-all"
+          >
+            <Icon icon="mdi:cellphone-arrow-down" class="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+            <span>Install App</span>
+          </button>
+        </div>
       </div>
+
+      <!-- iOS install instructions (no programmatic install prompt exists on iOS Safari) -->
+      <Teleport to="body">
+        <div
+          v-if="showIosInstructions"
+          class="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-4 bg-black/70 backdrop-blur-sm"
+          @click.self="showIosInstructions = false"
+        >
+          <div class="bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 border-2 border-purple-500/40 rounded-2xl p-5 sm:p-6 max-w-sm w-full text-center relative">
+            <button
+              @click="showIosInstructions = false"
+              class="absolute top-3 right-3 text-white/60 hover:text-white transition-colors"
+            >
+              <Icon icon="mdi:close" class="w-5 h-5" />
+            </button>
+            <div class="text-4xl mb-3">📲</div>
+            <h3 class="text-lg font-bold mb-2">Install Montoya</h3>
+            <p class="text-sm text-white/80">
+              Tap the <Icon icon="mdi:export-variant" class="inline w-4 h-4 -mt-1" /> <strong>Share</strong> icon in Safari's toolbar, then choose
+              <strong>"Add to Home Screen."</strong>
+            </p>
+            <button
+              @click="showIosInstructions = false"
+              class="mt-4 bg-purple-600 hover:bg-purple-500 px-6 py-2 rounded-full text-sm font-semibold transition-colors"
+            >
+              Got it
+            </button>
+          </div>
+        </div>
+      </Teleport>
     </div>
 
     <!-- Age Confirmation Modal -->
@@ -164,13 +205,45 @@
 </template>
 
 <script setup>
-import { ref } from "vue";
+import { ref, computed } from "vue";
 import { Icon } from "@iconify/vue";
 import { useAnalytics } from "~/composables/useAnalytics";
 import { useGameStore } from "~/stores/game";
 
 const { trackPageView } = useAnalytics();
 const gameStore = useGameStore();
+
+// --- PWA install button ---
+// Chromium (desktop Chrome/Edge, Android) exposes a `beforeinstallprompt` event that
+// @vite-pwa/nuxt's usePWA() wraps as `showInstallPrompt` / `install()`. iOS Safari has
+// no such event or API at all — the only way to install there is manually via the
+// Share sheet, so we detect iOS and show instructions instead of a broken button.
+const pwa = import.meta.client ? usePWA() : undefined;
+const isIOS = ref(false);
+const isStandalone = ref(false);
+const showIosInstructions = ref(false);
+
+onMounted(() => {
+  isIOS.value = /iphone|ipad|ipod/i.test(navigator.userAgent) && !("MSStream" in window);
+  isStandalone.value =
+    window.matchMedia("(display-mode: standalone)").matches ||
+    window.navigator.standalone === true;
+});
+
+const showInstallButton = computed(() => {
+  if (isStandalone.value || pwa?.isPWAInstalled) return false;
+  return Boolean(pwa?.showInstallPrompt || isIOS.value);
+});
+
+async function handleInstallClick() {
+  if (pwa?.showInstallPrompt) {
+    await pwa.install();
+    return;
+  }
+  if (isIOS.value) {
+    showIosInstructions.value = true;
+  }
+}
 
 // COMMENTED OUT: Age modal logic removed from single device mode flow
 // const showAgeModal = ref(false);

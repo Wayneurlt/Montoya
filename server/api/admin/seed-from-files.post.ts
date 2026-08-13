@@ -1,9 +1,12 @@
 import prisma from '~/lib/prisma'
+import { requireAdmin } from '~/server/utils/adminAuth'
 import { wouldYouRatherQuestions } from '~/data/questions/wouldyourather'
 import { neverHaveIEverQuestions } from '~/data/questions/neverhaveiever'
 import { mostLikelyToQuestions } from '~/data/questions/mostlikelyto'
 
-export default defineEventHandler(async () => {
+export default defineEventHandler(async (event) => {
+  requireAdmin(event)
+
   const payload: Array<{ gameType: 'NEVER_HAVE_I_EVER' | 'MOST_LIKELY_TO' | 'WOULD_YOU_RATHER'; text: string; intensity?: number; isActive?: boolean }> = []
 
   for (const t of wouldYouRatherQuestions) payload.push({ gameType: 'WOULD_YOU_RATHER', text: t, intensity: 1, isActive: true })

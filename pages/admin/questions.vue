@@ -12,6 +12,9 @@
         <UButton icon="i-mdi:database-import" color="neutral" variant="soft" @click="seedAllQuestions" class="w-full sm:w-auto">
           Import All
         </UButton>
+        <UButton icon="i-mdi:download" color="neutral" variant="soft" :loading="exporting" @click="exportQuestions" class="w-full sm:w-auto">
+          Export (.md)
+        </UButton>
         <UButton icon="i-mdi:plus" color="primary" @click="showAddForm = true" class="w-full sm:w-auto">
           Add Question
         </UButton>
@@ -150,7 +153,7 @@
             Intensity Level
             <span class="text-red-400">*</span>
           </label>
-          <div class="grid grid-cols-5 gap-2">
+          <div class="grid grid-cols-3 sm:grid-cols-5 gap-2">
             <UButton
               v-for="level in 5"
               :key="level"
@@ -231,14 +234,14 @@
         </div>
 
         <!-- Action Buttons -->
-        <div class="flex justify-between items-center pt-4 border-t border-white/10">
+        <div class="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 pt-4 border-t border-white/10">
           <div class="text-sm text-white/60">
             {{ getFormStatus() }}
           </div>
           <div class="flex gap-3">
-            <UButton 
-              color="neutral" 
-              variant="soft" 
+            <UButton
+              color="neutral"
+              variant="soft"
               @click="closeAddForm"
               type="button"
             >
@@ -295,10 +298,10 @@
               </td>
               <td class="px-4 py-3 text-sm">
                 <div class="flex gap-2">
-                  <UButton size="xs" color="neutral" variant="soft" @click="editQuestion(question)">
+                  <UButton size="sm" color="neutral" variant="soft" @click="editQuestion(question)">
                     Edit
                   </UButton>
-                  <UButton size="xs" color="error" variant="soft" @click="deleteQuestion(question)">
+                  <UButton size="sm" color="error" variant="soft" @click="deleteQuestion(question)">
                     Delete
                   </UButton>
                 </div>
@@ -310,8 +313,8 @@
 
       <!-- Pagination -->
       <div class="px-4 py-3 bg-white/5 border-t border-white/10">
-        <div class="flex items-center justify-between">
-          <div class="text-sm text-white/60">
+        <div class="flex flex-col sm:flex-row items-center justify-between gap-3">
+          <div class="text-sm text-white/60 text-center sm:text-left">
             Showing {{ startIndex + 1 }} to {{ endIndex }} of {{ filteredQuestions.length }} questions
           </div>
           <div class="flex gap-2">
@@ -358,6 +361,7 @@ definePageMeta({
 // State
 const loading = ref(true)
 const saving = ref(false)
+const exporting = ref(false)
 const showAddForm = ref(false)
 const editingQuestion = ref(null)
 
@@ -725,12 +729,49 @@ async function deleteQuestion(question) {
 // Seed all questions
 async function seedAllQuestions() {
   if (!confirm('Import all questions from data files? This will add any missing questions.')) return
-  
+
   try {
     await $fetch('/api/admin/seed-all-questions', { method: 'POST' })
     await loadQuestions()
   } catch (error) {
     console.error('Error seeding questions:', error)
+  }
+}
+
+// Export all questions as a Markdown file, downloadable on desktop, Android, and iOS
+// (including installed PWAs, where the Web Share sheet is the reliable way to save a file).
+async function exportQuestions() {
+  exporting.value = true
+  try {
+    const markdown = await $fetch('/api/admin/questions/export', { responseType: 'text' })
+    const filename = `questions-export-${new Date().toISOString().slice(0, 10)}.md`
+    const file = new File([markdown], filename, { type: 'text/markdown' })
+
+    let shared = false
+    if (typeof navigator.canShare === 'function' && navigator.canShare({ files: [file] })) {
+      try {
+        await navigator.share({ files: [file], title: 'Montoya Questions Export' })
+        shared = true
+      } catch (shareError: any) {
+        // User cancelling the share sheet is not a failure — don't also trigger a download.
+        if (shareError?.name === 'AbortError') shared = true
+      }
+    }
+
+    if (!shared) {
+      const url = URL.createObjectURL(file)
+      const link = document.createElement('a')
+      link.href = url
+      link.download = filename
+      document.body.appendChild(link)
+      link.click()
+      document.body.removeChild(link)
+      URL.revokeObjectURL(url)
+    }
+  } catch (error) {
+    console.error('Error exporting questions:', error)
+  } finally {
+    exporting.value = false
   }
 }
 

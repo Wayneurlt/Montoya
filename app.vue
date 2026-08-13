@@ -7,6 +7,7 @@
     <Notivue v-slot="item">
       <Notification :item="item" />
     </Notivue>
+    <PwaInstallPrompt />
   </UApp>
 </template>
 
@@ -38,7 +39,6 @@ function handleDismissKeyboard(e: Event) {
 onMounted(() => {
   // Connect socket early so analytics:page-view is sent from every page (Popular Games Live)
   useMultiplayer().connect()
-  console.log(window.innerHeight, window.innerWidth)
   trackPageView('app')
 
   // Dismiss mobile keyboard when tapping outside an input

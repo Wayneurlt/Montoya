@@ -99,6 +99,11 @@ import { playRingSound, vibrateRing } from '~/composables/useRingSound'
 import { useRoute, useRouter } from 'vue-router'
 import { navigateTo } from '#app'
 
+// Multiplayer room state lives in a process-wide singleton (see useMultiplayer.ts),
+// not per-request — rendering it during SSR could leak one user's live room into
+// another user's server-rendered HTML, so this page is client-only.
+definePageMeta({ ssr: false })
+
 const route = useRoute()
 const router = useRouter()
 const multiplayer = useMultiplayer()
@@ -114,6 +119,11 @@ const {
 } = multiplayer
 
 const gameType = computed(() => route.params.game as string)
+
+let isComponentMounted = true
+onBeforeUnmount(() => {
+  isComponentMounted = false
+})
 
 const safeRoomState = computed(() => {
   if (!roomState || !roomState.value) {
@@ -174,6 +184,7 @@ onMounted(() => {
         if (info.roomCode && info.nickname) {
           // Wait for connection, then rejoin
           const attemptReconnect = () => {
+            if (!isComponentMounted) return
             if (isConnected.value) {
               console.log('🔄 Reconnecting to room from game page:', info.roomCode)
               attemptAutoReconnect()
@@ -197,6 +208,7 @@ onMounted(() => {
   watch(isConnected, (connected) => {
     if (connected && !roomState.value?.roomCode) {
       setTimeout(() => {
+        if (!isComponentMounted) return
         attemptAutoReconnect()
       }, 300)
     }
