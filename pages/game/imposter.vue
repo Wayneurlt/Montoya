@@ -238,6 +238,7 @@
 <script setup>
 import { ref, computed, onMounted, onBeforeUnmount } from "vue";
 import { Icon } from "@iconify/vue";
+import { push } from "notivue";
 import { useGameStore } from "~/stores/game";
 import { useAnalytics } from "~/composables/useAnalytics";
 import { navigateTo } from "#app";
@@ -284,10 +285,37 @@ function getPlayerWord(playerId) {
   return playerWords.value[playerId] || '';
 }
 
+// Tracks which task pairs have already been used this session so the same
+// pair doesn't turn up again until every pair has been seen once.
+const usedTaskPairIndices = ref(new Set());
+
+function pickTaskPair() {
+  const availableIndices = taskPairs
+    .map((_, index) => index)
+    .filter((index) => !usedTaskPairIndices.value.has(index));
+
+  let isRepeat = false;
+  let indices = availableIndices;
+  if (indices.length === 0) {
+    isRepeat = true;
+    usedTaskPairIndices.value = new Set();
+    indices = taskPairs.map((_, index) => index);
+  }
+
+  const chosenIndex = indices[Math.floor(Math.random() * indices.length)];
+  usedTaskPairIndices.value.add(chosenIndex);
+
+  if (isRepeat) {
+    push.info({ title: 'Fresh round!', message: "You've seen every task pair — shuffling for a new round.", duration: 4000 });
+  }
+
+  return taskPairs[chosenIndex];
+}
+
 function startGame() {
   // Select random task pair
-  const randomPair = taskPairs[Math.floor(Math.random() * taskPairs.length)];
-  
+  const randomPair = pickTaskPair();
+
   // Select random imposter
   const randomIndex = Math.floor(Math.random() * players.value.length);
   imposterPlayer.value = players.value[randomIndex];

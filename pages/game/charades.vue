@@ -135,6 +135,7 @@
 <script setup>
 import { ref, computed, onMounted, onBeforeUnmount } from "vue";
 import { Icon } from "@iconify/vue";
+import { push } from "notivue";
 import { useGameStore } from "~/stores/game";
 import { useAnalytics } from "~/composables/useAnalytics";
 import { navigateTo } from "#app";
@@ -219,27 +220,38 @@ const categories = {
   ]
 };
 
-const usedPrompts = ref([]);
+// Tracked per category — a flat cross-category list meant one exhausted
+// category (only 10 prompts each) would wipe every other category's used-state
+// too, causing far more repeats than the 50-prompt total pool suggests.
+const usedPromptsByCategory = ref({});
 
 function drawPrompt() {
   // Start timer only if not already active
   if (!timerActive.value) {
     startTimer();
   }
-  
+
   const categoryNames = Object.keys(categories);
   const randomCategory = categoryNames[Math.floor(Math.random() * categoryNames.length)];
-  const availablePrompts = categories[randomCategory].filter(p => !usedPrompts.value.includes(p));
-  
+  const usedInCategory = usedPromptsByCategory.value[randomCategory] || [];
+  let availablePrompts = categories[randomCategory].filter(p => !usedInCategory.includes(p));
+
+  let isRepeat = false;
   if (availablePrompts.length === 0) {
-    usedPrompts.value = [];
+    isRepeat = true;
+    availablePrompts = categories[randomCategory];
+    usedPromptsByCategory.value[randomCategory] = [];
   }
-  
+
   const randomPrompt = availablePrompts[Math.floor(Math.random() * availablePrompts.length)];
-  
+
   currentPrompt.value = randomPrompt;
   currentCategory.value = randomCategory;
-  usedPrompts.value.push(randomPrompt);
+  usedPromptsByCategory.value[randomCategory] = [...(usedPromptsByCategory.value[randomCategory] || []), randomPrompt];
+
+  if (isRepeat) {
+    push.info({ title: 'Fresh round!', message: `You've acted out every "${randomCategory}" prompt — shuffling that category.`, duration: 4000 });
+  }
 }
 
 function startTimer() {
@@ -284,7 +296,9 @@ function nextTurn() {
   stopTimer();
   currentPrompt.value = "";
   currentCategory.value = "";
-  usedPrompts.value = []; // Reset used prompts for next player
+  // Deliberately NOT resetting usedPromptsByCategory here — tracking needs to
+  // persist across turns/players for prompts to actually stop repeating over
+  // the course of a full game, not just within one player's turn.
   gameStore.nextTurn();
   roundCount.value++;
 }

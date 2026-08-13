@@ -193,6 +193,7 @@
 <script setup>
 import { ref, computed, onMounted } from "vue";
 import { Icon } from "@iconify/vue";
+import { push } from "notivue";
 import { useGameStore } from "~/stores/game";
 import { useAnalytics } from "~/composables/useAnalytics";
 import { navigateTo } from "#app";
@@ -250,11 +251,38 @@ function getPlayerWord(playerId) {
   return playerWords.value[playerId] || '';
 }
 
+// Tracks which word pairs have already been used this session so the same
+// pair doesn't turn up again until every pair has been seen once.
+const usedWordPairIndices = ref(new Set());
+
+function pickWordPair() {
+  const availableIndices = wordPairs
+    .map((_, index) => index)
+    .filter((index) => !usedWordPairIndices.value.has(index));
+
+  let isRepeat = false;
+  let indices = availableIndices;
+  if (indices.length === 0) {
+    isRepeat = true;
+    usedWordPairIndices.value = new Set();
+    indices = wordPairs.map((_, index) => index);
+  }
+
+  const chosenIndex = indices[Math.floor(Math.random() * indices.length)];
+  usedWordPairIndices.value.add(chosenIndex);
+
+  if (isRepeat) {
+    push.info({ title: 'Fresh round!', message: "You've seen every word pair — shuffling for a new round.", duration: 4000 });
+  }
+
+  return wordPairs[chosenIndex];
+}
+
 function startGame() {
   // Select random word pair
-  const randomPair = wordPairs[Math.floor(Math.random() * wordPairs.length)];
+  const randomPair = pickWordPair();
   secretWord.value = randomPair.word;
-  
+
   // Select random Mr. White
   const randomIndex = Math.floor(Math.random() * players.value.length);
   mrWhitePlayer.value = players.value[randomIndex];
