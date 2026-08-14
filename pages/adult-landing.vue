@@ -45,21 +45,10 @@
         </p>
       </div>
 
-      <!-- Game Preview -->
-      <div ref="previewGridRef" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2 sm:gap-2.5 md:gap-3 lg:gap-4 mb-4 sm:mb-6 md:mb-8 lg:mb-12 max-w-5xl mx-auto px-4">
-        <div
-          v-for="game in gamePreviews"
-          :key="game.name"
-          class="card-poster p-2.5 sm:p-3 md:p-4 hover:-translate-y-1 transition-transform"
-        >
-          <Icon :icon="game.icon" class="w-6 h-6 sm:w-7 sm:h-7 md:w-8 md:h-8 mb-1.5 sm:mb-2 text-hot mx-auto" />
-          <h3 class="font-display text-xs sm:text-sm md:text-base font-bold uppercase mb-0.5 sm:mb-1 text-paper">{{ game.name }}</h3>
-          <p class="text-[10px] sm:text-xs text-paper/60">{{ game.tag }}</p>
-        </div>
-      </div>
-
-      <!-- Action Buttons -->
-      <div ref="buttonsRef" class="flex flex-col items-center gap-2 sm:gap-3 md:gap-4 px-4 mb-3 sm:mb-4 md:mb-6">
+      <!-- Action Buttons: right after the warning, not below the whole game
+           grid, so the actual decision (continue or go back) never requires
+           scrolling past exploratory content first. -->
+      <div ref="buttonsRef" class="flex flex-col items-center gap-2 sm:gap-3 md:gap-4 px-4 mb-4 sm:mb-6 md:mb-8">
         <NuxtLink
           to="/setup?mode=adult"
           @click="punchScale($event.currentTarget)"
@@ -75,6 +64,19 @@
           <Icon icon="mdi:arrow-left" class="w-5 h-5" />
           Go Back
         </NuxtLink>
+      </div>
+
+      <!-- Game Preview -->
+      <div ref="previewGridRef" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2 sm:gap-2.5 md:gap-3 lg:gap-4 mb-4 sm:mb-6 md:mb-8 lg:mb-12 max-w-5xl mx-auto px-4">
+        <div
+          v-for="game in gamePreviews"
+          :key="game.name"
+          class="card-poster p-2.5 sm:p-3 md:p-4 hover:-translate-y-1 transition-transform"
+        >
+          <Icon :icon="game.icon" class="w-6 h-6 sm:w-7 sm:h-7 md:w-8 md:h-8 mb-1.5 sm:mb-2 text-hot mx-auto" />
+          <h3 class="font-display text-xs sm:text-sm md:text-base font-bold uppercase mb-0.5 sm:mb-1 text-paper">{{ game.name }}</h3>
+          <p class="text-[10px] sm:text-xs text-paper/60">{{ game.tag }}</p>
+        </div>
       </div>
 
       <!-- Feature Pills -->
@@ -130,6 +132,6 @@ const featurePills = [
 
 onMounted(() => {
   trackPageView('adult-landing');
-  staggerReveal([heroRef.value, taglineRef.value, warningRef.value, previewGridRef.value, buttonsRef.value, pillsRef.value]);
+  staggerReveal([heroRef.value, taglineRef.value, warningRef.value, buttonsRef.value, previewGridRef.value, pillsRef.value]);
 });
 </script>

@@ -5,7 +5,7 @@
 
     <div class="max-w-5xl mx-auto relative z-10 pt-4 sm:pt-6 md:pt-8">
       <!-- Header with Home Button -->
-      <div ref="headerRowRef" class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 sm:gap-0 mb-6 sm:mb-8">
+      <div ref="headerRowRef" class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 sm:gap-0 mb-4 sm:mb-6">
         <div class="flex gap-2 w-full sm:w-auto">
           <NuxtLink to="/" class="bg-card border border-white/10 hover:border-hot/50 px-3 sm:px-4 py-1.5 sm:py-2 rounded-md transition-colors flex items-center gap-1.5 sm:gap-2 text-sm sm:text-base flex-1 sm:flex-initial justify-center sm:justify-start">
             <Icon icon="mdi:home" class="w-4 h-4 sm:w-5 sm:h-5" />
@@ -33,15 +33,15 @@
       </div>
 
       <!-- Game Title Card -->
-      <div ref="titleBlockRef" class="text-center mb-8">
-        <h1 class="font-display text-4xl sm:text-5xl md:text-6xl font-bold uppercase mb-4 text-paper">
+      <div ref="titleBlockRef" class="text-center mb-4 sm:mb-6">
+        <h1 class="font-display text-3xl sm:text-4xl md:text-5xl font-bold uppercase mb-1 sm:mb-2 text-paper">
           Would You <span class="text-hot">Rather</span>
         </h1>
         <p class="text-paper/60 text-sm font-medium">Make impossible choices!</p>
       </div>
 
       <!-- Main Question Card with Split Display -->
-      <div ref="questionCardRef" class="mb-6">
+      <div ref="questionCardRef" class="mb-4 sm:mb-6">
         <div ref="questionStageRef" class="relative">
           <!-- Two-column layout for choices -->
           <div v-if="parsedQuestion" class="relative grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
@@ -56,7 +56,7 @@
             <button
               @click="handleSelectOptionClick('A', $event)"
               :disabled="isMultiplayer && hasVoted"
-              class="mode-card min-h-[180px]"
+              class="mode-card"
               :class="{ 'is-active': selectedOption === 'A', 'opacity-50 cursor-not-allowed': isMultiplayer && hasVoted }"
             >
               <span class="mode-card-title text-xs opacity-70">Option A</span>
@@ -70,7 +70,7 @@
             <button
               @click="handleSelectOptionClick('B', $event)"
               :disabled="isMultiplayer && hasVoted"
-              class="mode-card is-volt min-h-[180px]"
+              class="mode-card is-volt"
               :class="{ 'is-active': selectedOption === 'B', 'opacity-50 cursor-not-allowed': isMultiplayer && hasVoted }"
             >
               <span class="mode-card-title text-xs opacity-70">Option B</span>

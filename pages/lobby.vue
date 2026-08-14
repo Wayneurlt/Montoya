@@ -191,12 +191,12 @@
         </div>
 
         <!-- Create/Join Room Form -->
-        <div v-else class="space-y-6">
-          <div class="text-center mb-8">
-            <h1 class="font-display text-4xl sm:text-5xl font-bold uppercase mb-4 text-paper">
+        <div v-else class="space-y-4">
+          <div class="text-center mb-4">
+            <h1 class="font-display text-3xl sm:text-4xl font-bold uppercase mb-2 text-paper">
               Multiplayer <span class="text-hot">Mode</span>
             </h1>
-            <p class="text-paper/70 text-lg">Create or join a game room</p>
+            <p class="text-paper/70 text-base">Create or join a game room</p>
           </div>
 
           <!-- Tabs -->
@@ -204,35 +204,35 @@
             <button
               @click="isCreating = true"
               :class="{ 'is-active': isCreating }"
-              class="pill-toggle-btn py-3"
+              class="pill-toggle-btn py-2.5"
             >
               Create Room
             </button>
             <button
               @click="isCreating = false"
               :class="{ 'is-active': !isCreating }"
-              class="pill-toggle-btn py-3"
+              class="pill-toggle-btn py-2.5"
             >
               Join Room
             </button>
           </div>
 
           <!-- Create Room Form -->
-          <div v-if="isCreating" class="card-poster p-6 space-y-4">
+          <div v-if="isCreating" class="card-poster p-4 sm:p-6 space-y-3">
             <div>
-              <label class="block text-sm font-semibold mb-2">Room Name (Optional)</label>
+              <label class="block text-sm font-semibold mb-1.5">Room Name (Optional)</label>
               <input
                 v-model="createForm.roomName"
                 type="text"
                 placeholder="My Awesome Game"
-                class="w-full bg-white/5 border border-white/10 rounded-md px-4 py-3 text-paper placeholder-paper/40 focus:outline-none focus:ring-2 focus:ring-hot/60"
+                class="w-full bg-white/5 border border-white/10 rounded-md px-4 py-2.5 text-paper placeholder-paper/40 focus:outline-none focus:ring-2 focus:ring-hot/60"
               />
             </div>
             <div>
-              <label class="block text-sm font-semibold mb-2">Answer Visibility</label>
-              <div class="space-y-2">
+              <label class="block text-sm font-semibold mb-1.5">Answer Visibility</label>
+              <div class="space-y-1.5">
                 <label
-                  class="flex items-center gap-3 p-3 rounded-md border cursor-pointer transition-all"
+                  class="flex items-center gap-3 p-2.5 rounded-md border cursor-pointer transition-all"
                   :class="createForm.answerVisibility === 'anonymous' ? 'border-hot bg-hot/10' : 'border-white/10 bg-white/5 hover:bg-white/10'"
                 >
                   <input
@@ -242,15 +242,15 @@
                     class="w-4 h-4 accent-hot"
                   />
                   <div class="flex-1">
-                    <div class="font-semibold flex items-center gap-2">
-                      <Icon icon="mdi:incognito" class="w-5 h-5" />
+                    <div class="font-semibold flex items-center gap-2 text-sm">
+                      <Icon icon="mdi:incognito" class="w-4 h-4" />
                       Anonymous
                     </div>
                     <div class="text-xs text-paper/60">Answers and votes are hidden</div>
                   </div>
                 </label>
                 <label
-                  class="flex items-center gap-3 p-3 rounded-md border cursor-pointer transition-all"
+                  class="flex items-center gap-3 p-2.5 rounded-md border cursor-pointer transition-all"
                   :class="createForm.answerVisibility === 'public' ? 'border-hot bg-hot/10' : 'border-white/10 bg-white/5 hover:bg-white/10'"
                 >
                   <input
@@ -260,8 +260,8 @@
                     class="w-4 h-4 accent-hot"
                   />
                   <div class="flex-1">
-                    <div class="font-semibold flex items-center gap-2">
-                      <Icon icon="mdi:eye" class="w-5 h-5" />
+                    <div class="font-semibold flex items-center gap-2 text-sm">
+                      <Icon icon="mdi:eye" class="w-4 h-4" />
                       Public
                     </div>
                     <div class="text-xs text-paper/60">Answers and votes show player names</div>
@@ -270,36 +270,36 @@
               </div>
             </div>
             <div>
-              <label class="block text-sm font-semibold mb-2">Your Nickname</label>
+              <label class="block text-sm font-semibold mb-1.5">Your Nickname</label>
               <input
                 v-model="createForm.nickname"
                 type="text"
                 placeholder="Enter your name"
                 maxlength="20"
-                class="w-full bg-white/5 border border-white/10 rounded-md px-4 py-3 text-paper placeholder-paper/40 focus:outline-none focus:ring-2 focus:ring-hot/60"
+                class="w-full bg-white/5 border border-white/10 rounded-md px-4 py-2.5 text-paper placeholder-paper/40 focus:outline-none focus:ring-2 focus:ring-hot/60"
               />
             </div>
             <div>
-              <label class="block text-sm font-semibold mb-2">Gender</label>
+              <label class="block text-sm font-semibold mb-1.5">Gender</label>
               <div class="grid grid-cols-3 gap-2">
                 <button
                   @click="createForm.gender = 'male'"
                   :class="createForm.gender === 'male' ? 'bg-hot text-ink' : 'bg-white/5 border border-white/10 text-paper/70 hover:bg-white/10'"
-                  class="p-3 rounded-md transition-all font-semibold"
+                  class="p-2.5 rounded-md transition-all font-semibold"
                 >
                   <Icon icon="mdi:gender-male" class="w-5 h-5 mx-auto" />
                 </button>
                 <button
                   @click="createForm.gender = 'female'"
                   :class="createForm.gender === 'female' ? 'bg-volt text-ink' : 'bg-white/5 border border-white/10 text-paper/70 hover:bg-white/10'"
-                  class="p-3 rounded-md transition-all font-semibold"
+                  class="p-2.5 rounded-md transition-all font-semibold"
                 >
                   <Icon icon="mdi:gender-female" class="w-5 h-5 mx-auto" />
                 </button>
                 <button
                   @click="createForm.gender = 'other'"
                   :class="createForm.gender === 'other' ? 'bg-paper text-ink' : 'bg-white/5 border border-white/10 text-paper/70 hover:bg-white/10'"
-                  class="p-3 rounded-md transition-all font-semibold"
+                  class="p-2.5 rounded-md transition-all font-semibold"
                 >
                   <Icon icon="mdi:account" class="w-5 h-5 mx-auto" />
                 </button>
@@ -308,56 +308,56 @@
             <button
               @click="handleCreateRoom"
               :disabled="!createForm.nickname.trim() || isConnecting"
-              class="w-full bg-hot text-ink shadow-hard hover:brightness-110 px-8 py-4 rounded-lg font-display font-bold uppercase tracking-wide text-lg transition-[filter] disabled:opacity-50 disabled:cursor-not-allowed disabled:shadow-none"
+              class="w-full bg-hot text-ink shadow-hard hover:brightness-110 px-8 py-3 rounded-lg font-display font-bold uppercase tracking-wide text-base sm:text-lg transition-[filter] disabled:opacity-50 disabled:cursor-not-allowed disabled:shadow-none"
             >
               {{ isConnecting ? 'Connecting...' : 'Create Room' }}
             </button>
           </div>
 
           <!-- Join Room Form -->
-          <div v-else class="card-poster p-6 space-y-4">
+          <div v-else class="card-poster p-4 sm:p-6 space-y-3">
             <div>
-              <label class="block text-sm font-semibold mb-2">Room Code</label>
+              <label class="block text-sm font-semibold mb-1.5">Room Code</label>
               <input
                 v-model="joinForm.roomCode"
                 type="text"
                 placeholder="ABCD12"
                 maxlength="6"
-                class="w-full bg-white/5 border border-white/10 rounded-md px-4 py-3 text-paper placeholder-paper/40 focus:outline-none focus:ring-2 focus:ring-hot/60 text-center text-2xl font-display font-bold tracking-widest uppercase"
+                class="w-full bg-white/5 border border-white/10 rounded-md px-4 py-2.5 text-paper placeholder-paper/40 focus:outline-none focus:ring-2 focus:ring-hot/60 text-center text-2xl font-display font-bold tracking-widest uppercase"
                 @input="joinForm.roomCode = joinForm.roomCode.toUpperCase().replace(/[^A-Z0-9]/g, ''); localError = null; clearError()"
               />
             </div>
             <div>
-              <label class="block text-sm font-semibold mb-2">Your Nickname</label>
+              <label class="block text-sm font-semibold mb-1.5">Your Nickname</label>
               <input
                 v-model="joinForm.nickname"
                 type="text"
                 placeholder="Enter your name"
                 maxlength="20"
-                class="w-full bg-white/5 border border-white/10 rounded-md px-4 py-3 text-paper placeholder-paper/40 focus:outline-none focus:ring-2 focus:ring-hot/60"
+                class="w-full bg-white/5 border border-white/10 rounded-md px-4 py-2.5 text-paper placeholder-paper/40 focus:outline-none focus:ring-2 focus:ring-hot/60"
               />
             </div>
             <div>
-              <label class="block text-sm font-semibold mb-2">Gender</label>
+              <label class="block text-sm font-semibold mb-1.5">Gender</label>
               <div class="grid grid-cols-3 gap-2">
                 <button
                   @click="joinForm.gender = 'male'"
                   :class="joinForm.gender === 'male' ? 'bg-hot text-ink' : 'bg-white/5 border border-white/10 text-paper/70 hover:bg-white/10'"
-                  class="p-3 rounded-md transition-all font-semibold"
+                  class="p-2.5 rounded-md transition-all font-semibold"
                 >
                   <Icon icon="mdi:gender-male" class="w-5 h-5 mx-auto" />
                 </button>
                 <button
                   @click="joinForm.gender = 'female'"
                   :class="joinForm.gender === 'female' ? 'bg-volt text-ink' : 'bg-white/5 border border-white/10 text-paper/70 hover:bg-white/10'"
-                  class="p-3 rounded-md transition-all font-semibold"
+                  class="p-2.5 rounded-md transition-all font-semibold"
                 >
                   <Icon icon="mdi:gender-female" class="w-5 h-5 mx-auto" />
                 </button>
                 <button
                   @click="joinForm.gender = 'other'"
                   :class="joinForm.gender === 'other' ? 'bg-paper text-ink' : 'bg-white/5 border border-white/10 text-paper/70 hover:bg-white/10'"
-                  class="p-3 rounded-md transition-all font-semibold"
+                  class="p-2.5 rounded-md transition-all font-semibold"
                 >
                   <Icon icon="mdi:account" class="w-5 h-5 mx-auto" />
                 </button>
@@ -366,7 +366,7 @@
             <button
               @click="handleJoinRoom"
               :disabled="!joinForm.roomCode || joinForm.roomCode.length !== 6 || !joinForm.nickname.trim() || isConnecting"
-              class="w-full bg-hot text-ink shadow-hard hover:brightness-110 px-8 py-4 rounded-lg font-display font-bold uppercase tracking-wide text-lg transition-[filter] disabled:opacity-50 disabled:cursor-not-allowed disabled:shadow-none"
+              class="w-full bg-hot text-ink shadow-hard hover:brightness-110 px-8 py-3 rounded-lg font-display font-bold uppercase tracking-wide text-base sm:text-lg transition-[filter] disabled:opacity-50 disabled:cursor-not-allowed disabled:shadow-none"
             >
               {{ isConnecting ? 'Connecting...' : 'Join Room' }}
             </button>
