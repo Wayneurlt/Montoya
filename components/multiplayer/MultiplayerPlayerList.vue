@@ -1,24 +1,34 @@
 <template>
-  <div class="bg-white/10 backdrop-blur-md rounded-lg sm:rounded-xl p-3 sm:p-4 border border-white/20 mt-4 sm:mt-5 md:mt-6">
-    <h3 class="font-bold mb-2 sm:mb-3 text-sm sm:text-base flex items-center gap-2">
-      <Icon icon="mdi:account-group" class="w-4 h-4 sm:w-5 sm:h-5" />
+  <div class="card-poster p-3 sm:p-4 mt-4 sm:mt-5 md:mt-6">
+    <h3 class="font-display uppercase tracking-wide text-xs sm:text-sm text-paper/60 mb-3 flex items-center gap-2 flex-wrap">
+      <Icon icon="mdi:account-group" class="w-4 h-4 sm:w-5 sm:h-5 text-hot" />
       Players ({{ players.length }})
-      <span v-if="currentTurnPlayer" class="text-purple-300 text-xs font-normal">— {{ currentTurnPlayer.nickname }}'s turn</span>
+      <span v-if="currentTurnPlayer" class="text-volt normal-case font-sans font-medium tracking-normal">— {{ currentTurnPlayer.nickname }}'s turn</span>
     </h3>
     <div class="grid grid-cols-2 sm:grid-cols-3 gap-1.5 sm:gap-2">
       <div
         v-for="player in players"
         :key="player.socketId"
-        class="bg-white/5 rounded-lg p-1.5 sm:p-2 text-center text-xs sm:text-sm transition-all"
+        class="rounded-md p-1.5 sm:p-2 text-center text-xs sm:text-sm transition-colors bg-white/5 border border-white/10"
         :class="{
-          'ring-2 ring-purple-500': player.isHost,
-          'ring-2 ring-pink-500 bg-pink-500/20 scale-105 shadow-lg shadow-pink-500/50': !!currentTurnSocketId && player.socketId === currentTurnSocketId,
+          'border-volt/50': player.isHost && !(!!currentTurnSocketId && player.socketId === currentTurnSocketId),
+          'bg-hot text-ink border-hot shadow-hard-sm': !!currentTurnSocketId && player.socketId === currentTurnSocketId,
         }"
       >
-        <div class="font-semibold">{{ player.nickname }}</div>
+        <div class="font-display uppercase tracking-wide truncate">{{ player.nickname }}</div>
         <div class="flex items-center justify-center gap-1 mt-1 flex-wrap">
-          <span v-if="player.isHost" class="text-xs text-purple-400">👑</span>
-          <span v-if="!!currentTurnSocketId && player.socketId === currentTurnSocketId" class="text-xs text-pink-400 animate-pulse font-medium">⭐ Their turn</span>
+          <Icon
+            v-if="player.isHost"
+            icon="mdi:crown"
+            class="w-3.5 h-3.5"
+            :class="!!currentTurnSocketId && player.socketId === currentTurnSocketId ? 'text-ink/70' : 'text-volt'"
+          />
+          <span
+            v-if="!!currentTurnSocketId && player.socketId === currentTurnSocketId"
+            class="text-[10px] font-display uppercase tracking-wide"
+          >
+            Turn
+          </span>
         </div>
       </div>
     </div>

@@ -1,21 +1,21 @@
 <template>
   <div class="max-w-3xl mx-auto relative z-10 pt-4 sm:pt-6 md:pt-8">
     <!-- Header -->
-    <MultiplayerGameHeader
-      :room-code="roomState.roomCode"
-      :is-host="isHost"
-      @back-to-lobby="handleBackToLobby"
-      @change-game="handleChangeGame"
-    />
+    <div ref="headerRowRef">
+      <MultiplayerGameHeader
+        :room-code="roomState.roomCode"
+        :is-host="isHost"
+        @back-to-lobby="handleBackToLobby"
+        @change-game="handleChangeGame"
+      />
+    </div>
 
     <!-- Game Title -->
-    <div class="text-center mb-8">
-      <h1
-        class="text-4xl sm:text-5xl md:text-6xl font-black mb-4 bg-clip-text text-transparent bg-gradient-to-r from-purple-400 via-pink-500 to-cyan-400 drop-shadow-2xl"
-      >
-        🎲 Dice of Desire
+    <div ref="titleBlockRef" class="text-center mb-6 sm:mb-8">
+      <h1 class="font-display text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold uppercase mb-2 sm:mb-4 text-paper">
+        Dice <span class="text-hot">of</span> Desire
       </h1>
-      <p class="text-purple-200/80 text-sm font-medium">
+      <p class="text-paper/60 text-xs sm:text-sm font-medium">
         Host controls the game flow
       </p>
     </div>
@@ -23,192 +23,130 @@
     <!-- Turn Indicator - always show when playing -->
     <div v-if="roomState.gamePhase === 'playing'" class="mb-4 sm:mb-6">
       <TurnIndicator v-if="currentPlayer" :current-player="currentPlayer" />
-      <div v-else class="bg-white/10 rounded-xl sm:rounded-2xl p-4 sm:p-5 border border-white/20 text-center">
-        <p class="text-white/70 text-sm sm:text-base">Waiting to see whose turn...</p>
+      <div v-else class="card-poster p-4 sm:p-5 text-center">
+        <p class="text-paper/60 text-sm sm:text-base">Waiting to see whose turn...</p>
       </div>
     </div>
-    
+
     <!-- Target Player (if any) -->
     <div
       v-if="targetPlayer"
-      class="bg-white/5 rounded-xl p-3 sm:p-4 mb-4 sm:mb-6 border border-white/10"
+      class="bg-white/5 border border-white/10 rounded-md p-3 sm:p-4 mb-4 sm:mb-6 text-center"
     >
-      <div class="text-center">
-        <div class="text-xs sm:text-sm text-white/60 mb-1">Target</div>
-        <div class="text-lg sm:text-xl font-bold">
-          {{ targetPlayer.nickname }}
-        </div>
+      <div class="text-[10px] sm:text-xs font-display uppercase tracking-wide text-paper/50 mb-1">Target</div>
+      <div class="text-base sm:text-lg font-display font-bold uppercase text-paper">
+        {{ targetPlayer.nickname }}
       </div>
     </div>
 
     <!-- Dice Area -->
-    <div
-      class="relative bg-gradient-to-br from-purple-950/60 to-pink-950/60 rounded-xl sm:rounded-2xl md:rounded-3xl p-3 sm:p-4 md:p-6 lg:p-8 mb-3 sm:mb-4 md:mb-6 border-2 border-purple-700/40 shadow-2xl shadow-purple-900/30 backdrop-blur-lg"
-    >
-      <div
-        class="flex justify-center gap-3 sm:gap-4 md:gap-6 lg:gap-8 mb-4 sm:mb-5 md:mb-6"
-      >
+    <div class="card-poster p-4 sm:p-5 md:p-6 lg:p-8 mb-4 sm:mb-6">
+      <div class="flex justify-center gap-3 sm:gap-4 md:gap-6 lg:gap-8 mb-4 sm:mb-5 md:mb-6">
         <!-- Body Part Die -->
         <div
-          class="group w-20 h-20 sm:w-24 sm:h-24 md:w-28 md:h-28 lg:w-32 lg:h-32 bg-gradient-to-br from-purple-700 to-pink-800 rounded-xl sm:rounded-2xl shadow-2xl flex flex-col justify-center items-center transition-all"
+          ref="bodyDieRef"
+          class="w-20 h-20 sm:w-24 sm:h-24 md:w-28 md:h-28 lg:w-32 lg:h-32 bg-hot text-ink rounded-lg sm:rounded-xl shadow-hard flex flex-col justify-center items-center"
           :class="{
             'animate-spin': isRolling,
-            'scale-110': !isRolling && currentRoll.body,
-            'ring-4 ring-purple-400 shadow-purple-600/50':
-              currentRoll.body === 'Your Choice',
+            'ring-4 ring-paper/50': !isRolling && currentRoll.body === 'Your Choice',
           }"
         >
           <div v-if="!isRolling" class="text-center px-1 sm:px-2">
-            <p
-              class="text-[10px] sm:text-xs md:text-sm text-white/80 font-bold mb-0.5 sm:mb-1"
-            >
+            <p class="text-[10px] sm:text-xs md:text-sm font-display uppercase tracking-wide opacity-80 mb-0.5 sm:mb-1">
               Body Part
             </p>
-            <p
-              class="text-xs sm:text-sm md:text-base lg:text-lg font-black text-white leading-tight"
-            >
+            <p class="text-xs sm:text-sm md:text-base lg:text-lg font-display font-bold leading-tight">
               {{ currentRoll.body || "?" }}
             </p>
           </div>
           <div v-else class="text-center">
-            <p class="text-[10px] sm:text-xs text-white/80 font-bold">
-              Rolling...
-            </p>
-            <p class="text-xl sm:text-2xl md:text-3xl font-bold text-white">
-              ⚄
-            </p>
+            <p class="text-[10px] sm:text-xs font-display uppercase tracking-wide opacity-80">Rolling</p>
+            <Icon icon="mdi:dice-multiple" class="w-6 h-6 sm:w-7 sm:h-7 mx-auto mt-1" />
           </div>
         </div>
 
         <!-- Action Die -->
         <div
-          class="group w-20 h-20 sm:w-24 sm:h-24 md:w-28 md:h-28 lg:w-32 lg:h-32 bg-gradient-to-br from-pink-700 to-purple-800 rounded-xl sm:rounded-2xl shadow-2xl flex flex-col justify-center items-center transition-all"
+          ref="actionDieRef"
+          class="w-20 h-20 sm:w-24 sm:h-24 md:w-28 md:h-28 lg:w-32 lg:h-32 bg-volt text-ink rounded-lg sm:rounded-xl shadow-hard flex flex-col justify-center items-center"
           :class="{
             'animate-spin': isRolling,
-            'scale-110': !isRolling && currentRoll.action,
-            'ring-4 ring-pink-400 shadow-pink-600/50':
-              currentRoll.action === 'Your Choice',
+            'ring-4 ring-paper/50': !isRolling && currentRoll.action === 'Your Choice',
           }"
         >
           <div v-if="!isRolling" class="text-center px-1 sm:px-2">
-            <p
-              class="text-[10px] sm:text-xs md:text-sm text-white/80 font-bold mb-0.5 sm:mb-1"
-            >
+            <p class="text-[10px] sm:text-xs md:text-sm font-display uppercase tracking-wide opacity-80 mb-0.5 sm:mb-1">
               Action
             </p>
-            <p
-              class="text-xs sm:text-sm md:text-base lg:text-lg font-black text-white leading-tight"
-            >
+            <p class="text-xs sm:text-sm md:text-base lg:text-lg font-display font-bold leading-tight">
               {{ currentRoll.action || "?" }}
             </p>
           </div>
           <div v-else class="text-center">
-            <p class="text-[10px] sm:text-xs text-white/80 font-bold">
-              Rolling...
-            </p>
-            <p class="text-xl sm:text-2xl md:text-3xl font-bold text-white">
-              ⚂
-            </p>
+            <p class="text-[10px] sm:text-xs font-display uppercase tracking-wide opacity-80">Rolling</p>
+            <Icon icon="mdi:dice-multiple" class="w-6 h-6 sm:w-7 sm:h-7 mx-auto mt-1" />
           </div>
         </div>
       </div>
 
       <button
         v-if="isHost"
-        @click="rollDice"
+        @click="handleRoll"
         :disabled="isRolling || isTimerRunning"
-        class="group w-full bg-gradient-to-r from-purple-700 to-pink-700 hover:from-purple-600 hover:to-pink-600 py-3 sm:py-4 md:py-5 rounded-xl sm:rounded-2xl font-black text-base sm:text-lg md:text-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 sm:gap-3 shadow-xl hover:shadow-purple-600/50 border-2 border-purple-500/30 hover:scale-105"
+        class="w-full bg-hot text-ink shadow-hard hover:brightness-110 py-3 sm:py-4 md:py-5 rounded-lg font-display font-bold uppercase tracking-wide text-sm sm:text-base md:text-lg transition-[filter] disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 sm:gap-3"
       >
-        <Icon
-          v-if="isRolling"
-          icon="svg-spinners:3-dots-fade"
-          class="w-6 h-6"
-        />
-        <Icon
-          v-else
-          icon="mdi:dice"
-          class="w-6 h-6 group-hover:rotate-45 transition-transform"
-        />
+        <Icon v-if="isRolling" icon="svg-spinners:3-dots-fade" class="w-5 h-5 sm:w-6 sm:h-6" />
+        <Icon v-else icon="mdi:dice" class="w-5 h-5 sm:w-6 sm:h-6" />
         {{ isRolling ? "Rolling..." : "Roll Dice" }}
       </button>
-      <p v-else class="text-center text-white/60 text-sm mt-3 sm:mt-4">Waiting for host to roll the dice...</p>
+      <p v-else class="text-center text-paper/60 text-sm mt-3 sm:mt-4">Waiting for host to roll the dice...</p>
     </div>
 
     <!-- Result Display -->
-    <div
-      v-if="currentResult"
-      class="bg-gradient-to-br from-purple-950/60 to-pink-950/60 rounded-xl sm:rounded-2xl md:rounded-3xl p-3 sm:p-4 md:p-6 mb-3 sm:mb-4 md:mb-6 border-2 border-purple-700/40 shadow-2xl shadow-purple-900/30 backdrop-blur-lg"
-    >
-      <h3
-        class="text-base sm:text-lg md:text-xl lg:text-2xl font-black mb-2 sm:mb-3 md:mb-4 text-center flex items-center justify-center gap-1.5 sm:gap-2 md:gap-3"
-      >
-        <Icon
-          icon="mdi:fire"
-          class="w-4 h-4 sm:w-5 sm:h-5 md:w-6 md:h-7 text-orange-500 animate-pulse"
-        />
-        <span
-          class="bg-clip-text text-transparent bg-gradient-to-r from-purple-400 to-pink-500"
-          >Your Command</span
-        >
-        <Icon
-          icon="mdi:fire"
-          class="w-4 h-4 sm:w-5 sm:h-5 md:w-6 md:h-7 text-orange-500 animate-pulse"
-          style="animation-delay: 0.5s"
-        />
-      </h3>
-      <div
-        class="bg-gradient-to-r from-purple-700/40 to-pink-700/40 rounded-lg sm:rounded-xl md:rounded-2xl p-3 sm:p-4 md:p-6 mb-3 sm:mb-4 md:mb-6 border-2 border-purple-600/30 shadow-xl"
-      >
-        <p
-          class="text-lg sm:text-xl md:text-2xl lg:text-3xl font-black text-center leading-relaxed drop-shadow-lg px-2"
-        >
-          {{ currentResult }}
-        </p>
-        <p
-          v-if="specialEffect"
-          class="text-center mt-4 text-yellow-300 font-bold text-lg inline-flex items-center justify-center gap-2 bg-black/20 rounded-full px-6 py-3 mx-auto"
-        >
-          <Icon :icon="specialEffectIcon" class="w-6 h-6" />
+    <div v-if="currentResult" class="card-face p-4 sm:p-6 md:p-8 mb-4 sm:mb-6">
+      <div class="card-index card-index-tl text-hot"><Icon icon="mdi:fire" class="w-3.5 h-3.5" />CMD</div>
+      <div class="card-index card-index-br text-hot"><Icon icon="mdi:fire" class="w-3.5 h-3.5" />CMD</div>
+
+      <div class="mb-4 sm:mb-6 flex justify-center">
+        <div ref="typeBadgeRef" class="badge-stamp bg-hot text-ink px-5 sm:px-6 py-2.5 sm:py-3 text-sm sm:text-base">
+          <Icon icon="mdi:fire" class="w-5 h-5 sm:w-6 sm:h-6" />
+          Your Command
+        </div>
+      </div>
+
+      <p ref="questionTextRef" class="font-display text-lg sm:text-xl md:text-2xl lg:text-3xl font-bold text-center leading-relaxed px-2 text-paper mb-4">
+        {{ currentResult }}
+      </p>
+      <div v-if="specialEffect" class="flex justify-center mb-2">
+        <p class="text-volt font-display font-bold uppercase tracking-wide text-xs sm:text-sm inline-flex items-center gap-2 bg-white/5 border border-white/10 rounded-full px-4 sm:px-5 py-2 sm:py-2.5">
+          <Icon :icon="specialEffectIcon" class="w-4 h-4 sm:w-5 sm:h-5" />
           {{ specialEffect }}
         </p>
       </div>
 
       <!-- Timer -->
-      <div class="flex flex-col items-center">
-        <div
-          class="relative w-24 h-24 sm:w-28 sm:h-28 md:w-32 md:h-32 mb-3 sm:mb-4 md:mb-6"
-        >
+      <div class="flex flex-col items-center mt-4 sm:mt-6">
+        <div class="relative w-24 h-24 sm:w-28 sm:h-28 md:w-32 md:h-32 mb-3 sm:mb-4 md:mb-6">
           <svg class="w-full h-full transform -rotate-90" viewBox="0 0 36 36">
             <path
               d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
               fill="none"
-              stroke="rgba(255,255,255,0.2)"
+              stroke="rgba(255,255,255,0.1)"
               stroke-width="3"
             />
             <path
               d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
               fill="none"
-              stroke="url(#timerGradient)"
+              :stroke="secondsLeft <= 5 ? '#FF2E63' : '#C6FF3D'"
               stroke-width="3"
               stroke-linecap="round"
               :stroke-dasharray="`${timerPercent}, 100`"
             />
-            <defs>
-              <linearGradient
-                id="timerGradient"
-                x1="0%"
-                y1="0%"
-                x2="100%"
-                y2="0%"
-              >
-                <stop offset="0%" stop-color="#ec4899" />
-                <stop offset="100%" stop-color="#8b5cf6" />
-              </linearGradient>
-            </defs>
           </svg>
           <span
-            class="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-2xl font-bold"
-            :class="secondsLeft <= 5 ? 'text-red-400' : 'text-white'"
+            ref="timerNumberRef"
+            class="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-xl sm:text-2xl font-display font-bold tabular-nums"
+            :class="secondsLeft <= 5 ? 'text-hot' : 'text-paper'"
           >
             {{ secondsLeft }}s
           </span>
@@ -216,73 +154,71 @@
 
         <div v-if="isHost" class="flex gap-2 sm:gap-3 md:gap-4">
           <button
-            @click="completeAction"
-            class="bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 px-3 sm:px-4 md:px-6 py-1.5 sm:py-2 rounded-lg font-medium flex items-center gap-1.5 sm:gap-2 text-xs sm:text-sm md:text-base"
+            @click="handleCompleteAction"
+            class="bg-volt text-ink shadow-hard-sm hover:brightness-110 px-3 sm:px-4 md:px-6 py-1.5 sm:py-2 rounded-lg font-display font-bold uppercase tracking-wide flex items-center gap-1.5 sm:gap-2 text-xs sm:text-sm md:text-base"
           >
             <Icon icon="mdi:check-bold" class="w-4 h-4 sm:w-5 sm:h-5" />
             Completed
           </button>
           <button
-            @click="failAction"
-            class="bg-gradient-to-r from-red-500 to-pink-600 hover:from-red-600 hover:to-pink-700 px-3 sm:px-4 md:px-6 py-1.5 sm:py-2 rounded-lg font-medium flex items-center gap-1.5 sm:gap-2 text-xs sm:text-sm md:text-base"
+            @click="handleFailAction"
+            class="bg-hot text-ink shadow-hard-sm hover:brightness-110 px-3 sm:px-4 md:px-6 py-1.5 sm:py-2 rounded-lg font-display font-bold uppercase tracking-wide flex items-center gap-1.5 sm:gap-2 text-xs sm:text-sm md:text-base"
           >
             <Icon icon="mdi:close-thick" class="w-4 h-4 sm:w-5 sm:h-5" />
             Failed
           </button>
         </div>
-        <p v-else class="text-white/60 text-sm">Waiting for host to mark Completed or Failed</p>
+        <p v-else class="text-paper/60 text-sm">Waiting for host to mark Completed or Failed</p>
       </div>
     </div>
 
-    <!-- History -->
-    <div
-      class="bg-white/10 rounded-lg sm:rounded-xl md:rounded-2xl p-3 sm:p-4 md:p-6 border border-white/20"
-    >
-      <h3
-        class="text-base sm:text-lg md:text-xl font-bold mb-2 sm:mb-3 md:mb-4 flex items-center gap-1.5 sm:gap-2"
+    <!-- History: collapsed by default so it doesn't eat gameplay space -->
+    <div class="card-poster overflow-hidden">
+      <button
+        type="button"
+        @click="toggleLog"
+        class="w-full flex items-center justify-between p-4 font-display uppercase tracking-wide text-sm text-paper/70"
       >
-        <Icon icon="mdi:history" class="w-4 h-4 sm:w-5 sm:h-5" />
-        <span>Game History</span>
-      </h3>
-      <ul
-        class="space-y-2 sm:space-y-3 max-h-40 sm:max-h-50 md:max-h-60 overflow-y-auto pr-2 text-xs sm:text-sm"
-      >
-        <li
-          v-for="(item, index) in history"
-          :key="index"
-          class="pb-3 border-b border-white/10 last:border-0 group"
-        >
-          <div class="flex justify-between items-start">
-            <div>
-              <p class="font-semibold">
-                <span class="text-pink-300">{{ item.roller }}</span> →
-                <span class="text-cyan-300">{{ item.target }}</span
-                >:
-              </p>
-              <p class="mt-1">{{ item.result }}</p>
-              <p
-                v-if="item.special"
-                class="text-pink-300 text-sm mt-1 flex items-center gap-1"
-              >
-                <Icon :icon="getEffectIcon(item.special)" class="w-4 h-4" />
-                {{ item.special }}
-              </p>
-            </div>
-            <span class="opacity-0 group-hover:opacity-100 transition-opacity">
+        <span class="flex items-center gap-2">
+          <Icon icon="mdi:history" class="w-5 h-5" />
+          <span>Game History</span>
+          <span v-if="history.length" class="bg-white/10 text-paper/60 text-xs px-2 py-0.5 rounded-full normal-case tracking-normal font-sans font-medium">{{ history.length }}</span>
+        </span>
+        <Icon icon="mdi:chevron-down" class="w-5 h-5 transition-transform duration-200" :class="{ 'rotate-180': logExpanded }" />
+      </button>
+      <div ref="logBodyRef" class="overflow-hidden" style="height: 0">
+        <ul class="space-y-2 text-xs sm:text-sm px-4 pb-4 max-h-60 overflow-y-auto">
+          <li
+            v-for="(item, index) in history"
+            :key="index"
+            class="py-2 px-3 rounded-md bg-white/5"
+          >
+            <div class="flex justify-between items-start gap-2">
+              <div class="min-w-0">
+                <p class="font-semibold text-paper/90">
+                  <span class="text-hot">{{ item.roller }}</span> →
+                  <span class="text-volt">{{ item.target }}</span>:
+                </p>
+                <p class="mt-1 text-paper/80 break-words">{{ item.result }}</p>
+                <p v-if="item.special" class="text-volt text-xs sm:text-sm mt-1 flex items-center gap-1">
+                  <Icon :icon="getEffectIcon(item.special)" class="w-4 h-4" />
+                  {{ item.special }}
+                </p>
+              </div>
               <Icon
                 v-if="item.status === 'completed'"
                 icon="mdi:check-circle"
-                class="w-5 h-5 text-green-400"
+                class="w-5 h-5 text-volt flex-shrink-0"
               />
               <Icon
                 v-else-if="item.status === 'failed'"
                 icon="mdi:close-circle"
-                class="w-5 h-5 text-red-400"
+                class="w-5 h-5 text-hot flex-shrink-0"
               />
-            </span>
-          </div>
-        </li>
-      </ul>
+            </div>
+          </li>
+        </ul>
+      </div>
     </div>
 
     <!-- Player List -->
@@ -291,15 +227,17 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onBeforeUnmount, watch, type DeepReadonly } from "vue";
+import { ref, computed, onBeforeUnmount, onMounted, watch, nextTick, type DeepReadonly } from "vue";
 import { Icon } from "@iconify/vue";
 import { useRouter } from "vue-router";
+import gsap from "gsap";
 import { navigateTo } from "#app";
 import TurnIndicator from './TurnIndicator.vue';
 import WaitingForHost from './WaitingForHost.vue';
 import MultiplayerGameHeader from './MultiplayerGameHeader.vue';
 import MultiplayerPlayerList from './MultiplayerPlayerList.vue';
 import { useMultiplayer, type RoomState } from '~/composables/useMultiplayer';
+import { staggerReveal, punchScale, tickPulse, shake, celebrateBurst } from '~/composables/useGameAnimations';
 
 interface Props {
   roomState: DeepReadonly<RoomState>;
@@ -371,6 +309,40 @@ const specialEffectIcon = ref("mdi:star");
 const currentRoll = ref({ body: "", action: "" });
 const currentResult = ref("");
 const history = ref<any[]>([]);
+const logExpanded = ref(false);
+
+// Animation refs
+const headerRowRef = ref<HTMLElement | null>(null);
+const titleBlockRef = ref<HTMLElement | null>(null);
+const bodyDieRef = ref<HTMLElement | null>(null);
+const actionDieRef = ref<HTMLElement | null>(null);
+const typeBadgeRef = ref<HTMLElement | null>(null);
+const questionTextRef = ref<HTMLElement | null>(null);
+const timerNumberRef = ref<HTMLElement | null>(null);
+const logBodyRef = ref<HTMLElement | null>(null);
+
+// Collapsed by default so history doesn't permanently eat gameplay space —
+// animate the height open/closed rather than a plain v-if.
+const toggleLog = () => {
+  logExpanded.value = !logExpanded.value;
+  nextTick(() => {
+    if (!logBodyRef.value) return;
+    if (logExpanded.value) {
+      const targetHeight = logBodyRef.value.scrollHeight;
+      gsap.fromTo(
+        logBodyRef.value,
+        { height: 0 },
+        { height: targetHeight, duration: 0.35, ease: 'power2.out', onComplete: () => gsap.set(logBodyRef.value, { height: 'auto' }) }
+      );
+    } else {
+      gsap.fromTo(
+        logBodyRef.value,
+        { height: logBodyRef.value.scrollHeight },
+        { height: 0, duration: 0.28, ease: 'power2.in' }
+      );
+    }
+  });
+};
 
 // Who is up: from current prompt or server's nextUpPlayer (before host rolls)
 const currentPlayer = computed(() => {
@@ -464,6 +436,8 @@ const rollDice = async () => {
   const action = ACTIONS[actionIndex];
 
   currentRoll.value = { body: bodyPart, action: action };
+  tickPulse(bodyDieRef.value, { scale: 1.12 });
+  tickPulse(actionDieRef.value, { scale: 1.12 });
 
   let timerDuration = 30;
 
@@ -530,6 +504,19 @@ const rollDice = async () => {
   });
 
   isRolling.value = false;
+
+  await nextTick();
+  if (typeBadgeRef.value) {
+    gsap.fromTo(typeBadgeRef.value, { scale: 0.6, opacity: 0 }, { scale: 1, opacity: 1, duration: 0.35, ease: 'back.out(2.2)' });
+  }
+  if (questionTextRef.value) {
+    gsap.fromTo(questionTextRef.value, { y: 14, opacity: 0 }, { y: 0, opacity: 1, duration: 0.4, delay: 0.12, ease: 'power2.out' });
+  }
+};
+
+const handleRoll = (evt: MouseEvent) => {
+  punchScale(evt.currentTarget as HTMLElement);
+  rollDice();
 };
 
 const startTimer = (duration: number) => {
@@ -541,6 +528,10 @@ const startTimer = (duration: number) => {
   timer.value = setInterval(() => {
     secondsLeft.value--;
     timerPercent.value = (secondsLeft.value / totalDuration) * 100;
+    tickPulse(timerNumberRef.value, { scale: secondsLeft.value <= 5 ? 1.4 : 1.15 });
+    if (secondsLeft.value === 5) {
+      shake(timerNumberRef.value);
+    }
 
     if (secondsLeft.value <= 0) {
       clearInterval(timer.value);
@@ -580,6 +571,16 @@ const failAction = () => {
   currentRoll.value = { body: "", action: "" };
 };
 
+const handleCompleteAction = (evt: MouseEvent) => {
+  celebrateBurst(evt.currentTarget as HTMLElement);
+  completeAction();
+};
+
+const handleFailAction = (evt: MouseEvent) => {
+  punchScale(evt.currentTarget as HTMLElement);
+  failAction();
+};
+
 // Watch for prompt changes
 watch(
   () => props.roomState.currentPrompt,
@@ -606,6 +607,12 @@ watch(
 
 onBeforeUnmount(() => {
   clearInterval(timer.value);
+});
+
+onMounted(() => {
+  nextTick(() => {
+    staggerReveal([headerRowRef.value, titleBlockRef.value]);
+  });
 });
 </script>
 

@@ -1,156 +1,134 @@
 <template>
-  <div class="min-h-screen bg-gradient-to-br from-slate-950 via-purple-950 to-slate-950 text-white p-3 sm:p-4 relative overflow-x-hidden overflow-y-auto safe-bottom">
+  <div class="min-h-screen bg-nightlife text-paper p-3 sm:p-4 relative overflow-x-hidden overflow-y-auto safe-bottom">
     <!-- Background Icons Pattern -->
     <BackgroundIcons />
 
     <div class="max-w-4xl mx-auto relative z-10 pt-4 sm:pt-6 md:pt-8">
       <!-- Header with Home Button -->
-      <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 sm:gap-0 mb-6 sm:mb-8">
+      <div ref="headerRowRef" class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 sm:gap-0 mb-6 sm:mb-8">
         <div class="flex gap-2 w-full sm:w-auto">
-          <NuxtLink to="/" class="bg-white/10 hover:bg-white/20 backdrop-blur-md px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg sm:rounded-xl transition-all duration-300 flex items-center gap-1.5 sm:gap-2 border border-white/20 hover:scale-105 text-sm sm:text-base flex-1 sm:flex-initial justify-center sm:justify-start">
+          <NuxtLink to="/" class="bg-card border border-white/10 hover:border-hot/50 px-3 sm:px-4 py-1.5 sm:py-2 rounded-md transition-colors flex items-center gap-1.5 sm:gap-2 text-sm sm:text-base flex-1 sm:flex-initial justify-center sm:justify-start">
             <Icon icon="mdi:home" class="w-4 h-4 sm:w-5 sm:h-5" />
             <span class="font-medium">Home</span>
           </NuxtLink>
-          <NuxtLink to="/setup?step=game-selection" class="bg-white/10 hover:bg-white/20 backdrop-blur-md px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg sm:rounded-xl transition-all duration-300 flex items-center gap-1.5 sm:gap-2 border border-white/20 hover:scale-105 text-sm sm:text-base flex-1 sm:flex-initial justify-center sm:justify-start">
+          <NuxtLink to="/setup?step=game-selection" class="bg-card border border-white/10 hover:border-hot/50 px-3 sm:px-4 py-1.5 sm:py-2 rounded-md transition-colors flex items-center gap-1.5 sm:gap-2 text-sm sm:text-base flex-1 sm:flex-initial justify-center sm:justify-start">
             <Icon icon="mdi:arrow-left" class="w-4 h-4 sm:w-5 sm:h-5" />
             <span class="font-medium">Back</span>
           </NuxtLink>
         </div>
-        
+
         <div class="flex items-center gap-2 w-full sm:w-auto justify-center sm:justify-end">
-          <div class="bg-white/10 backdrop-blur-md px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg sm:rounded-xl border border-white/20">
-            <div class="text-[10px] sm:text-xs text-white/60">Current Turn</div>
-            <div class="text-xs sm:text-sm font-bold flex items-center gap-1 sm:gap-1.5">
+          <div class="bg-card border border-white/10 px-3 sm:px-4 py-1.5 sm:py-2 rounded-md">
+            <div class="text-[10px] sm:text-xs text-paper/50 font-display uppercase tracking-wide">Current Turn</div>
+            <div class="text-xs sm:text-sm font-bold font-display uppercase flex items-center gap-1 sm:gap-1.5">
               <span class="truncate max-w-[100px] sm:max-w-none">{{ currentPlayer?.name || 'Player' }}</span>
-              <span class="text-xs sm:text-base flex-shrink-0">{{ currentPlayer?.gender === 'male' ? '♂' : currentPlayer?.gender === 'female' ? '♀' : '' }}</span>
+              <span class="text-xs sm:text-base flex-shrink-0 text-hot">{{ currentPlayer?.gender === 'male' ? '♂' : currentPlayer?.gender === 'female' ? '♀' : '' }}</span>
             </div>
           </div>
-          <div class="bg-white/10 backdrop-blur-md px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg sm:rounded-xl border border-white/20">
-            <div class="flex items-center gap-1.5 sm:gap-2">
-              <Icon icon="mdi:counter" class="w-4 h-4 sm:w-5 sm:h-5 text-cyan-300" />
-              <span class="font-semibold text-xs sm:text-sm md:text-base">Round {{ roundCount }}</span>
-            </div>
-          </div>
+          <span class="text-xs sm:text-sm px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-full border font-display uppercase tracking-wide bg-hot/15 text-hot border-hot/30 flex items-center gap-1.5 sm:gap-2">
+            <Icon icon="mdi:counter" class="w-4 h-4 sm:w-5 sm:h-5" />
+            <span>Round {{ roundCount }}</span>
+          </span>
         </div>
       </div>
 
       <!-- Game Title Card -->
-      <div class="text-center mb-3 sm:mb-4 md:mb-6 transform hover:scale-105 transition-transform duration-300 px-2">
-        <div class="inline-block bg-gradient-to-r from-red-900/40 to-black/60 backdrop-blur-md rounded-lg sm:rounded-xl md:rounded-2xl px-3 sm:px-4 md:px-6 lg:px-8 py-2 sm:py-3 md:py-4 border-2 border-red-500/40 shadow-2xl shadow-red-900/50 w-full sm:w-auto">
-          <h1 class="text-2xl sm:text-3xl md:text-4xl lg:text-5xl xl:text-6xl font-black bg-clip-text text-transparent bg-gradient-to-r from-red-500 via-orange-500 to-amber-400 mb-1 sm:mb-2">
-            Most Likely To
-          </h1>
-          <p class="text-red-200/80 text-[10px] sm:text-xs md:text-sm font-medium tracking-wide">Point at someone - majority rules!</p>
-        </div>
+      <div ref="titleBlockRef" class="text-center mb-8">
+        <h1 class="font-display text-4xl sm:text-5xl md:text-6xl font-bold uppercase mb-4 text-paper">
+          Most <span class="text-hot">Likely</span> To
+        </h1>
+        <p class="text-paper/60 text-sm font-medium">Point at someone - majority rules!</p>
       </div>
 
       <!-- Main Question Card -->
-      <div class="mb-8">
-        <div class="bg-gradient-to-br from-red-950/60 to-black/80 backdrop-blur-xl rounded-3xl p-8 md:p-12 shadow-2xl border-2 border-red-600/30 relative overflow-hidden min-h-[280px] flex items-center justify-center">
-          <!-- Decorative corner elements -->
-          <div class="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-red-600/20 to-transparent rounded-bl-full"></div>
-          <div class="absolute bottom-0 left-0 w-32 h-32 bg-gradient-to-tr from-orange-600/20 to-transparent rounded-tr-full"></div>
-          
-          <transition name="slide-fade" mode="out-in">
-            <div :key="questionKey" class="text-center relative z-10 w-full">
-              <!-- Question Icon -->
-              <div class="mb-6 flex justify-center">
-                <div class="bg-gradient-to-br from-red-600 to-orange-700 p-4 rounded-2xl shadow-lg shadow-red-900/50 animate-pulse-slow">
-                  <Icon icon="mdi:account-question" class="w-12 h-12" />
-                </div>
-              </div>
-              
-              <!-- Question Text -->
-              <p class="text-2xl md:text-4xl font-bold leading-relaxed px-4 text-white drop-shadow-lg">
-                {{ question?.text || 'Get ready to point fingers...' }}
-              </p>
+      <div ref="questionCardRef" class="mb-6">
+        <div class="card-face p-8 md:p-10 min-h-[280px] flex items-center justify-center">
+          <div class="card-index card-index-tl text-hot"><Icon icon="mdi:account-question" class="w-3.5 h-3.5" />M</div>
+          <div class="card-index card-index-br text-hot"><Icon icon="mdi:account-question" class="w-3.5 h-3.5" />M</div>
 
-              <!-- Decorative underline -->
-              <div class="mt-6 flex justify-center">
-                <div class="h-1 w-24 bg-gradient-to-r from-red-600 via-orange-600 to-amber-500 rounded-full"></div>
+          <div class="text-center relative z-10 w-full">
+            <div class="mb-6 flex justify-center">
+              <div class="badge-stamp px-6 py-3 text-lg bg-hot text-ink">
+                <Icon icon="mdi:account-question" class="w-6 h-6" />
+                Most Likely To
               </div>
             </div>
-          </transition>
+
+            <p ref="questionTextRef" class="font-display text-xl md:text-3xl font-bold leading-relaxed px-2 text-paper">
+              {{ question?.text || 'Get ready to point fingers...' }}
+            </p>
+          </div>
         </div>
       </div>
 
       <!-- Multiplayer Voting (if in multiplayer mode) -->
-      <div v-if="isMultiplayer && roomState && roomState.gamePhase === 'playing'" class="mb-8">
-        <div class="bg-white/10 backdrop-blur-md rounded-2xl p-6 border border-white/20">
-          <h3 class="text-xl font-bold mb-4 text-center">Who is most likely to...</h3>
+      <div v-if="isMultiplayer && roomState && roomState.gamePhase === 'playing'" class="mb-6">
+        <div class="card-poster p-6">
+          <h3 class="font-display uppercase tracking-wide text-lg font-bold mb-4 text-center">Who is most likely to...</h3>
           <div class="grid grid-cols-2 sm:grid-cols-3 gap-3">
             <button
               v-for="player in availablePlayers"
               :key="player.socketId"
-              @click="handleVoteForPlayer(player.socketId)"
+              @click="handleVoteForPlayerClick(player.socketId, $event)"
               :disabled="hasVoted"
-              :class="[
-                'p-4 rounded-xl border-2 transition-all',
-                selectedPlayer === player.socketId
-                  ? 'bg-red-500/30 border-red-500 ring-4 ring-red-400'
-                  : 'bg-white/5 border-white/10 hover:border-red-400/50',
-                hasVoted ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer hover:scale-105'
-              ]"
+              class="p-4 rounded-lg border-2 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              :class="selectedPlayer === player.socketId ? 'bg-hot/15 border-hot' : 'bg-card border-white/10 hover:border-hot/50'"
             >
-              <div class="w-12 h-12 rounded-full bg-gradient-to-r from-red-500 to-orange-500 flex items-center justify-center mx-auto mb-2 font-bold text-xl">
+              <div class="w-12 h-12 rounded-full bg-hot/15 text-hot flex items-center justify-center mx-auto mb-2 font-display font-bold text-xl">
                 {{ player.nickname.charAt(0).toUpperCase() }}
               </div>
-              <div class="text-sm font-semibold text-center">{{ player.nickname }}</div>
-              <div v-if="player.isHost" class="text-xs text-purple-300 mt-1">Host</div>
+              <div class="text-sm font-display uppercase tracking-wide text-center">{{ player.nickname }}</div>
+              <div v-if="player.isHost" class="text-[10px] text-volt text-center mt-1 font-display uppercase tracking-wide">Host</div>
             </button>
           </div>
-          <div v-if="hasVoted" class="mt-4 text-center text-purple-300 text-sm">
-            ✓ Vote submitted! Waiting for other players...
+          <div v-if="hasVoted" class="mt-4 text-center text-paper/60 text-sm font-medium flex items-center justify-center gap-2">
+            <Icon icon="mdi:check-circle" class="w-4 h-4 text-volt" />
+            <span>Vote submitted! Waiting for other players...</span>
           </div>
         </div>
       </div>
 
       <!-- Multiplayer Results -->
-      <div v-if="isMultiplayer && roomState && roomState.gamePhase === 'results'" class="mb-8">
-        <div class="bg-white/10 backdrop-blur-md rounded-2xl p-6 border border-white/20">
-          <h3 class="text-xl font-bold mb-4 text-center">Results</h3>
+      <div v-if="isMultiplayer && roomState && roomState.gamePhase === 'results'" class="mb-6">
+        <div class="card-poster p-6">
+          <h3 class="font-display uppercase tracking-wide text-lg font-bold mb-4 text-center">Results</h3>
           <div class="space-y-3">
             <div
               v-for="(playerVotes, playerId) in voteDistribution"
               :key="playerId"
-              :class="[
-                'rounded-xl p-4 border-2 transition-all',
-                playerId === winnerId
-                  ? 'bg-gradient-to-r from-yellow-500/30 to-orange-500/30 border-yellow-500 ring-4 ring-yellow-400'
-                  : 'bg-white/5 border-white/10'
-              ]"
+              class="rounded-lg p-4 border-2 transition-colors"
+              :class="playerId === winnerId ? 'bg-volt/10 border-volt' : 'bg-white/5 border-white/10'"
             >
               <div class="flex items-center justify-between mb-2">
                 <div class="flex items-center gap-3">
-                  <div class="w-10 h-10 rounded-full bg-gradient-to-r from-red-500 to-orange-500 flex items-center justify-center font-bold">
+                  <div class="w-10 h-10 rounded-full bg-hot/15 text-hot flex items-center justify-center font-display font-bold">
                     {{ getPlayerName(playerId)?.charAt(0).toUpperCase() }}
                   </div>
                   <div>
-                    <div class="font-semibold">{{ getPlayerName(playerId) }}</div>
-                    <div v-if="roomState && roomState.answerVisibility === 'public'" class="text-xs text-white/60">
+                    <div class="font-display uppercase tracking-wide font-semibold">{{ getPlayerName(playerId) }}</div>
+                    <div v-if="roomState && roomState.answerVisibility === 'public'" class="text-xs text-paper/50">
                       Voted by: {{ getVoterNames(playerId).join(', ') }}
                     </div>
                   </div>
                 </div>
-                <div class="text-2xl font-black">{{ playerVotes.length }}</div>
+                <div class="text-2xl font-display font-black">{{ playerVotes.length }}</div>
               </div>
               <div class="h-2 bg-white/10 rounded-full overflow-hidden">
                 <div
-                  class="h-full bg-gradient-to-r from-red-500 to-orange-500 transition-all duration-500"
+                  class="h-full bg-hot transition-all duration-500"
                   :style="{ width: `${(playerVotes.length / totalVotes) * 100}%` }"
                 ></div>
               </div>
             </div>
           </div>
-          <div v-if="winnerId" class="mt-6 text-center">
-            <div class="text-2xl font-black bg-gradient-to-r from-yellow-400 to-orange-400 bg-clip-text text-transparent mb-2">
-              🏆 Winner: {{ getPlayerName(winnerId) }}
-            </div>
+          <div v-if="winnerId" class="mt-6 text-center flex items-center justify-center gap-2">
+            <Icon icon="mdi:trophy" class="w-6 h-6 text-volt" />
+            <span class="text-xl font-display font-bold uppercase tracking-wide text-volt">Winner: {{ getPlayerName(winnerId) }}</span>
           </div>
           <div v-if="isHost" class="mt-4">
             <button
-              @click="handleNextRound"
-              class="w-full bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 text-white px-6 py-3 rounded-xl font-bold transition-all"
+              @click="handleNextRoundClick"
+              class="w-full bg-volt text-ink shadow-hard hover:brightness-110 px-6 py-3 rounded-lg font-display font-bold uppercase tracking-wide transition-[filter]"
             >
               Next Question
             </button>
@@ -159,50 +137,50 @@
       </div>
 
       <!-- Action Buttons (Single-Device Mode) -->
-      <div v-if="!isMultiplayer" class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
-        <button 
-          @click="fetchAnother" 
-          class="group bg-gradient-to-r from-red-700 to-orange-700 hover:from-red-600 hover:to-orange-600 px-8 py-5 rounded-2xl font-bold text-lg flex items-center justify-center gap-3 shadow-xl hover:shadow-red-600/50 transition-all duration-300 transform hover:scale-105 border-2 border-red-500/30"
+      <div v-if="!isMultiplayer" class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+        <button
+          @click="handleFetchAnotherClick"
+          class="bg-card hover:bg-white/5 border border-white/10 px-8 py-5 rounded-lg font-display font-bold uppercase tracking-wide text-lg flex items-center justify-center gap-3 transition-colors"
         >
-          <Icon icon="mdi:refresh" class="w-6 h-6 group-hover:rotate-180 transition-transform duration-500" />
+          <Icon icon="mdi:refresh" class="w-6 h-6" />
           <span>Next Question</span>
         </button>
-        
-        <button 
-          @click="applyPenalty" 
-          class="group bg-gradient-to-r from-amber-700 to-red-700 hover:from-amber-600 hover:to-red-600 px-8 py-5 rounded-2xl font-bold text-lg flex items-center justify-center gap-3 shadow-xl hover:shadow-amber-600/50 transition-all duration-300 transform hover:scale-105 border-2 border-amber-500/30"
+
+        <button
+          @click="handleApplyPenaltyClick"
+          class="bg-hot text-ink shadow-hard hover:brightness-110 px-8 py-5 rounded-lg font-display font-bold uppercase tracking-wide text-lg flex items-center justify-center gap-3 transition-[filter]"
         >
-          <Icon icon="mdi:glass-cocktail" class="w-6 h-6 group-hover:animate-bounce" />
+          <Icon icon="mdi:glass-cocktail" class="w-6 h-6" />
           <span>Drink Penalty</span>
         </button>
       </div>
 
       <!-- Penalty Display -->
       <transition name="bounce-in">
-        <div v-if="showPenalty" class="mb-8">
-          <div class="bg-gradient-to-r from-red-500/30 to-orange-500/30 backdrop-blur-md border-2 border-red-400/50 rounded-2xl p-6 text-center shadow-2xl animate-pulse">
+        <div v-if="showPenalty" ref="penaltyBlockRef" class="mb-6">
+          <div class="card-poster border-hot/40 p-6 text-center">
             <div class="flex items-center justify-center gap-3 mb-2">
-              <Icon icon="mdi:alert-circle" class="w-8 h-8 text-red-300" />
-              <p class="text-red-200 font-bold text-xl">{{ penaltyMessage }}</p>
-              <Icon icon="mdi:alert-circle" class="w-8 h-8 text-red-300" />
+              <Icon icon="mdi:alert-circle" class="w-8 h-8 text-hot" />
+              <p class="font-display font-bold uppercase tracking-wide text-xl text-paper">{{ penaltyMessage }}</p>
+              <Icon icon="mdi:alert-circle" class="w-8 h-8 text-hot" />
             </div>
-            <p class="text-red-300/70 text-sm mt-2">Time to pay up! 🍻</p>
+            <p class="text-paper/60 text-sm mt-2">Time to pay up!</p>
           </div>
         </div>
       </transition>
 
       <!-- Game Stats -->
       <div class="grid grid-cols-2 gap-4">
-        <div class="bg-black/40 backdrop-blur-md rounded-xl p-4 border border-red-600/20 text-center hover:bg-red-950/30 transition-all">
-          <Icon icon="mdi:star-circle" class="w-8 h-8 mx-auto mb-2 text-amber-500" />
-          <p class="text-2xl font-bold text-white">{{ questionCount }}</p>
-          <p class="text-red-200/60 text-sm">Questions Asked</p>
+        <div class="card-poster p-4 text-center">
+          <Icon icon="mdi:star-circle" class="w-8 h-8 mx-auto mb-2 text-hot" />
+          <p class="text-2xl font-display font-bold text-paper">{{ questionCount }}</p>
+          <p class="text-paper/50 text-sm font-display uppercase tracking-wide">Questions Asked</p>
         </div>
-        
-        <div class="bg-black/40 backdrop-blur-md rounded-xl p-4 border border-orange-600/20 text-center hover:bg-orange-950/30 transition-all">
-          <Icon icon="mdi:glass-cocktail" class="w-8 h-8 mx-auto mb-2 text-orange-500" />
-          <p class="text-2xl font-bold text-white">{{ penaltyCount }}</p>
-          <p class="text-orange-200/60 text-sm">Penalties Given</p>
+
+        <div class="card-poster card-poster-volt p-4 text-center">
+          <Icon icon="mdi:glass-cocktail" class="w-8 h-8 mx-auto mb-2 text-volt" />
+          <p class="text-2xl font-display font-bold text-paper">{{ penaltyCount }}</p>
+          <p class="text-paper/50 text-sm font-display uppercase tracking-wide">Penalties Given</p>
         </div>
       </div>
     </div>
@@ -210,14 +188,16 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, watch } from 'vue';
+import { ref, computed, onMounted, watch, nextTick } from 'vue';
 import { Icon } from '@iconify/vue';
 import { push } from 'notivue';
+import gsap from 'gsap';
 import { useAnalytics } from '~/composables/useAnalytics';
 import { useGameStore } from '~/stores/game';
 // Questions are now loaded from database via API
 import { useMostLikelyToTracker } from '~/composables/useQuestionTracker';
 import { useMultiplayer } from '~/composables/useMultiplayer';
+import { staggerReveal, punchScale, shake } from '~/composables/useGameAnimations';
 
 // Multiplayer room state lives in a process-wide singleton (see useMultiplayer.ts),
 // not per-request — rendering it during SSR could leak one user's live room into
@@ -251,6 +231,28 @@ const selectedPlayer = ref<string | null>(null);
 
 // Initialize analytics
 const { trackPageView, updateActivity } = useAnalytics();
+
+// Animation refs
+const headerRowRef = ref(null);
+const titleBlockRef = ref(null);
+const questionCardRef = ref(null);
+const questionTextRef = ref(null);
+const penaltyBlockRef = ref(null);
+
+// Reveal beat: whenever the displayed question changes, settle the text in
+// with a quick fade/rise instead of an instant swap — mirrors how
+// truth-or-dare.vue reveals `questionTextRef` after a draw.
+watch(question, (_val, oldVal) => {
+  // Skip the very first population: questionCardRef (this element's parent) is
+  // already fading in via staggerReveal() on mount, and animating both at once
+  // compounds their opacity multiplicatively, leaving the card nearly invisible
+  // for far longer than either animation's own duration.
+  if (!oldVal) return;
+  nextTick(() => {
+    if (!questionTextRef.value) return;
+    gsap.fromTo(questionTextRef.value, { y: 14, opacity: 0 }, { y: 0, opacity: 1, duration: 0.4, ease: 'power2.out' });
+  });
+});
 
 // Shared across every call site that pulls a question from the tracker: once the
 // whole pool has been shown, the tracker resets and picks a repeat — tell the
@@ -299,11 +301,6 @@ const winnerId = computed(() => {
   return winner
 })
 
-// Key for transition
-const questionKey = computed(() => {
-  return question.value && question.value.text ? `question-${question.value.text}` : 'question-none'
-})
-
 // Helper functions
 const getPlayerName = (socketId: string) => {
   return roomState.value.players.find(p => p.socketId === socketId)?.nickname || 'Unknown'
@@ -315,22 +312,22 @@ const getVoterNames = (playerId: string) => {
 
 const fetchAnother = () => {
   showPenalty.value = false;
-  
+
   // Track user activity
   updateActivity();
-  
+
   if (!questionTracker) {
     question.value = { text: 'Questions are loading... Please wait.' };
     return;
   }
-  
+
   const result = questionTracker.getNextQuestion();
   notifyIfRepeat(result);
 
   // Log usage stats for debugging
   const stats = questionTracker.getUsageStats.value;
   console.log(`Most Likely To - Used: ${stats.usedCount}/${stats.totalQuestions} (${stats.usagePercentage}%)`);
-  
+
   question.value = { text: result.question };
   roundCount.value++;
   questionCount.value++;
@@ -339,7 +336,7 @@ const fetchAnother = () => {
 // Multiplayer vote for player
 const handleVoteForPlayer = (playerId: string) => {
   if (hasVoted.value || !isMultiplayer.value) return;
-  
+
   selectedPlayer.value = playerId
   submitVote(playerId)
   hasVoted.value = true
@@ -349,7 +346,7 @@ const handleVoteForPlayer = (playerId: string) => {
 // Handle next round (host only)
 const handleNextRound = () => {
   if (!isHost.value || !isMultiplayer.value) return;
-  
+
   const result = questionTracker?.getNextQuestion();
   if (result) {
     notifyIfRepeat(result);
@@ -362,12 +359,36 @@ const handleNextRound = () => {
   }
 };
 
+// Thin click wrappers that add the shared tactile "punch" feedback around the
+// existing, untouched game logic — same pattern as truth-or-dare.vue's
+// handleDraw/handleCompleteChallenge/handleResetCard.
+const handleFetchAnotherClick = (evt?: Event) => {
+  punchScale((evt?.currentTarget as Element) ?? null);
+  fetchAnother();
+};
+
+const handleApplyPenaltyClick = (evt?: Event) => {
+  punchScale((evt?.currentTarget as Element) ?? null);
+  applyPenalty();
+  nextTick(() => shake(penaltyBlockRef.value));
+};
+
+const handleVoteForPlayerClick = (playerId: string, evt?: Event) => {
+  punchScale((evt?.currentTarget as Element) ?? null);
+  handleVoteForPlayer(playerId);
+};
+
+const handleNextRoundClick = (evt?: Event) => {
+  punchScale((evt?.currentTarget as Element) ?? null);
+  handleNextRound();
+};
+
 // Watch for game state updates in multiplayer
 watch(() => roomState.value.gamePhase, (newPhase) => {
   if (newPhase === 'playing') {
     hasVoted.value = false;
     selectedPlayer.value = null;
-    
+
     // If host, fetch next question
     if (isHost.value && questionTracker) {
       const result = questionTracker.getNextQuestion();
@@ -408,10 +429,10 @@ const applyPenalty = () => {
   penaltyMessage.value = penalties[Math.floor(Math.random() * penalties.length)];
   showPenalty.value = true;
   penaltyCount.value++;
-  
+
   // Track activity
   updateActivity();
-  
+
   // Auto-hide penalty message after 5 seconds
   setTimeout(() => {
     showPenalty.value = false;
@@ -427,30 +448,30 @@ async function loadQuestions() {
         console.error('❌ API call failed:', error)
         throw new Error(`Failed to fetch questions: ${error.message || 'Unknown error'}`)
       })
-    
+
     console.log('Most Likely To API response:', response)
-    
+
     if (!response || !response.questions) {
       console.error('❌ Invalid API response structure:', response)
       throw new Error('Invalid API response structure')
     }
-    
+
     const questions = response.questions || []
-    
+
     if (!Array.isArray(questions)) {
       throw new Error('Questions is not an array')
     }
-    
+
     if (questions.length === 0) {
       throw new Error('No questions returned from API')
     }
-    
+
     console.log(`✅ Successfully received ${questions.length} questions from API`)
-    
+
     // Create tracker with loaded questions
     questionTracker = useMostLikelyToTracker(questions.map(q => q.text || q))
     questionTracker.initializeTracker();
-    
+
     console.log(`✅ Loaded ${questions.length} Most Likely To questions`)
   } catch (error) {
     console.error('❌ Error loading Most Likely To questions:', error)
@@ -464,11 +485,11 @@ onMounted(async () => {
   if (typeof window !== "undefined") {
     // Track page view
     trackPageView('most-likely-to');
-    
+
     // Initialize multiplayer if in multiplayer mode
     if (isMultiplayer.value) {
       connect();
-      
+
       // Check if we have room info
       const roomInfo = localStorage.getItem('multiplayer_room');
       if (roomInfo) {
@@ -480,14 +501,17 @@ onMounted(async () => {
         }
       }
     }
-    
+
     // Load game state
     gameStore.loadFromLocalStorage();
-    
+
+    await nextTick();
+    staggerReveal([headerRowRef.value, titleBlockRef.value, questionCardRef.value]);
+
     // Load questions from database
     try {
       await loadQuestions()
-      
+
       // In multiplayer, wait for host to start game
       if (isMultiplayer.value) {
         if (isHost.value && roomState.value.gamePhase === 'playing') {
@@ -511,55 +535,7 @@ onMounted(async () => {
 </script>
 
 <style scoped>
-/* Animations */
-@keyframes float {
-  0%, 100% {
-    transform: translateY(0) rotate(0deg);
-  }
-  50% {
-    transform: translateY(-20px) rotate(5deg);
-  }
-}
-
-.animate-float {
-  animation: float 6s ease-in-out infinite;
-}
-
-@keyframes pulse-slow {
-  0%, 100% {
-    opacity: 1;
-    transform: scale(1);
-  }
-  50% {
-    opacity: 0.8;
-    transform: scale(1.05);
-  }
-}
-
-.animate-pulse-slow {
-  animation: pulse-slow 3s ease-in-out infinite;
-}
-
-/* Slide fade transition */
-.slide-fade-enter-active {
-  transition: all 0.4s cubic-bezier(0.68, -0.55, 0.27, 1.55);
-}
-
-.slide-fade-leave-active {
-  transition: all 0.3s cubic-bezier(0.68, -0.55, 0.27, 1.55);
-}
-
-.slide-fade-enter-from {
-  transform: translateY(30px) scale(0.9);
-  opacity: 0;
-}
-
-.slide-fade-leave-to {
-  transform: translateY(-30px) scale(0.9);
-  opacity: 0;
-}
-
-/* Bounce in animation */
+/* Bounce in animation (penalty reveal) */
 .bounce-in-enter-active {
   animation: bounce-in 0.5s cubic-bezier(0.68, -0.55, 0.27, 1.55);
 }
@@ -592,25 +568,4 @@ onMounted(async () => {
     opacity: 0;
   }
 }
-
-/* Scrollbar styling */
-::-webkit-scrollbar {
-  width: 8px;
-}
-
-::-webkit-scrollbar-track {
-  background: rgba(255, 255, 255, 0.1);
-  border-radius: 4px;
-}
-
-::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.3);
-  border-radius: 4px;
-}
-
-::-webkit-scrollbar-thumb:hover {
-  background: rgba(255, 255, 255, 0.5);
-}
 </style>
-
-

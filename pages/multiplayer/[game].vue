@@ -1,18 +1,18 @@
 <template>
-  <div class="min-h-screen bg-gradient-to-br from-slate-950 via-purple-950 to-slate-950 text-white p-3 sm:p-4 relative overflow-x-hidden overflow-y-auto safe-bottom">
+  <div class="min-h-screen bg-nightlife text-paper p-3 sm:p-4 relative overflow-x-hidden overflow-y-auto safe-bottom">
     <BackgroundIcons />
 
     <!-- Error State -->
     <div v-if="error" class="max-w-3xl mx-auto mt-8">
-      <div class="bg-red-500/20 border-2 border-red-500/50 rounded-xl p-4 backdrop-blur-md">
+      <div class="card-poster p-4">
         <div class="flex items-center gap-2">
-          <Icon icon="mdi:alert-circle" class="w-6 h-6 text-red-400" />
-          <p class="text-red-200 font-semibold">{{ error }}</p>
+          <Icon icon="mdi:alert-circle" class="w-6 h-6 text-hot" />
+          <p class="text-paper font-semibold">{{ error }}</p>
         </div>
       </div>
       <button
         @click="handleLeaveRoom"
-        class="mt-4 w-full bg-red-500/20 hover:bg-red-500/30 text-red-300 px-4 py-2 rounded-lg border border-red-500/30 transition-all"
+        class="mt-4 w-full bg-hot/10 hover:bg-hot/20 text-hot px-4 py-2 rounded-md border border-hot/30 transition-all font-display uppercase tracking-wide text-sm"
       >
         Leave Room
       </button>
@@ -20,18 +20,18 @@
 
     <!-- Connection Lost - reconnection attempts exhausted, or our own reconnect poll gave up -->
     <div v-else-if="connectionLost || reconnectGaveUp" class="max-w-3xl mx-auto mt-8 text-center py-12">
-      <Icon icon="mdi:wifi-off" class="w-16 h-16 mx-auto mb-4 text-red-400" />
+      <Icon icon="mdi:wifi-off" class="w-16 h-16 mx-auto mb-4 text-hot" />
       <p class="text-xl font-semibold mb-4">Lost connection to the room.</p>
       <div class="flex items-center justify-center gap-3">
         <button
           @click="handleRetryConnection"
-          class="bg-purple-600 hover:bg-purple-500 px-4 py-2 rounded-lg transition-all font-semibold"
+          class="bg-hot text-ink shadow-hard-sm hover:brightness-110 px-4 py-2 rounded-md transition-[filter] font-display font-bold uppercase tracking-wide text-sm"
         >
           Retry
         </button>
         <button
           @click="handleLeaveRoom"
-          class="bg-white/10 hover:bg-white/20 px-4 py-2 rounded-lg transition-all"
+          class="bg-card border border-white/10 hover:bg-white/5 px-4 py-2 rounded-md transition-all font-display uppercase tracking-wide text-sm"
         >
           Back to Lobby
         </button>
@@ -41,11 +41,11 @@
     <!-- Loading State -->
     <div v-else-if="!isConnected || !safeRoomState.roomCode" class="max-w-3xl mx-auto mt-8 text-center py-12">
       <div class="animate-pulse">
-        <Icon icon="mdi:loading" class="w-16 h-16 mx-auto mb-4 text-purple-400 animate-spin" />
+        <Icon icon="mdi:loading" class="w-16 h-16 mx-auto mb-4 text-hot animate-spin" />
         <p class="text-xl font-semibold">{{ isReconnecting ? 'Reconnecting to room...' : 'Connecting to room...' }}</p>
         <button
           @click="handleLeaveRoom"
-          class="mt-4 bg-white/10 hover:bg-white/20 px-4 py-2 rounded-lg transition-all"
+          class="mt-4 bg-card border border-white/10 hover:bg-white/5 px-4 py-2 rounded-md transition-all font-display uppercase tracking-wide text-sm"
         >
           Cancel
         </button>
@@ -96,12 +96,12 @@
 
       <!-- Unknown Game -->
       <div v-else class="max-w-3xl mx-auto mt-8 text-center py-12">
-        <div class="bg-red-500/20 border-2 border-red-500/50 rounded-xl p-6 backdrop-blur-md">
-          <Icon icon="mdi:alert" class="w-16 h-16 mx-auto mb-4 text-red-400" />
+        <div class="card-poster p-6">
+          <Icon icon="mdi:alert" class="w-16 h-16 mx-auto mb-4 text-hot" />
           <p class="text-xl font-semibold">Unknown game type: {{ gameType }}</p>
           <button
             @click="handleLeaveRoom"
-            class="mt-4 bg-red-500/20 hover:bg-red-500/30 text-red-300 px-4 py-2 rounded-lg border border-red-500/30 transition-all"
+            class="mt-4 bg-hot/10 hover:bg-hot/20 text-hot px-4 py-2 rounded-md border border-hot/30 transition-all font-display uppercase tracking-wide text-sm"
           >
             Return to Lobby
           </button>

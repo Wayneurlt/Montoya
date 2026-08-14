@@ -1,108 +1,119 @@
 <template>
   <div
-    class="min-h-screen bg-gradient-to-br from-slate-950 via-purple-950 to-slate-950 text-white p-3 sm:p-4 relative overflow-x-hidden overflow-y-auto safe-bottom"
+    class="min-h-screen bg-nightlife text-paper p-3 sm:p-4 relative overflow-x-hidden overflow-y-auto safe-bottom"
   >
     <!-- Background Icons Pattern -->
     <BackgroundIcons />
 
     <!-- Main Game Container -->
     <div
-      class="max-w-3xl mx-auto bg-white/10 backdrop-blur-md rounded-xl sm:rounded-2xl p-4 sm:p-5 md:p-6 lg:p-8 shadow-2xl relative z-10"
+      class="max-w-3xl mx-auto p-1 sm:p-2 relative z-10"
     >
       <!-- Home Button & Info -->
-      <div class="flex justify-between items-center mb-4 sm:mb-5 md:mb-6 gap-2">
-        <div class="flex gap-2">
-          <NuxtLink to="/" class="bg-white/10 hover:bg-white/20 backdrop-blur-md px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg sm:rounded-xl transition-all duration-300 flex items-center gap-1.5 sm:gap-2 border border-white/20 hover:scale-105 shadow-lg text-sm sm:text-base">
+      <div ref="headerRowRef" class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 sm:gap-0 mb-6">
+        <div class="flex gap-2 w-full sm:w-auto">
+          <NuxtLink to="/" class="bg-card border border-white/10 hover:border-hot/50 px-3 sm:px-4 py-1.5 sm:py-2 rounded-md transition-colors flex items-center gap-1.5 sm:gap-2 text-sm sm:text-base flex-1 sm:flex-initial justify-center sm:justify-start">
             <Icon icon="mdi:home" class="w-4 h-4 sm:w-5 sm:h-5" />
             <span class="font-medium">Home</span>
           </NuxtLink>
-          <NuxtLink to="/setup?step=game-selection" class="bg-white/10 hover:bg-white/20 backdrop-blur-md px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg sm:rounded-xl transition-all duration-300 flex items-center gap-1.5 sm:gap-2 border border-white/20 hover:scale-105 shadow-lg text-sm sm:text-base">
+          <NuxtLink to="/setup?step=game-selection" class="bg-card border border-white/10 hover:border-hot/50 px-3 sm:px-4 py-1.5 sm:py-2 rounded-md transition-colors flex items-center gap-1.5 sm:gap-2 text-sm sm:text-base flex-1 sm:flex-initial justify-center sm:justify-start">
             <Icon icon="mdi:arrow-left" class="w-4 h-4 sm:w-5 sm:h-5" />
             <span class="font-medium">Back</span>
           </NuxtLink>
         </div>
-        
-        <div class="flex items-center gap-1.5 sm:gap-2">
-          <span class="text-xs sm:text-sm px-2 sm:px-3 py-1 sm:py-1.5 rounded-full bg-green-500/20 text-green-300 border border-green-400/30 shadow-md whitespace-nowrap">
-            👨‍👩‍👧‍👦 Family
+
+        <div class="flex items-center gap-2 w-full sm:w-auto justify-center sm:justify-end">
+          <span class="text-xs sm:text-sm px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-full border font-display uppercase tracking-wide bg-paper/10 text-paper border-paper/20 flex items-center gap-1.5 whitespace-nowrap">
+            <Icon icon="mdi:account-group" class="w-3.5 h-3.5" />
+            Family
           </span>
-          <span class="text-xs sm:text-sm px-2 sm:px-3 py-1 sm:py-1.5 rounded-full bg-purple-500/20 text-purple-300 border border-purple-400/30 shadow-md whitespace-nowrap">
+          <span class="text-xs sm:text-sm px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-full border font-display uppercase tracking-wide bg-hot/15 text-hot border-hot/30 whitespace-nowrap">
             Round {{ roundCount }}
           </span>
         </div>
       </div>
 
-      <!-- Game Header -->
-      <div class="text-center mb-2 sm:mb-3 md:mb-4">
-        <h1 class="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-black mb-2 sm:mb-3 bg-clip-text text-transparent bg-gradient-to-r from-purple-400 via-pink-500 to-cyan-400 drop-shadow-2xl">
-          🎭 Charades
+      <!-- Game Title -->
+      <div ref="titleBlockRef" class="text-center mb-8">
+        <h1 class="font-display text-4xl sm:text-5xl md:text-6xl font-bold uppercase mb-4 text-paper flex items-center justify-center gap-3">
+          <Icon icon="mdi:drama-masks" class="w-9 h-9 sm:w-11 sm:h-11 text-hot" />
+          Charades
         </h1>
-        <p class="text-xs sm:text-sm md:text-base text-purple-200 px-2">
-          Act it out without speaking! Your team has to guess what you're acting.
-        </p>
+        <p class="text-paper/60 text-sm font-medium px-2">Act it out without speaking! Your team has to guess what you're acting.</p>
       </div>
 
-      <!-- Current Player Turn -->
-      <div class="bg-gradient-to-r from-purple-500/20 to-pink-500/20 border-2 border-purple-400/50 rounded-lg sm:rounded-xl p-2 sm:p-3 md:p-4 mb-2 sm:mb-3 md:mb-4">
+      <!-- Current Actor -->
+      <div ref="turnBlockRef" class="card-poster p-4 mb-6">
         <div class="text-center">
-          <p class="text-[10px] sm:text-xs md:text-sm text-white/70 mb-0.5 sm:mb-1">Current Actor</p>
-          <p class="text-lg sm:text-xl md:text-2xl lg:text-3xl font-bold">{{ currentPlayer?.name }}</p>
+          <div class="text-xs font-display uppercase tracking-wider text-paper/50 mb-1">Current Actor</div>
+          <div class="text-xl font-bold font-display uppercase">{{ currentPlayer?.name }}</div>
         </div>
       </div>
 
       <!-- Timer -->
-      <div v-if="timerActive" class="mb-4 sm:mb-5 md:mb-6 bg-white/5 rounded-lg sm:rounded-xl p-3 sm:p-4">
+      <div v-if="timerActive" ref="timerBlockRef" class="card-poster p-4 mb-6">
         <div class="flex justify-between items-center mb-2">
-          <div class="flex items-center gap-1.5 sm:gap-2">
-            <Icon icon="mdi:timer" class="w-4 h-4 sm:w-5 sm:h-5 text-cyan-400" />
-            <span class="font-medium text-sm sm:text-base">Time Remaining:</span>
+          <div class="flex items-center gap-2">
+            <Icon icon="mdi:timer" class="w-5 h-5 text-hot" />
+            <span class="font-display uppercase tracking-wide text-sm">Time Remaining</span>
           </div>
           <span
-            class="font-bold text-xl sm:text-2xl"
-            :class="timeLeft <= 10 ? 'text-red-400' : 'text-cyan-400'"
+            ref="timerNumberRef"
+            class="font-bold font-display text-lg tabular-nums"
+            :class="timeLeft <= 10 ? 'text-hot' : 'text-volt'"
           >
             {{ timeLeft }}s
           </span>
         </div>
-        <div class="w-full h-2 bg-white/20 rounded-full overflow-hidden">
+        <div class="w-full h-2 bg-white/10 rounded-full overflow-hidden">
           <div
-            class="h-full bg-gradient-to-r from-cyan-500 to-blue-500 transition-all duration-1000 ease-linear"
+            class="h-full bg-hot transition-[width] duration-1000 ease-linear"
             :style="{ width: timePercent + '%' }"
           ></div>
         </div>
       </div>
 
-      <!-- Charade Card -->
+      <!-- Draw Card -->
       <div v-if="!currentPrompt && !timerActive" class="text-center py-8 sm:py-10 md:py-12">
         <button
-          @click="drawPrompt"
-          class="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 px-8 sm:px-10 md:px-12 py-4 sm:py-5 rounded-xl sm:rounded-2xl text-lg sm:text-xl md:text-2xl font-black shadow-2xl hover:shadow-purple-600/50 transition-all duration-300 transform hover:scale-110"
+          @click="handleDrawPrompt($event)"
+          class="bg-hot text-ink shadow-hard hover:brightness-110 px-8 sm:px-10 md:px-12 py-4 sm:py-5 rounded-lg font-display font-bold uppercase tracking-wide text-lg sm:text-xl transition-[filter]"
         >
-          <Icon icon="mdi:cards" class="w-6 h-6 sm:w-7 sm:h-7 md:w-8 md:h-8 inline-block mr-2" />
+          <Icon icon="mdi:cards" class="w-6 h-6 sm:w-7 sm:h-7 inline-block mr-2 -mt-1" />
           Draw Card
         </button>
       </div>
 
       <!-- Show Prompt (Hidden from others) -->
-      <div v-else class="space-y-4 sm:space-y-5 md:space-y-6">
-        <div class="bg-gradient-to-br from-purple-600 to-pink-600 rounded-xl sm:rounded-2xl p-6 sm:p-8 md:p-10 text-center shadow-2xl">
-          <p class="text-xs sm:text-sm text-white/80 mb-2 sm:mb-3">Category</p>
-          <p class="text-base sm:text-lg md:text-xl font-bold text-cyan-300 mb-4 sm:mb-6">{{ currentCategory }}</p>
-          <p class="text-2xl sm:text-3xl md:text-4xl font-black leading-tight">{{ currentPrompt }}</p>
+      <div v-else class="space-y-4 sm:space-y-5 md:space-y-6 mb-6">
+        <div class="max-w-md mx-auto">
+          <div ref="promptCardRef" class="card-face is-volt p-6 sm:p-8 md:p-10 min-h-[240px] flex items-center justify-center">
+            <div class="card-index card-index-tl text-volt"><Icon icon="mdi:drama-masks" class="w-3.5 h-3.5" />C</div>
+            <div class="card-index card-index-br text-volt"><Icon icon="mdi:drama-masks" class="w-3.5 h-3.5" />C</div>
+            <div class="text-center w-full">
+              <div class="mb-5 flex justify-center">
+                <div class="badge-stamp px-5 py-2.5 text-base bg-volt text-ink">
+                  <Icon icon="mdi:tag" class="w-5 h-5" />
+                  {{ currentCategory }}
+                </div>
+              </div>
+              <p class="font-display text-2xl sm:text-3xl md:text-4xl font-bold leading-tight text-paper">{{ currentPrompt }}</p>
+            </div>
+          </div>
         </div>
 
         <!-- Action Buttons -->
         <div class="grid grid-cols-2 gap-3 sm:gap-4">
           <button
-            @click="correctGuess"
-            class="bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 py-3 sm:py-4 rounded-lg sm:rounded-xl font-bold text-base sm:text-lg transition-all flex items-center justify-center gap-2 shadow-lg"
+            @click="handleCorrectGuess($event)"
+            class="bg-volt text-ink shadow-hard hover:brightness-110 py-3 sm:py-4 rounded-lg font-display font-bold uppercase tracking-wide text-base sm:text-lg transition-[filter] flex items-center justify-center gap-2"
           >
             <Icon icon="mdi:check-circle" class="w-5 h-5 sm:w-6 sm:h-6" />
             Correct!
           </button>
           <button
-            @click="skipPrompt"
-            class="bg-gradient-to-r from-yellow-500 to-orange-500 hover:from-yellow-600 hover:to-orange-600 py-3 sm:py-4 rounded-lg sm:rounded-xl font-bold text-base sm:text-lg transition-all flex items-center justify-center gap-2 shadow-lg"
+            @click="handleSkipPrompt($event)"
+            class="bg-card hover:bg-white/5 border border-white/10 py-3 sm:py-4 rounded-lg font-display font-bold uppercase tracking-wide text-base sm:text-lg transition-colors flex items-center justify-center gap-2"
           >
             <Icon icon="mdi:skip-next" class="w-5 h-5 sm:w-6 sm:h-6" />
             Skip
@@ -111,20 +122,20 @@
       </div>
 
       <!-- Score Board -->
-      <div class="mt-6 sm:mt-8 bg-white/5 rounded-lg sm:rounded-xl p-4 sm:p-5 md:p-6">
-        <h3 class="font-bold text-lg sm:text-xl mb-3 sm:mb-4 flex items-center gap-2">
-          <Icon icon="mdi:trophy" class="w-5 h-5 sm:w-6 sm:h-6 text-yellow-400" />
+      <div class="card-poster p-4 sm:p-5 md:p-6">
+        <h3 class="font-display uppercase tracking-wide font-bold text-lg sm:text-xl mb-3 sm:mb-4 flex items-center gap-2">
+          <Icon icon="mdi:trophy" class="w-5 h-5 sm:w-6 sm:h-6 text-volt" />
           <span>Scoreboard</span>
         </h3>
         <div class="space-y-2 sm:space-y-3">
           <div
             v-for="player in players"
             :key="player.id"
-            class="flex justify-between items-center p-2 sm:p-3 rounded-lg"
-            :class="player.id === currentPlayer?.id ? 'bg-purple-500/20' : 'bg-white/5'"
+            class="flex justify-between items-center p-2 sm:p-3 rounded-md border"
+            :class="player.id === currentPlayer?.id ? 'bg-hot/15 border-hot/30' : 'bg-white/5 border-transparent'"
           >
             <span class="font-medium text-sm sm:text-base">{{ player.name }}</span>
-            <span class="font-bold text-lg sm:text-xl text-cyan-400">{{ scores[player.id] || 0 }}</span>
+            <span class="font-bold font-display text-lg sm:text-xl text-volt">{{ scores[player.id] || 0 }}</span>
           </div>
         </div>
       </div>
@@ -133,11 +144,12 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, onBeforeUnmount } from "vue";
+import { ref, computed, onMounted, onBeforeUnmount, nextTick } from "vue";
 import { Icon } from "@iconify/vue";
 import { push } from "notivue";
 import { useGameStore } from "~/stores/game";
 import { useAnalytics } from "~/composables/useAnalytics";
+import { staggerReveal, punchScale, tickPulse, shake } from "~/composables/useGameAnimations";
 import { navigateTo } from "#app";
 
 const gameStore = useGameStore();
@@ -151,6 +163,14 @@ const currentPrompt = ref("");
 const currentCategory = ref("");
 const roundCount = ref(1);
 const scores = ref({});
+
+// Animation refs
+const headerRowRef = ref(null);
+const titleBlockRef = ref(null);
+const turnBlockRef = ref(null);
+const timerBlockRef = ref(null);
+const timerNumberRef = ref(null);
+const promptCardRef = ref(null);
 
 const players = computed(() => gameStore.players);
 const currentPlayer = computed(() => gameStore.currentPlayer);
@@ -252,17 +272,41 @@ function drawPrompt() {
   if (isRepeat) {
     push.info({ title: 'Fresh round!', message: `You've acted out every "${randomCategory}" prompt — shuffling that category.`, duration: 4000 });
   }
+
+  // Quick punch-in reveal for the new prompt — a full card flip is too slow
+  // for a fast, timer-driven prompt cadence.
+  nextTick(() => punchScale(promptCardRef.value));
+}
+
+// Button handlers: add tactile feedback without altering the underlying game logic.
+function handleDrawPrompt(evt) {
+  punchScale(evt?.currentTarget);
+  drawPrompt();
+}
+
+function handleCorrectGuess(evt) {
+  punchScale(evt?.currentTarget);
+  correctGuess();
+}
+
+function handleSkipPrompt(evt) {
+  punchScale(evt?.currentTarget);
+  skipPrompt();
 }
 
 function startTimer() {
   if (timerActive.value) return; // Don't restart if already running
-  
+
   timerActive.value = true;
   timeLeft.value = MAX_TIME;
-  
+
   timerInterval.value = setInterval(() => {
     timeLeft.value--;
-    
+    tickPulse(timerNumberRef.value, { scale: timeLeft.value <= 10 ? 1.4 : 1.15 });
+    if (timeLeft.value === 10) {
+      shake(timerBlockRef.value);
+    }
+
     if (timeLeft.value <= 0) {
       stopTimer();
       // Time's up - move to next player
@@ -282,7 +326,7 @@ function correctGuess() {
     scores.value[currentPlayer.value.id] = 0;
   }
   scores.value[currentPlayer.value.id]++;
-  
+
   // Automatically draw next prompt (timer continues)
   drawPrompt();
 }
@@ -305,21 +349,26 @@ function nextTurn() {
 
 onMounted(() => {
   trackPageView('charades');
-  
+
   // Load game state
   gameStore.loadFromLocalStorage();
-  
+
   // Initialize scores
   players.value.forEach(player => {
     if (!scores.value[player.id]) {
       scores.value[player.id] = 0;
     }
   });
-  
+
   // Redirect if no players
   if (players.value.length === 0) {
     navigateTo('/setup?game=charades');
+    return;
   }
+
+  nextTick(() => {
+    staggerReveal([headerRowRef.value, titleBlockRef.value, turnBlockRef.value]);
+  });
 });
 
 onBeforeUnmount(() => {
@@ -330,4 +379,3 @@ onBeforeUnmount(() => {
 <style scoped>
 /* Add any additional styles here */
 </style>
-

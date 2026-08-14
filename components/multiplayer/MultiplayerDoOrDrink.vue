@@ -1,17 +1,19 @@
 <template>
   <div class="max-w-3xl mx-auto relative z-10 pt-4 sm:pt-6 md:pt-8">
     <!-- Header -->
-    <MultiplayerGameHeader
-      :room-code="roomState.roomCode"
-      :is-host="isHost"
-      @back-to-lobby="handleBackToLobby"
-      @change-game="handleChangeGame"
-    />
+    <div ref="headerRowRef">
+      <MultiplayerGameHeader
+        :room-code="roomState.roomCode"
+        :is-host="isHost"
+        @back-to-lobby="handleBackToLobby"
+        @change-game="handleChangeGame"
+      />
+    </div>
 
     <!-- Game Title -->
-    <div class="text-center mb-4 sm:mb-6">
-      <h1 class="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-black mb-2 sm:mb-3 bg-clip-text text-transparent bg-gradient-to-r from-purple-400 via-pink-500 to-cyan-400 drop-shadow-2xl">
-        🍺 Do or Drink
+    <div ref="titleBlockRef" class="text-center mb-4 sm:mb-6">
+      <h1 class="font-display text-3xl sm:text-4xl md:text-5xl font-bold uppercase text-paper">
+        Do <span class="text-hot">or</span> Drink
       </h1>
     </div>
 
@@ -19,143 +21,149 @@
     <TurnIndicator :current-player="currentPlayer" />
 
     <!-- Loading State -->
-    <div v-if="questionsLoading" class="mb-4 sm:mb-6 bg-blue-500/20 border border-blue-400/30 rounded-xl p-4 text-center">
+    <div v-if="questionsLoading" class="mb-4 sm:mb-6 card-poster p-4 text-center">
       <div class="flex items-center justify-center gap-3">
-        <Icon icon="svg-spinners:3-dots-fade" class="w-6 h-6" />
+        <Icon icon="svg-spinners:3-dots-fade" class="w-6 h-6 text-hot" />
         <span class="font-medium">Loading questions from database...</span>
       </div>
     </div>
 
-    <!-- Main Game Card - Simplified -->
-    <div
-      v-if="currentCard && cardFlipped"
-      class="relative w-full min-h-[300px] sm:min-h-[350px] mb-4 sm:mb-6"
-    >
-      <!-- Challenge Card - Simplified Display -->
-      <div class="bg-white/10 backdrop-blur-md rounded-2xl sm:rounded-3xl p-6 sm:p-8 md:p-10 border-2 border-white/20 shadow-2xl">
-        <div class="text-center">
-          <!-- Intensity Badge -->
-          <div class="mb-4 sm:mb-6 flex justify-center">
-            <div
-              class="inline-flex items-center gap-2 sm:gap-3 px-4 sm:px-6 py-2 sm:py-3 rounded-full font-black text-sm sm:text-base md:text-lg shadow-lg"
-              :class="intensityClass"
-            >
-              <Icon
-                :icon="
-                  currentCard.intensity === 1
-                    ? 'mdi:emoticon-happy'
-                    : currentCard.intensity === 2
-                    ? 'mdi:emoticon-excited'
-                    : 'mdi:emoticon-devil'
-                "
-                class="w-5 h-5 sm:w-6 sm:h-6"
-              />
-              Level {{ currentCard.intensity }}
-            </div>
-          </div>
-          
-          <!-- Challenge Text -->
-          <p class="text-xl sm:text-2xl md:text-3xl font-bold mb-4 sm:mb-6 px-2 sm:px-4 leading-relaxed">
-            {{ currentCard.text }}
-          </p>
-
-          <!-- Target Player (if any) -->
-          <div
-            v-if="currentCard.target"
-            class="bg-white/10 rounded-xl p-3 sm:p-4 max-w-sm mx-auto mb-4 sm:mb-6 border border-white/20"
+    <!-- Flip Stage: face-down draw card (host) <-> revealed challenge card (everyone) -->
+    <div ref="flipStageRef" class="flip-stage mb-4 sm:mb-6">
+      <div ref="flipInnerRef" class="flip-inner">
+        <!-- Host: face-down card to draw with -->
+        <div v-if="isHost && !currentCard" class="max-w-[220px] mx-auto">
+          <button
+            ref="drawButtonRef"
+            @click="handleDraw($event)"
+            :disabled="isDrawing"
+            class="playing-card is-hot shadow-hard hover:brightness-110 disabled:opacity-50 disabled:cursor-not-allowed w-full"
           >
-            <p class="text-sm sm:text-base font-medium flex items-center justify-center gap-2">
-              <Icon icon="mdi:account-arrow-right" class="w-5 h-5 sm:w-6 sm:h-6" />
-              To: {{ currentCard.target.nickname }}
-            </p>
-          </div>
+            <div class="playing-card-pattern"></div>
+            <div class="card-index card-index-tl"><Icon icon="mdi:cards" class="w-3.5 h-3.5" />D</div>
+            <div class="card-index card-index-br"><Icon icon="mdi:cards" class="w-3.5 h-3.5" />D</div>
+            <div v-if="isDrawing" class="absolute inset-0 flex items-center justify-center bg-black/20">
+              <Icon icon="svg-spinners:3-dots-fade" class="w-8 h-8" />
+            </div>
+            <div v-else class="playing-card-medallion">
+              <span><Icon icon="mdi:cards" class="w-7 h-7" /></span>
+            </div>
+            <span class="absolute bottom-4 inset-x-0 text-center font-display font-bold uppercase tracking-wide text-sm">Draw</span>
+          </button>
+        </div>
 
-          <!-- Penalty -->
-          <div class="mt-4 sm:mt-6">
-            <p class="text-base sm:text-lg md:text-xl font-black px-4 sm:px-6 py-2 sm:py-3 rounded-full inline-block" :class="intensityTextClass">
-              Penalty: {{ currentCard.drinkAmount }}
-            </p>
+        <!-- Non-host: waiting for the host to draw -->
+        <div v-else-if="!currentCard" class="card-poster p-8 sm:p-12 text-center">
+          <Icon icon="mdi:cards" class="w-14 h-14 sm:w-16 sm:h-16 mx-auto mb-4 text-hot" />
+          <p class="text-base sm:text-lg font-display font-bold uppercase tracking-wide text-paper/60">
+            Waiting for host to draw a card...
+          </p>
+        </div>
+
+        <!-- Revealed card face -->
+        <div v-if="currentCard && cardFlipped" class="max-w-md mx-auto">
+          <div
+            class="card-face p-6 sm:p-8 md:p-10 min-h-[240px] flex items-center justify-center"
+            :class="{ 'is-volt': currentCard.intensity === 1 }"
+          >
+            <div class="card-index card-index-tl" :class="currentCard.intensity === 1 ? 'text-volt' : 'text-hot'">
+              <Icon icon="mdi:cards" class="w-3.5 h-3.5" />L{{ currentCard.intensity }}
+            </div>
+            <div class="card-index card-index-br" :class="currentCard.intensity === 1 ? 'text-volt' : 'text-hot'">
+              <Icon icon="mdi:cards" class="w-3.5 h-3.5" />L{{ currentCard.intensity }}
+            </div>
+
+            <div class="text-center w-full">
+              <!-- Intensity Badge -->
+              <div class="mb-4 sm:mb-6 flex justify-center">
+                <div ref="typeBadgeRef" class="badge-stamp px-5 sm:px-6 py-2.5 sm:py-3 text-sm sm:text-base" :class="intensityClass">
+                  <Icon
+                    :icon="
+                      currentCard.intensity === 1
+                        ? 'mdi:emoticon-happy'
+                        : currentCard.intensity === 2
+                        ? 'mdi:emoticon-excited'
+                        : 'mdi:emoticon-devil'
+                    "
+                    class="w-5 h-5 sm:w-6 sm:h-6"
+                  />
+                  Level {{ currentCard.intensity }}
+                </div>
+              </div>
+
+              <!-- Challenge Text -->
+              <p ref="questionTextRef" class="font-display text-lg sm:text-xl md:text-2xl font-bold mb-4 sm:mb-6 leading-relaxed px-2 text-paper">
+                {{ currentCard.text }}
+              </p>
+
+              <!-- Target Player (if any) -->
+              <div v-if="currentCard.target" class="bg-white/5 border border-white/10 rounded-md p-3 sm:p-4 max-w-sm mx-auto mb-4 sm:mb-6">
+                <p class="text-sm sm:text-base font-medium flex items-center justify-center gap-2 text-paper">
+                  <Icon icon="mdi:account-arrow-right" class="w-4 h-4 sm:w-5 sm:h-5 text-hot" />
+                  To: {{ currentCard.target.nickname }}
+                </p>
+              </div>
+
+              <!-- Penalty -->
+              <p class="font-display font-bold uppercase tracking-wide text-sm sm:text-base px-4 sm:px-6 py-2 rounded-full inline-block bg-white/5 border border-white/10" :class="intensityTextClass">
+                Penalty: {{ currentCard.drinkAmount }}
+              </p>
+            </div>
           </div>
         </div>
       </div>
     </div>
 
-    <!-- Waiting for Card -->
-    <div v-else-if="!currentCard" class="mb-4 sm:mb-6">
-      <div class="bg-white/5 rounded-2xl p-8 sm:p-12 text-center border border-white/10">
-        <Icon icon="mdi:cards" class="w-16 h-16 sm:w-20 sm:h-20 mx-auto mb-4 text-purple-400" />
-        <p class="text-lg sm:text-xl font-semibold text-white/70">
-          {{ isHost ? 'Click below to draw a card' : 'Waiting for host to draw a card...' }}
-        </p>
-      </div>
-    </div>
-
-    <!-- Action Buttons - Simplified -->
-    <div class="space-y-4 mb-4 sm:mb-6">
-      <!-- Host: Draw Card Button -->
-      <button
-        v-if="isHost && !currentCard"
-        @click="drawCard"
-        :disabled="isDrawing"
-        class="w-full group bg-gradient-to-r from-purple-700 to-pink-700 hover:from-purple-600 hover:to-pink-600 py-4 sm:py-5 rounded-xl sm:rounded-2xl font-black text-base sm:text-lg transition-all flex items-center justify-center gap-3 disabled:opacity-50 disabled:cursor-not-allowed shadow-xl hover:shadow-purple-600/50 border-2 border-purple-500/30 hover:scale-105"
-      >
-        <Icon
-          v-if="isDrawing"
-          icon="svg-spinners:3-dots-fade"
-          class="w-5 h-5 sm:w-6 sm:h-6"
-        />
-        <Icon v-else icon="mdi:cards" class="w-5 h-5 sm:w-6 sm:h-6 group-hover:rotate-12 transition-transform" />
-        {{ isDrawing ? "Drawing..." : "Draw Card" }}
-      </button>
-      
-      <!-- Action Buttons (Host only - when card is revealed) -->
-      <div v-else-if="currentCard && cardFlipped" class="space-y-3 sm:space-y-4">
+    <!-- Action Buttons -->
+    <div class="space-y-3 sm:space-y-4 mb-4 sm:mb-6">
+      <div v-if="currentCard && cardFlipped" class="space-y-3 sm:space-y-4">
         <div v-if="isHost" class="grid grid-cols-2 gap-3 sm:gap-4">
           <button
-            @click="completeChallenge"
-            class="group bg-gradient-to-r from-green-700 to-emerald-700 hover:from-green-600 hover:to-emerald-600 py-4 sm:py-5 rounded-xl sm:rounded-2xl font-black text-base sm:text-lg transition-all flex items-center justify-center gap-2 sm:gap-3 shadow-xl hover:shadow-green-600/50 border-2 border-green-500/30 hover:scale-105"
+            @click="handleComplete"
+            class="bg-volt text-ink shadow-hard hover:brightness-110 py-3 sm:py-4 rounded-lg font-display font-bold uppercase tracking-wide text-sm sm:text-base transition-[filter] flex items-center justify-center gap-2"
           >
-            <Icon icon="mdi:check-bold" class="w-5 h-5 sm:w-6 sm:h-6 group-hover:scale-110 transition-transform" />
+            <Icon icon="mdi:check-bold" class="w-5 h-5 sm:w-6 sm:h-6" />
             Completed
           </button>
           <button
-            @click="takeDrink"
-            class="group bg-gradient-to-r from-purple-700 to-pink-700 hover:from-purple-600 hover:to-pink-600 py-4 sm:py-5 rounded-xl sm:rounded-2xl font-black text-base sm:text-lg transition-all flex items-center justify-center gap-2 sm:gap-3 shadow-xl hover:shadow-purple-600/50 border-2 border-purple-500/30 hover:scale-105"
+            @click="handleDrink"
+            class="bg-hot text-ink shadow-hard hover:brightness-110 py-3 sm:py-4 rounded-lg font-display font-bold uppercase tracking-wide text-sm sm:text-base transition-[filter] flex items-center justify-center gap-2"
           >
-            <Icon icon="mdi:glass-cocktail" class="w-5 h-5 sm:w-6 sm:h-6 group-hover:animate-bounce" />
+            <Icon icon="mdi:glass-cocktail" class="w-5 h-5 sm:w-6 sm:h-6" />
             Take Drink
           </button>
         </div>
-        <p v-else class="text-center text-white/60 text-sm">Waiting for host to mark Completed or Take Drink</p>
+        <p v-else class="text-center text-paper/60 text-sm">Waiting for host to mark Completed or Take Drink</p>
         <!-- Host: Skip Question Button -->
         <button
           v-if="isHost"
-          @click="handleSkipQuestion"
-          class="w-full bg-gradient-to-r from-yellow-500 to-orange-500 hover:from-yellow-600 hover:to-orange-600 text-white py-3 sm:py-4 rounded-xl sm:rounded-2xl font-black text-base sm:text-lg shadow-xl transition-all transform hover:scale-105"
+          @click="handleSkip"
+          class="w-full bg-card border border-white/10 hover:border-volt/50 text-paper py-2.5 sm:py-3 rounded-lg font-display font-bold uppercase tracking-wide text-sm sm:text-base transition-colors flex items-center justify-center gap-2"
         >
-          <Icon icon="mdi:skip-next" class="w-5 h-5 sm:w-6 sm:h-6 inline mr-2" />
+          <Icon icon="mdi:skip-next" class="w-4 h-4 sm:w-5 sm:h-5" />
           Skip Question
         </button>
       </div>
     </div>
 
-    <!-- Hesitation Timer - Simplified -->
-    <div v-if="currentCard && cardFlipped" class="mb-4 sm:mb-6 bg-white/5 rounded-lg sm:rounded-xl p-3 sm:p-4">
+    <!-- Hesitation Timer -->
+    <div v-if="currentCard && cardFlipped" ref="timerBlockRef" class="card-poster p-3 sm:p-4 mb-4 sm:mb-6">
       <div class="flex justify-between items-center mb-2">
         <div class="flex items-center gap-2">
-          <Icon icon="mdi:timer-sand" class="w-4 h-4 sm:w-5 sm:h-5 text-pink-300" />
-          <span class="font-medium text-sm sm:text-base">Hesitation Timer</span>
+          <Icon icon="mdi:timer-sand" class="w-4 h-4 sm:w-5 sm:h-5 text-hot" />
+          <span class="font-display uppercase tracking-wide text-xs sm:text-sm">Hesitation Timer</span>
         </div>
         <span
-          class="font-bold text-lg sm:text-xl"
-          :class="hesitationTime <= 5 ? 'text-red-400' : 'text-cyan-400'"
+          ref="timerNumberRef"
+          class="font-bold font-display text-lg sm:text-xl tabular-nums"
+          :class="hesitationTime <= 5 ? 'text-hot' : 'text-volt'"
         >
           {{ hesitationTime }}s
         </span>
       </div>
-      <div class="w-full h-2 bg-white/20 rounded-full overflow-hidden">
+      <div class="w-full h-2 bg-white/10 rounded-full overflow-hidden">
         <div
-          class="h-full bg-gradient-to-r from-pink-500 to-purple-500 transition-all duration-1000 ease-linear"
+          class="h-full bg-hot transition-all duration-1000 ease-linear"
           :style="{ width: hesitationPercent + '%' }"
         ></div>
       </div>
@@ -174,9 +182,10 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onBeforeUnmount, watch, onMounted, type DeepReadonly } from 'vue'
+import { ref, computed, onBeforeUnmount, watch, onMounted, nextTick, type DeepReadonly } from 'vue'
 import { Icon } from '@iconify/vue'
 import { useRouter } from 'vue-router'
+import gsap from 'gsap'
 import { navigateTo } from '#app'
 import TurnIndicator from './TurnIndicator.vue'
 import WaitingForHost from './WaitingForHost.vue'
@@ -184,6 +193,7 @@ import MultiplayerGameHeader from './MultiplayerGameHeader.vue'
 import MultiplayerPlayerList from './MultiplayerPlayerList.vue'
 import { useMultiplayer, type RoomState } from '~/composables/useMultiplayer'
 import { useMultiplayerQuestions } from '~/composables/useMultiplayerQuestions'
+import { staggerReveal, flipTransition, punchScale, tickPulse, shake, celebrateBurst } from '~/composables/useGameAnimations'
 
 interface Props {
   roomState: DeepReadonly<RoomState>
@@ -212,11 +222,11 @@ const handleBackToLobby = () => {
 // Use the multiplayer composable's isHost directly for reactivity
 const isHost = computed(() => props.multiplayer.isHost.value)
 
-// Intensity levels
+// Intensity levels: flat hot/volt badge + penalty text treatment (no gradients)
 const INTENSITY_LEVELS = [
-  { color: "bg-gradient-to-br from-green-900 to-emerald-900", bgColor: "bg-green-500 text-white", textColor: "text-green-600" },
-  { color: "bg-gradient-to-br from-yellow-900 to-orange-900", bgColor: "bg-yellow-500 text-white", textColor: "text-yellow-600" },
-  { color: "bg-gradient-to-br from-red-900 to-pink-900", bgColor: "bg-red-500 text-white", textColor: "text-red-600" },
+  { bgColor: "bg-volt text-ink", textColor: "text-volt" },
+  { bgColor: "bg-hot text-ink", textColor: "text-hot" },
+  { bgColor: "bg-hot text-ink", textColor: "text-hot" },
 ]
 
 // Game State
@@ -229,6 +239,17 @@ const hesitationPercent = ref(100)
 const isDrawing = ref(false)
 const baseDrinkAmount = ref("1")
 const gameLevel = ref(1)
+
+// Animation refs
+const headerRowRef = ref<HTMLElement | null>(null)
+const titleBlockRef = ref<HTMLElement | null>(null)
+const flipStageRef = ref<HTMLElement | null>(null)
+const flipInnerRef = ref<HTMLElement | null>(null)
+const drawButtonRef = ref<HTMLElement | null>(null)
+const timerBlockRef = ref<HTMLElement | null>(null)
+const timerNumberRef = ref<HTMLElement | null>(null)
+const typeBadgeRef = ref<HTMLElement | null>(null)
+const questionTextRef = ref<HTMLElement | null>(null)
 
 // Question tracker
 let challengeTracker: any = null
@@ -272,11 +293,6 @@ const hostName = computed(() => {
 })
 
 const { questionsLoading, loadInitialQuestions, notifyIfRepeat } = useMultiplayerQuestions(props.multiplayer)
-
-const cardColor = computed(() => {
-  if (!currentCard.value) return "bg-gradient-to-br from-purple-900 to-black"
-  return INTENSITY_LEVELS[currentCard.value.intensity - 1]?.color || "bg-gradient-to-br from-purple-900 to-black"
-})
 
 const intensityClass = computed(() => {
   if (!currentCard.value) return ""
@@ -362,8 +378,8 @@ const drawCard = () => {
     const player = getPlayerForTurn()
     const challenge = generateChallenge(player)
     currentCard.value = challenge
-    
-    
+
+
     // Update game state (always send who must do the challenge so all devices show same turn)
     props.multiplayer.nextRound({
       text: challenge.text,
@@ -394,12 +410,9 @@ const drawCard = () => {
   }
 }
 
-const flipCard = () => {
-  // Auto-flip when card is drawn from server
-  if (currentCard.value && !cardFlipped.value && !isDrawing.value) {
-    cardFlipped.value = true
-    startHesitationTimer()
-  }
+const handleDraw = (evt: MouseEvent) => {
+  punchScale(evt.currentTarget as HTMLElement)
+  drawCard()
 }
 
 const startHesitationTimer = () => {
@@ -409,6 +422,10 @@ const startHesitationTimer = () => {
   hesitationTimer.value = setInterval(() => {
     hesitationTime.value--
     hesitationPercent.value = (hesitationTime.value / 15) * 100
+    tickPulse(timerNumberRef.value, { scale: hesitationTime.value <= 5 ? 1.4 : 1.15 })
+    if (hesitationTime.value === 5) {
+      shake(timerBlockRef.value)
+    }
     if (hesitationTime.value <= 0) {
       clearInterval(hesitationTimer.value)
       gameHistory.value.unshift({
@@ -447,6 +464,16 @@ const takeDrink = () => {
   nextTurn()
 }
 
+const handleComplete = (evt: MouseEvent) => {
+  celebrateBurst(evt.currentTarget as HTMLElement)
+  completeChallenge()
+}
+
+const handleDrink = (evt: MouseEvent) => {
+  punchScale(evt.currentTarget as HTMLElement)
+  takeDrink()
+}
+
 const handleSkipQuestion = () => {
   if (!currentCard.value || !props.isHost) return
   clearInterval(hesitationTimer.value)
@@ -457,11 +484,18 @@ const handleSkipQuestion = () => {
   cardFlipped.value = false
 }
 
+const handleSkip = (evt: MouseEvent) => {
+  punchScale(evt.currentTarget as HTMLElement)
+  handleSkipQuestion()
+}
+
 const nextTurn = () => {
   const current = props.roomState.currentPrompt?.player
   if (current?.socketId) lastTurnPlayerId.value = current.socketId
-  currentCard.value = null
-  cardFlipped.value = false
+  flipTransition(flipInnerRef.value, () => {
+    currentCard.value = null
+    cardFlipped.value = false
+  })
   hesitationPercent.value = 100
   hesitationTime.value = 15
   clearInterval(hesitationTimer.value)
@@ -484,17 +518,19 @@ const getLogIcon = (log: any) => {
 const getLogIconColor = (log: any) => {
   if (typeof log === "object") {
     switch (log.type) {
-      case "draw": return "text-purple-400"
-      case "complete": return "text-green-400"
-      case "drink": return "text-pink-400"
-      case "penalty": return "text-red-400"
-      default: return "text-white/60"
+      case "draw": return "text-hot"
+      case "complete": return "text-volt"
+      case "drink": return "text-hot"
+      case "penalty": return "text-hot"
+      default: return "text-paper/60"
     }
   }
-  return "text-white/60"
+  return "text-paper/60"
 }
 
-// Watch for prompt changes
+// Watch for prompt changes — flips the shared card via flipTransition so
+// every client sees the same physical reveal beat, then replays the same
+// badge/text pop-in sequence as the single-player game.
 watch(() => props.roomState.currentPrompt, (newPrompt) => {
   if (newPrompt && newPrompt.text) {
     currentCard.value = {
@@ -503,11 +539,18 @@ watch(() => props.roomState.currentPrompt, (newPrompt) => {
       drinkAmount: newPrompt.drinkAmount || "1 sip",
       target: newPrompt.target,
     }
-    // Auto-flip card when received from server
-    setTimeout(() => {
+    flipTransition(flipInnerRef.value, () => {
       cardFlipped.value = true
-      startHesitationTimer()
-    }, 300)
+    }).then(async () => {
+      await nextTick()
+      if (typeBadgeRef.value) {
+        gsap.fromTo(typeBadgeRef.value, { scale: 0.6, opacity: 0 }, { scale: 1, opacity: 1, duration: 0.35, ease: 'back.out(2.2)' })
+      }
+      if (questionTextRef.value) {
+        gsap.fromTo(questionTextRef.value, { y: 14, opacity: 0 }, { y: 0, opacity: 1, duration: 0.4, delay: 0.12, ease: 'power2.out' })
+      }
+    })
+    startHesitationTimer()
   } else {
     currentCard.value = null
     cardFlipped.value = false
@@ -522,21 +565,20 @@ onBeforeUnmount(() => {
 // Load questions on mount
 onMounted(() => {
   loadInitialQuestions(loadQuestions)
+  nextTick(() => {
+    staggerReveal([headerRowRef.value, titleBlockRef.value])
+  })
 })
 </script>
 
 <style scoped>
-.perspective-1000 {
-  perspective: 1000px;
+.flip-stage {
+  perspective: 1400px;
 }
-.transform-style-preserve-3d {
+.flip-inner {
   transform-style: preserve-3d;
-}
-.backface-hidden {
+  will-change: transform;
   backface-visibility: hidden;
-}
-.rotate-y-180 {
-  transform: rotateY(180deg);
 }
 
 .fade-enter-active,

@@ -1,28 +1,28 @@
 <template>
-  <div class="lobby-page min-h-screen bg-gradient-to-br from-slate-950 via-purple-950 to-slate-950 text-white p-3 sm:p-4 relative overflow-x-hidden overflow-y-auto">
+  <div class="lobby-page min-h-screen bg-nightlife text-paper p-3 sm:p-4 relative overflow-x-hidden overflow-y-auto">
     <!-- Background Icons Pattern -->
     <BackgroundIcons />
 
     <div class="max-w-4xl mx-auto relative z-10 pt-4 sm:pt-6 md:pt-8 pb-32 sm:pb-36" style="padding-bottom: max(8rem, env(safe-area-inset-bottom, 0px) + 4rem);">
       <!-- Header -->
-      <div class="flex items-center justify-between mb-6 sm:mb-8">
-        <NuxtLink to="/" class="bg-white/10 hover:bg-white/20 backdrop-blur-md px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg transition-all flex items-center gap-2 border border-white/20 hover:scale-105">
+      <div ref="headerRef" class="flex items-center justify-between mb-6 sm:mb-8">
+        <NuxtLink to="/" class="bg-card border border-white/10 hover:border-hot/50 px-3 sm:px-4 py-1.5 sm:py-2 rounded-md transition-colors flex items-center gap-2">
           <Icon icon="mdi:home" class="w-5 h-5" />
           <span class="font-medium">Home</span>
         </NuxtLink>
         <div v-if="safeRoomState.roomCode" class="text-center">
-          <div class="text-xs text-white/60 mb-1">Room Code</div>
+          <div class="text-xs text-paper/50 mb-1 font-display uppercase tracking-wide">Room Code</div>
           <button
             @click="copyRoomCode"
-            class="group relative cursor-pointer transition-all hover:scale-105"
+            class="group relative cursor-pointer transition-all hover:-translate-y-0.5"
             :title="copied ? 'Copied!' : 'Click to copy'"
           >
-            <div class="text-3xl sm:text-4xl font-black bg-gradient-to-r from-purple-400 via-pink-500 to-cyan-400 bg-clip-text text-transparent flex items-center justify-center gap-2">
+            <div class="font-display text-3xl sm:text-4xl font-bold text-hot flex items-center justify-center gap-2">
               {{ safeRoomState.roomCode }}
-              <Icon icon="mdi:content-copy" class="w-5 h-5 sm:w-6 sm:h-6 text-purple-400 opacity-70 group-hover:opacity-100 transition-opacity" />
+              <Icon icon="mdi:content-copy" class="w-5 h-5 sm:w-6 sm:h-6 text-hot/70 group-hover:text-hot transition-colors" />
             </div>
             <transition name="fade">
-              <div v-if="copied" class="absolute -bottom-8 left-1/2 transform -translate-x-1/2 bg-green-500 text-white px-3 py-1 rounded-lg text-xs whitespace-nowrap">
+              <div v-if="copied" class="absolute -bottom-8 left-1/2 transform -translate-x-1/2 bg-volt text-ink px-3 py-1 rounded-md text-xs whitespace-nowrap font-display uppercase tracking-wide font-bold">
                 Copied!
               </div>
             </transition>
@@ -32,15 +32,15 @@
 
       <!-- Connection Lost - distinct from dismissible room errors: reconnection is exhausted -->
       <transition name="fade">
-        <div v-if="connectionLost" class="mb-6 bg-red-500/20 border-2 border-red-500/50 rounded-xl p-4 backdrop-blur-md flex items-center justify-between gap-3">
+        <div v-if="connectionLost" class="mb-6 card-poster p-4 flex items-center justify-between gap-3">
           <div class="flex items-center gap-2 min-w-0">
-            <Icon icon="mdi:wifi-off" class="w-6 h-6 text-red-400 shrink-0" />
-            <p class="text-red-200 font-semibold">Lost connection to the server.</p>
+            <Icon icon="mdi:wifi-off" class="w-6 h-6 text-hot shrink-0" />
+            <p class="text-paper font-semibold">Lost connection to the server.</p>
           </div>
           <button
             type="button"
             @click="retryConnection"
-            class="shrink-0 bg-red-500/30 hover:bg-red-500/50 text-white px-4 py-2 rounded-lg font-semibold text-sm transition-colors"
+            class="shrink-0 bg-hot text-ink shadow-hard-sm hover:brightness-110 px-4 py-2 rounded-md font-display font-bold uppercase tracking-wide text-sm transition-[filter]"
           >
             Retry
           </button>
@@ -49,16 +49,16 @@
 
       <!-- Error Message -->
       <transition name="fade">
-        <div v-if="displayError" class="mb-6 bg-red-500/20 border-2 border-red-500/50 rounded-xl p-4 backdrop-blur-md">
+        <div v-if="displayError" class="mb-6 card-poster p-4">
           <div class="flex items-center justify-between gap-2">
             <div class="flex items-center gap-2 min-w-0">
-              <Icon icon="mdi:alert-circle" class="w-6 h-6 text-red-400 shrink-0" />
-              <p class="text-red-200 font-semibold">{{ displayError }}</p>
+              <Icon icon="mdi:alert-circle" class="w-6 h-6 text-hot shrink-0" />
+              <p class="text-paper font-semibold">{{ displayError }}</p>
             </div>
             <button
               type="button"
               @click="localError = null; clearError()"
-              class="shrink-0 p-1 rounded-lg hover:bg-red-500/30 text-red-300 transition-colors"
+              class="shrink-0 p-1 rounded-md hover:bg-white/5 text-paper/60 hover:text-paper transition-colors"
               aria-label="Dismiss"
             >
               <Icon icon="mdi:close" class="w-5 h-5" />
@@ -68,20 +68,20 @@
       </transition>
 
       <!-- Lobby Phase -->
-      <div v-if="!safeRoomState.gamePhase || safeRoomState.gamePhase === 'lobby'" class="space-y-6">
+      <div ref="mainContentRef" v-if="!safeRoomState.gamePhase || safeRoomState.gamePhase === 'lobby'" class="space-y-6">
         <!-- Room Info Card -->
-        <div v-if="safeRoomState.roomCode" class="bg-white/10 backdrop-blur-md rounded-2xl p-6 border border-white/20">
+        <div v-if="safeRoomState.roomCode" class="card-poster p-6">
           <div class="text-center mb-6">
-            <h1 class="text-3xl sm:text-4xl font-black mb-2 bg-gradient-to-r from-purple-400 via-pink-500 to-cyan-400 bg-clip-text text-transparent">
+            <h1 class="font-display text-3xl sm:text-4xl font-bold uppercase mb-2 text-paper">
               {{ safeRoomState.roomName || 'Game Room' }}
             </h1>
             <div class="flex items-center justify-center gap-4 mt-4">
               <div class="flex items-center gap-2">
-                <Icon icon="mdi:account-group" class="w-5 h-5 text-purple-400" />
+                <Icon icon="mdi:account-group" class="w-5 h-5 text-hot" />
                 <span class="text-sm">{{ playerCount }} Players</span>
               </div>
               <div class="flex items-center gap-2">
-                <Icon :icon="safeRoomState.answerVisibility === 'anonymous' ? 'mdi:incognito' : 'mdi:eye'" class="w-5 h-5 text-pink-400" />
+                <Icon :icon="safeRoomState.answerVisibility === 'anonymous' ? 'mdi:incognito' : 'mdi:eye'" class="w-5 h-5 text-volt" />
                 <span class="text-sm capitalize">{{ safeRoomState.answerVisibility }} Mode</span>
               </div>
             </div>
@@ -89,24 +89,24 @@
 
           <!-- Player List -->
           <div class="mb-6">
-            <h3 class="text-lg font-bold mb-4 text-center">Players</h3>
+            <h3 class="font-display text-lg font-bold uppercase mb-4 text-center text-paper">Players</h3>
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div
                 v-for="player in safeRoomState.players"
                 :key="player.socketId"
-                class="bg-white/5 rounded-xl p-4 border border-white/10 flex items-center justify-between"
-                :class="{ 'ring-2 ring-purple-500': player.isHost, 'opacity-50': !player.connected }"
+                class="bg-card rounded-md p-4 border border-white/10 flex items-center justify-between"
+                :class="{ 'border-hot': player.isHost, 'opacity-50': !player.connected }"
               >
                 <div class="flex items-center gap-3">
-                  <div class="w-10 h-10 rounded-full bg-gradient-to-r from-purple-500 to-pink-500 flex items-center justify-center font-bold">
+                  <div class="w-10 h-10 rounded-full bg-hot text-ink flex items-center justify-center font-display font-bold">
                     {{ player.nickname.charAt(0).toUpperCase() }}
                   </div>
                   <div>
                     <div class="font-semibold flex items-center gap-2">
                       {{ player.nickname }}
-                      <span v-if="player.isHost" class="text-xs bg-purple-500/30 px-2 py-0.5 rounded-full">Host</span>
+                      <span v-if="player.isHost" class="badge-stamp bg-hot text-ink text-[10px] px-2 py-0.5">Host</span>
                     </div>
-                    <div class="text-xs text-white/60">
+                    <div class="text-xs text-paper/50">
                       {{ player.connected ? 'Connected' : 'Disconnected' }}
                     </div>
                   </div>
@@ -118,9 +118,9 @@
 
           <!-- Host Controls - Always show if room exists, but disable if not host -->
           <div class="space-y-4">
-            <div class="bg-purple-500/20 rounded-xl p-4 border border-purple-500/30">
-              <h3 class="font-bold mb-3 flex items-center gap-2">
-                <Icon icon="mdi:gamepad-variant" class="w-5 h-5" />
+            <div class="card-poster p-4">
+              <h3 class="font-display font-bold uppercase tracking-wide mb-3 flex items-center gap-2 text-paper">
+                <Icon icon="mdi:gamepad-variant" class="w-5 h-5 text-hot" />
                 Select Game
               </h3>
               <div class="grid grid-cols-2 sm:grid-cols-3 gap-3">
@@ -129,15 +129,13 @@
                   :key="game.value"
                   @click="selectedGame = game.value"
                   :disabled="!isHost"
-                  :class="{
-                    'ring-2 ring-pink-500 bg-pink-500/20': selectedGame === game.value,
-                    'bg-white/5 hover:bg-white/10': selectedGame !== game.value,
-                    'opacity-50 cursor-not-allowed': !isHost,
-                  }"
-                  class="p-3 rounded-lg border border-white/10 transition-all text-center"
+                  :class="selectedGame === game.value
+                    ? 'border-hot bg-hot/15 shadow-hard-sm'
+                    : 'border-white/10 bg-white/5 hover:border-hot/30'"
+                  class="p-3 rounded-md border-2 transition-all text-center disabled:opacity-40 disabled:cursor-not-allowed"
                 >
-                  <div class="text-2xl mb-1">{{ game.emoji }}</div>
-                  <div class="text-xs font-semibold">{{ game.name }}</div>
+                  <Icon :icon="game.icon" class="w-6 h-6 mx-auto mb-1 text-hot" />
+                  <div class="text-xs font-display font-bold uppercase tracking-wide">{{ game.name }}</div>
                 </button>
               </div>
             </div>
@@ -147,36 +145,36 @@
               <button
                 @click="handleStartGame"
                 :disabled="!canStartGame || !selectedGame || !isHost || isStartingGame"
-                class="w-full bg-gradient-to-r from-purple-600 via-pink-600 to-purple-600 hover:from-purple-500 hover:via-pink-500 hover:to-purple-500 text-white px-8 py-4 rounded-xl font-black text-lg shadow-2xl hover:shadow-pink-600/50 transition-all duration-300 transform hover:scale-105 border-2 border-pink-500/50 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 flex items-center justify-center gap-2"
+                class="w-full bg-volt text-ink shadow-hard hover:brightness-110 px-8 py-4 rounded-lg font-display font-bold uppercase tracking-wide text-lg transition-[filter] disabled:opacity-50 disabled:cursor-not-allowed disabled:shadow-none flex items-center justify-center gap-2"
               >
                 <Icon :icon="isStartingGame ? 'mdi:loading' : 'mdi:play-circle'" :class="['w-6 h-6', { 'animate-spin': isStartingGame }]" />
                 <span>{{ isStartingGame ? 'Starting...' : 'Start Game' }}</span>
               </button>
-              
+
               <!-- Helper messages -->
               <div v-if="!isHost" class="text-center space-y-2">
-                <p class="text-sm text-yellow-400">
+                <p class="text-sm text-hot">
                   <Icon icon="mdi:information" class="w-4 h-4 inline mr-1" />
                   Only the host can start the game
                 </p>
                 <button
                   @click="handleRingHost"
                   :disabled="isRinging || ringHostCooldown > 0"
-                  class="inline-flex items-center gap-2 bg-gradient-to-r from-yellow-600/80 to-orange-600/80 hover:from-yellow-500 hover:to-orange-500 text-white px-4 py-2 rounded-lg font-semibold text-sm transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                  class="inline-flex items-center gap-2 bg-hot text-ink shadow-hard-sm hover:brightness-110 px-4 py-2 rounded-md font-display font-bold uppercase tracking-wide text-sm transition-[filter] disabled:opacity-50 disabled:cursor-not-allowed disabled:shadow-none"
                 >
                   <Icon icon="mdi:bell-ring" class="w-4 h-4" />
                   {{ isRinging ? 'Ringing...' : ringHostCooldown > 0 ? `Ring Host (${ringHostCooldown}s)` : 'Ring Host' }}
                 </button>
               </div>
-              <div v-else-if="!selectedGame" class="text-center text-sm text-yellow-400">
+              <div v-else-if="!selectedGame" class="text-center text-sm text-hot">
                 <Icon icon="mdi:information" class="w-4 h-4 inline mr-1" />
                 Please select a game first
               </div>
-              <div v-else-if="playerCount < 2" class="text-center text-sm text-yellow-400">
+              <div v-else-if="playerCount < 2" class="text-center text-sm text-hot">
                 <Icon icon="mdi:information" class="w-4 h-4 inline mr-1" />
                 Need at least 2 players to start ({{ playerCount }}/2)
               </div>
-              <div v-else-if="!canStartGame" class="text-center text-sm text-yellow-400">
+              <div v-else-if="!canStartGame" class="text-center text-sm text-hot">
                 <Icon icon="mdi:information" class="w-4 h-4 inline mr-1" />
                 Waiting for more players...
               </div>
@@ -186,7 +184,7 @@
           <!-- Leave Button -->
           <button
             @click="handleLeaveRoom"
-            class="w-full mt-4 bg-red-500/20 hover:bg-red-500/30 text-red-300 px-4 py-2 rounded-lg border border-red-500/30 transition-all"
+            class="w-full mt-4 bg-hot/10 hover:bg-hot/20 text-hot px-4 py-2 rounded-md border border-hot/30 transition-all font-display uppercase tracking-wide text-sm"
           >
             Leave Room
           </button>
@@ -195,72 +193,78 @@
         <!-- Create/Join Room Form -->
         <div v-else class="space-y-6">
           <div class="text-center mb-8">
-            <h1 class="text-4xl sm:text-5xl font-black mb-4 bg-gradient-to-r from-purple-400 via-pink-500 to-cyan-400 bg-clip-text text-transparent">
-              Multiplayer Mode
+            <h1 class="font-display text-4xl sm:text-5xl font-bold uppercase mb-4 text-paper">
+              Multiplayer <span class="text-hot">Mode</span>
             </h1>
-            <p class="text-purple-200 text-lg">Create or join a game room</p>
+            <p class="text-paper/70 text-lg">Create or join a game room</p>
           </div>
 
           <!-- Tabs -->
-          <div class="flex gap-2 mb-6">
+          <div class="pill-toggle">
             <button
               @click="isCreating = true"
-              :class="isCreating ? 'bg-purple-600 text-white' : 'bg-white/10 text-white/70'"
-              class="flex-1 py-3 rounded-lg font-semibold transition-all"
+              :class="{ 'is-active': isCreating }"
+              class="pill-toggle-btn py-3"
             >
               Create Room
             </button>
             <button
               @click="isCreating = false"
-              :class="!isCreating ? 'bg-purple-600 text-white' : 'bg-white/10 text-white/70'"
-              class="flex-1 py-3 rounded-lg font-semibold transition-all"
+              :class="{ 'is-active': !isCreating }"
+              class="pill-toggle-btn py-3"
             >
               Join Room
             </button>
           </div>
 
           <!-- Create Room Form -->
-          <div v-if="isCreating" class="bg-white/10 backdrop-blur-md rounded-2xl p-6 border border-white/20 space-y-4">
+          <div v-if="isCreating" class="card-poster p-6 space-y-4">
             <div>
               <label class="block text-sm font-semibold mb-2">Room Name (Optional)</label>
               <input
                 v-model="createForm.roomName"
                 type="text"
                 placeholder="My Awesome Game"
-                class="w-full bg-white/5 border border-white/20 rounded-lg px-4 py-3 text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-purple-500"
+                class="w-full bg-white/5 border border-white/10 rounded-md px-4 py-3 text-paper placeholder-paper/40 focus:outline-none focus:ring-2 focus:ring-hot/60"
               />
             </div>
             <div>
               <label class="block text-sm font-semibold mb-2">Answer Visibility</label>
               <div class="space-y-2">
-                <label class="flex items-center gap-3 p-3 bg-white/5 rounded-lg border border-white/10 cursor-pointer hover:bg-white/10 transition-all">
+                <label
+                  class="flex items-center gap-3 p-3 rounded-md border cursor-pointer transition-all"
+                  :class="createForm.answerVisibility === 'anonymous' ? 'border-hot bg-hot/10' : 'border-white/10 bg-white/5 hover:bg-white/10'"
+                >
                   <input
                     v-model="createForm.answerVisibility"
                     type="radio"
                     value="anonymous"
-                    class="w-4 h-4 text-purple-600"
+                    class="w-4 h-4 accent-hot"
                   />
                   <div class="flex-1">
                     <div class="font-semibold flex items-center gap-2">
                       <Icon icon="mdi:incognito" class="w-5 h-5" />
                       Anonymous
                     </div>
-                    <div class="text-xs text-white/60">Answers and votes are hidden</div>
+                    <div class="text-xs text-paper/60">Answers and votes are hidden</div>
                   </div>
                 </label>
-                <label class="flex items-center gap-3 p-3 bg-white/5 rounded-lg border border-white/10 cursor-pointer hover:bg-white/10 transition-all">
+                <label
+                  class="flex items-center gap-3 p-3 rounded-md border cursor-pointer transition-all"
+                  :class="createForm.answerVisibility === 'public' ? 'border-hot bg-hot/10' : 'border-white/10 bg-white/5 hover:bg-white/10'"
+                >
                   <input
                     v-model="createForm.answerVisibility"
                     type="radio"
                     value="public"
-                    class="w-4 h-4 text-purple-600"
+                    class="w-4 h-4 accent-hot"
                   />
                   <div class="flex-1">
                     <div class="font-semibold flex items-center gap-2">
                       <Icon icon="mdi:eye" class="w-5 h-5" />
                       Public
                     </div>
-                    <div class="text-xs text-white/60">Answers and votes show player names</div>
+                    <div class="text-xs text-paper/60">Answers and votes show player names</div>
                   </div>
                 </label>
               </div>
@@ -272,7 +276,7 @@
                 type="text"
                 placeholder="Enter your name"
                 maxlength="20"
-                class="w-full bg-white/5 border border-white/20 rounded-lg px-4 py-3 text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-purple-500"
+                class="w-full bg-white/5 border border-white/10 rounded-md px-4 py-3 text-paper placeholder-paper/40 focus:outline-none focus:ring-2 focus:ring-hot/60"
               />
             </div>
             <div>
@@ -280,44 +284,38 @@
               <div class="grid grid-cols-3 gap-2">
                 <button
                   @click="createForm.gender = 'male'"
-                  :class="createForm.gender === 'male' 
-                    ? 'bg-blue-500/30 border-2 border-blue-500 text-white' 
-                    : 'bg-white/5 border border-white/20 text-white/70 hover:bg-white/10'"
-                  class="p-3 rounded-lg transition-all font-semibold"
+                  :class="createForm.gender === 'male' ? 'bg-hot text-ink' : 'bg-white/5 border border-white/10 text-paper/70 hover:bg-white/10'"
+                  class="p-3 rounded-md transition-all font-semibold"
                 >
-                  ♂ Male
+                  <Icon icon="mdi:gender-male" class="w-5 h-5 mx-auto" />
                 </button>
                 <button
                   @click="createForm.gender = 'female'"
-                  :class="createForm.gender === 'female' 
-                    ? 'bg-pink-500/30 border-2 border-pink-500 text-white' 
-                    : 'bg-white/5 border border-white/20 text-white/70 hover:bg-white/10'"
-                  class="p-3 rounded-lg transition-all font-semibold"
+                  :class="createForm.gender === 'female' ? 'bg-volt text-ink' : 'bg-white/5 border border-white/10 text-paper/70 hover:bg-white/10'"
+                  class="p-3 rounded-md transition-all font-semibold"
                 >
-                  ♀ Female
+                  <Icon icon="mdi:gender-female" class="w-5 h-5 mx-auto" />
                 </button>
                 <button
                   @click="createForm.gender = 'other'"
-                  :class="createForm.gender === 'other' 
-                    ? 'bg-purple-500/30 border-2 border-purple-500 text-white' 
-                    : 'bg-white/5 border border-white/20 text-white/70 hover:bg-white/10'"
-                  class="p-3 rounded-lg transition-all font-semibold"
+                  :class="createForm.gender === 'other' ? 'bg-paper text-ink' : 'bg-white/5 border border-white/10 text-paper/70 hover:bg-white/10'"
+                  class="p-3 rounded-md transition-all font-semibold"
                 >
-                  ⚧ Other
+                  <Icon icon="mdi:account" class="w-5 h-5 mx-auto" />
                 </button>
               </div>
             </div>
             <button
               @click="handleCreateRoom"
               :disabled="!createForm.nickname.trim() || isConnecting"
-              class="w-full bg-gradient-to-r from-purple-600 via-pink-600 to-purple-600 hover:from-purple-500 hover:via-pink-500 hover:to-purple-500 text-white px-8 py-4 rounded-xl font-black text-lg shadow-2xl hover:shadow-pink-600/50 transition-all duration-300 transform hover:scale-105 border-2 border-pink-500/50 disabled:opacity-50 disabled:cursor-not-allowed"
+              class="w-full bg-hot text-ink shadow-hard hover:brightness-110 px-8 py-4 rounded-lg font-display font-bold uppercase tracking-wide text-lg transition-[filter] disabled:opacity-50 disabled:cursor-not-allowed disabled:shadow-none"
             >
               {{ isConnecting ? 'Connecting...' : 'Create Room' }}
             </button>
           </div>
 
           <!-- Join Room Form -->
-          <div v-else class="bg-white/10 backdrop-blur-md rounded-2xl p-6 border border-white/20 space-y-4">
+          <div v-else class="card-poster p-6 space-y-4">
             <div>
               <label class="block text-sm font-semibold mb-2">Room Code</label>
               <input
@@ -325,7 +323,7 @@
                 type="text"
                 placeholder="ABCD12"
                 maxlength="6"
-                class="w-full bg-white/5 border border-white/20 rounded-lg px-4 py-3 text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-purple-500 text-center text-2xl font-black tracking-widest uppercase"
+                class="w-full bg-white/5 border border-white/10 rounded-md px-4 py-3 text-paper placeholder-paper/40 focus:outline-none focus:ring-2 focus:ring-hot/60 text-center text-2xl font-display font-bold tracking-widest uppercase"
                 @input="joinForm.roomCode = joinForm.roomCode.toUpperCase().replace(/[^A-Z0-9]/g, ''); localError = null; clearError()"
               />
             </div>
@@ -336,7 +334,7 @@
                 type="text"
                 placeholder="Enter your name"
                 maxlength="20"
-                class="w-full bg-white/5 border border-white/20 rounded-lg px-4 py-3 text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-purple-500"
+                class="w-full bg-white/5 border border-white/10 rounded-md px-4 py-3 text-paper placeholder-paper/40 focus:outline-none focus:ring-2 focus:ring-hot/60"
               />
             </div>
             <div>
@@ -344,37 +342,31 @@
               <div class="grid grid-cols-3 gap-2">
                 <button
                   @click="joinForm.gender = 'male'"
-                  :class="joinForm.gender === 'male' 
-                    ? 'bg-blue-500/30 border-2 border-blue-500 text-white' 
-                    : 'bg-white/5 border border-white/20 text-white/70 hover:bg-white/10'"
-                  class="p-3 rounded-lg transition-all font-semibold"
+                  :class="joinForm.gender === 'male' ? 'bg-hot text-ink' : 'bg-white/5 border border-white/10 text-paper/70 hover:bg-white/10'"
+                  class="p-3 rounded-md transition-all font-semibold"
                 >
-                  ♂ Male
+                  <Icon icon="mdi:gender-male" class="w-5 h-5 mx-auto" />
                 </button>
                 <button
                   @click="joinForm.gender = 'female'"
-                  :class="joinForm.gender === 'female' 
-                    ? 'bg-pink-500/30 border-2 border-pink-500 text-white' 
-                    : 'bg-white/5 border border-white/20 text-white/70 hover:bg-white/10'"
-                  class="p-3 rounded-lg transition-all font-semibold"
+                  :class="joinForm.gender === 'female' ? 'bg-volt text-ink' : 'bg-white/5 border border-white/10 text-paper/70 hover:bg-white/10'"
+                  class="p-3 rounded-md transition-all font-semibold"
                 >
-                  ♀ Female
+                  <Icon icon="mdi:gender-female" class="w-5 h-5 mx-auto" />
                 </button>
                 <button
                   @click="joinForm.gender = 'other'"
-                  :class="joinForm.gender === 'other' 
-                    ? 'bg-purple-500/30 border-2 border-purple-500 text-white' 
-                    : 'bg-white/5 border border-white/20 text-white/70 hover:bg-white/10'"
-                  class="p-3 rounded-lg transition-all font-semibold"
+                  :class="joinForm.gender === 'other' ? 'bg-paper text-ink' : 'bg-white/5 border border-white/10 text-paper/70 hover:bg-white/10'"
+                  class="p-3 rounded-md transition-all font-semibold"
                 >
-                  ⚧ Other
+                  <Icon icon="mdi:account" class="w-5 h-5 mx-auto" />
                 </button>
               </div>
             </div>
             <button
               @click="handleJoinRoom"
               :disabled="!joinForm.roomCode || joinForm.roomCode.length !== 6 || !joinForm.nickname.trim() || isConnecting"
-              class="w-full bg-gradient-to-r from-purple-600 via-pink-600 to-purple-600 hover:from-purple-500 hover:via-pink-500 hover:to-purple-500 text-white px-8 py-4 rounded-xl font-black text-lg shadow-2xl hover:shadow-pink-600/50 transition-all duration-300 transform hover:scale-105 border-2 border-pink-500/50 disabled:opacity-50 disabled:cursor-not-allowed"
+              class="w-full bg-hot text-ink shadow-hard hover:brightness-110 px-8 py-4 rounded-lg font-display font-bold uppercase tracking-wide text-lg transition-[filter] disabled:opacity-50 disabled:cursor-not-allowed disabled:shadow-none"
             >
               {{ isConnecting ? 'Connecting...' : 'Join Room' }}
             </button>
@@ -385,7 +377,7 @@
       <!-- Game Phase - Redirect to game -->
       <div v-else-if="safeRoomState.gamePhase === 'playing' && safeRoomState.currentGame" class="text-center py-12">
         <div class="animate-pulse">
-          <Icon icon="mdi:loading" class="w-16 h-16 mx-auto mb-4 text-purple-400 animate-spin" />
+          <Icon icon="mdi:loading" class="w-16 h-16 mx-auto mb-4 text-hot animate-spin" />
           <p class="text-xl font-semibold">Starting game...</p>
         </div>
       </div>
@@ -404,6 +396,7 @@ import { playRingSound, vibrateRing } from '~/composables/useRingSound'
 import { usePayment } from '~/composables/usePayment'
 import { useGameStore } from '~/stores/game'
 import MultiplayerPaywallModal from '~/components/payment/MultiplayerPaywallModal.vue'
+import { staggerReveal } from '~/composables/useGameAnimations'
 
 // Multiplayer room state lives in a process-wide singleton (see useMultiplayer.ts),
 // not per-request — rendering it during SSR could leak one user's live room into
@@ -442,6 +435,10 @@ const ringHostCooldown = ref(0)
 let ringCooldownTimer: ReturnType<typeof setInterval> | null = null
 let isComponentMounted = true
 let pendingConnectTimeout: ReturnType<typeof setTimeout> | null = null
+
+// Animation refs
+const headerRef = ref(null)
+const mainContentRef = ref(null)
 
 const handleRingHost = () => {
   if (isRinging.value || ringHostCooldown.value > 0) return
@@ -519,12 +516,12 @@ const safeRoomState = computed(() => {
 
 // Multiplayer games (excluding single-device only games)
 const multiplayerGames = [
-  { value: 'truth-or-dare', name: 'Truth or Dare', emoji: '🎭' },
-  { value: 'dice-of-desire', name: 'Dice of Desire', emoji: '🎲' },
-  { value: 'do-or-drink', name: 'Do or Drink', emoji: '🍺' },
-  { value: 'never-have-i-ever', name: 'Never Have I Ever', emoji: '🙅' },
-  { value: 'most-likely-to', name: 'Most Likely To', emoji: '🤷' },
-  { value: 'would-you-rather', name: 'Would You Rather', emoji: '🤔' },
+  { value: 'truth-or-dare', name: 'Truth or Dare', icon: 'mdi:cards-heart' },
+  { value: 'dice-of-desire', name: 'Dice of Desire', icon: 'mdi:dice-6' },
+  { value: 'do-or-drink', name: 'Do or Drink', icon: 'mdi:glass-cocktail' },
+  { value: 'never-have-i-ever', name: 'Never Have I Ever', icon: 'mdi:hand-back-right' },
+  { value: 'most-likely-to', name: 'Most Likely To', icon: 'mdi:account-group-outline' },
+  { value: 'would-you-rather', name: 'Would You Rather', icon: 'mdi:help-circle' },
 ]
 
 const handleCreateRoom = async () => {
@@ -547,7 +544,7 @@ const handleCreateRoom = async () => {
       isConnecting.value = false
       return
     }
-    
+
     // Wait for connection to be established (max 3 seconds)
     let attempts = 0
     while (!isConnected.value && attempts < 15 && isComponentMounted) {
@@ -599,10 +596,10 @@ const handleCreateRoom = async () => {
 const handleJoinRoom = async () => {
   if (!joinForm.value.roomCode || joinForm.value.roomCode.length !== 6) return
   if (!joinForm.value.nickname.trim() || isConnecting.value) return
-  
+
   isConnecting.value = true
   localError.value = null
-  
+
   try {
     // Connect first
     const socket = connect()
@@ -611,7 +608,7 @@ const handleJoinRoom = async () => {
       isConnecting.value = false
       return
     }
-    
+
     // Wait for connection to be established (max 3 seconds)
     let attempts = 0
     while (!isConnected.value && attempts < 15 && isComponentMounted) {
@@ -691,7 +688,7 @@ watch(() => roomState.value.gamePhase, (newPhase) => {
         answerVisibility: roomState.value.answerVisibility,
       }))
     }
-    
+
     // Navigate to multiplayer game
     navigateTo(`/multiplayer/${roomState.value.currentGame}`)
   }
@@ -755,7 +752,7 @@ onMounted(() => {
             joinForm.value.nickname = info.nickname
             joinForm.value.gender = info.gender || 'male'
             isCreating.value = false
-            
+
             // Rejoin room using the composable method
             setTimeout(() => {
               if (!isComponentMounted) return
@@ -770,6 +767,8 @@ onMounted(() => {
       }
     }
   }, { immediate: true })
+
+  staggerReveal([headerRef.value, mainContentRef.value])
 })
 
 onBeforeUnmount(() => {
@@ -806,4 +805,3 @@ onBeforeUnmount(() => {
   opacity: 0;
 }
 </style>
-

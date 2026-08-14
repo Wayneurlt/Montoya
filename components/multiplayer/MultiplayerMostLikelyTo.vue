@@ -1,155 +1,148 @@
 <template>
   <div class="max-w-3xl mx-auto relative z-10 pt-4 sm:pt-6 md:pt-8">
     <!-- Header -->
-    <MultiplayerGameHeader
-      :room-code="roomState.roomCode"
-      :is-host="isHost"
-      @back-to-lobby="handleBackToLobby"
-      @change-game="handleChangeGame"
-    />
+    <div ref="headerRowRef">
+      <MultiplayerGameHeader
+        :room-code="roomState.roomCode"
+        :is-host="isHost"
+        @back-to-lobby="handleBackToLobby"
+        @change-game="handleChangeGame"
+      />
+    </div>
 
     <!-- Game Title -->
-    <div class="text-center mb-8">
-      <h1 class="text-4xl sm:text-5xl md:text-6xl font-black mb-4 bg-clip-text text-transparent bg-gradient-to-r from-purple-400 via-pink-500 to-cyan-400 drop-shadow-2xl">
-        🤷 Most Likely To
+    <div ref="titleBlockRef" class="text-center mb-6 sm:mb-8">
+      <h1 class="font-display text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold uppercase mb-2 sm:mb-4 text-paper">
+        Most Likely <span class="text-hot">To</span>
       </h1>
-      <p class="text-purple-200/80 text-sm font-medium">{{ roomState.answerVisibility === 'anonymous' ? 'Anonymous Mode' : 'Public Mode' }}</p>
+      <p class="text-paper/60 text-xs sm:text-sm font-medium">{{ roomState.answerVisibility === 'anonymous' ? 'Anonymous Mode' : 'Public Mode' }}</p>
     </div>
 
     <!-- Loading State -->
-    <div v-if="questionsLoading" class="mb-6 bg-blue-500/20 border border-blue-400/30 rounded-xl p-4 text-center">
+    <div v-if="questionsLoading" class="mb-4 sm:mb-6 card-poster p-4 text-center">
       <div class="flex items-center justify-center gap-3">
-        <Icon icon="svg-spinners:3-dots-fade" class="w-6 h-6" />
+        <Icon icon="svg-spinners:3-dots-fade" class="w-6 h-6 text-hot" />
         <span class="font-medium">Loading questions from database...</span>
       </div>
     </div>
 
     <!-- Playing Phase: Show Question and Voting -->
-    <div v-if="roomState.gamePhase === 'playing' && roomState.currentPrompt" class="space-y-6">
+    <div v-if="roomState.gamePhase === 'playing' && roomState.currentPrompt" class="space-y-4 sm:space-y-6">
       <!-- Current Question -->
-      <div class="bg-white/10 backdrop-blur-md rounded-2xl p-6 sm:p-8 md:p-10 mb-6 border border-white/20 shadow-2xl">
-        <div class="text-center">
-          <p class="text-2xl sm:text-3xl md:text-4xl font-bold mb-4 leading-relaxed">
-            {{ roomState.currentPrompt?.text || roomState.currentPrompt }}
-          </p>
-        </div>
+      <div class="card-face p-6 sm:p-8 md:p-10">
+        <div class="card-index card-index-tl"><Icon icon="mdi:thought-bubble" class="w-3.5 h-3.5" />Q</div>
+        <div class="card-index card-index-br"><Icon icon="mdi:thought-bubble" class="w-3.5 h-3.5" />Q</div>
+        <p class="font-display text-xl sm:text-2xl md:text-3xl font-bold text-center leading-relaxed px-2 text-paper">
+          {{ roomState.currentPrompt?.text || roomState.currentPrompt }}
+        </p>
       </div>
 
       <!-- Voting Options (if not voted yet) - Players can vote for themselves -->
-      <div v-if="!hasVoted" class="bg-white/10 backdrop-blur-md rounded-xl p-6 border border-white/20">
-        <h3 class="font-bold mb-4 text-center">Who is most likely to?</h3>
-        <div class="grid grid-cols-2 sm:grid-cols-3 gap-3">
+      <div v-if="!hasVoted" class="card-poster p-4 sm:p-6">
+        <h3 class="font-display uppercase tracking-wide text-sm text-paper/70 mb-4 text-center">Who is most likely to?</h3>
+        <div class="grid grid-cols-2 sm:grid-cols-3 gap-2 sm:gap-3">
           <button
             v-for="player in roomState.players"
             :key="player.socketId"
-            @click="submitVote(player.socketId)"
+            @click="handleVote(player.socketId, $event)"
             :disabled="isSubmitting"
-            class="bg-white/5 hover:bg-white/10 border-2 border-white/20 hover:border-purple-500/50 rounded-xl p-4 transition-all transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed"
+            class="bg-card border border-white/10 hover:border-hot/50 rounded-lg p-3 sm:p-4 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            <div class="w-12 h-12 rounded-full bg-gradient-to-r from-purple-500 to-pink-500 flex items-center justify-center font-bold mx-auto mb-2">
+            <div class="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-hot text-ink flex items-center justify-center font-display font-bold mx-auto mb-2">
               {{ player.nickname.charAt(0).toUpperCase() }}
             </div>
-            <div class="text-sm font-semibold flex items-center justify-center gap-1">
+            <div class="text-xs sm:text-sm font-display uppercase tracking-wide flex items-center justify-center gap-1 truncate">
               {{ player.nickname }}
-              <span v-if="player.isHost" class="text-xs text-purple-400">👑</span>
+              <Icon v-if="player.isHost" icon="mdi:crown" class="w-3.5 h-3.5 text-volt flex-shrink-0" />
             </div>
           </button>
         </div>
       </div>
 
       <!-- Already Voted -->
-      <div v-else class="bg-purple-500/20 border-2 border-purple-500/50 rounded-xl p-6 text-center">
-        <Icon icon="mdi:check-circle" class="w-16 h-16 mx-auto mb-4 text-green-400" />
-        <p class="text-xl font-semibold">You've voted for {{ votedForPlayer?.nickname || 'someone' }}!</p>
-        <p class="text-sm text-white/60 mt-2">Waiting for others...</p>
+      <div v-else class="bg-volt/10 border-2 border-volt/40 rounded-lg p-4 sm:p-6 text-center">
+        <Icon icon="mdi:check-circle" class="w-14 h-14 sm:w-16 sm:h-16 mx-auto mb-4 text-volt" />
+        <p class="text-lg sm:text-xl font-display font-bold uppercase tracking-wide">You've voted for {{ votedForPlayer?.nickname || 'someone' }}!</p>
+        <p class="text-sm text-paper/60 mt-2">Waiting for others...</p>
       </div>
 
       <!-- Live Vote Count -->
-      <div v-if="votes.length > 0" class="bg-white/10 backdrop-blur-md rounded-xl p-4 border border-white/20">
-        <h3 class="font-bold mb-3">Live Results</h3>
+      <div v-if="votes.length > 0" class="card-poster p-4">
+        <h3 class="font-display uppercase tracking-wide text-sm text-paper/70 mb-3">Live Results</h3>
         <div class="space-y-2">
           <div
             v-for="player in roomState.players"
             :key="player.socketId"
             class="flex items-center justify-between"
           >
-            <span class="font-semibold">{{ player.nickname }}:</span>
-            <span class="text-purple-400 font-bold animate-pulse">{{ getVoteCount(player.socketId) }} votes</span>
+            <span class="font-medium">{{ player.nickname }}:</span>
+            <span class="text-hot font-bold">{{ getVoteCount(player.socketId) }} votes</span>
           </div>
-          <div class="mt-2 text-sm text-white/60 text-center">
+          <div class="mt-2 text-sm text-paper/50 text-center">
             {{ votes.length }} / {{ roomState.players.length }} players voted
           </div>
         </div>
       </div>
 
       <!-- Host: Skip Question Button -->
-      <div v-if="isHost" class="bg-yellow-500/20 rounded-xl p-4 border border-yellow-500/30">
+      <div v-if="isHost" class="card-poster p-4">
         <button
-          @click="handleSkipQuestion"
+          @click="handleSkip"
           :disabled="isLoading"
-          class="w-full bg-gradient-to-r from-yellow-500 to-orange-500 hover:from-yellow-600 hover:to-orange-600 text-white px-6 py-3 rounded-xl font-black shadow-xl transition-all transform hover:scale-105 disabled:opacity-50"
+          class="w-full bg-card border border-white/10 hover:border-volt/50 text-paper px-6 py-2.5 sm:py-3 rounded-lg font-display font-bold uppercase tracking-wide transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
         >
-          <Icon icon="mdi:skip-next" class="w-5 h-5 inline mr-2" />
+          <Icon icon="mdi:skip-next" class="w-5 h-5" />
           Skip Question
         </button>
       </div>
     </div>
 
     <!-- Results Phase - Reveal with Animation -->
-    <div v-else-if="roomState.gamePhase === 'results'" class="space-y-6">
-      <div class="bg-white/10 backdrop-blur-md rounded-2xl p-6 border border-white/20">
-        <h2 class="text-2xl font-bold mb-4 text-center">Results</h2>
-        
-        <!-- Winner Highlight with Confetti Effect -->
-        <div v-if="winner" class="bg-gradient-to-r from-yellow-500/30 to-orange-500/30 border-4 border-yellow-500/50 rounded-xl p-6 mb-4 text-center animate-pulse relative overflow-hidden">
-          <!-- Confetti Effect -->
-          <div class="absolute inset-0 overflow-hidden pointer-events-none">
-            <div class="confetti confetti-1">🎉</div>
-            <div class="confetti confetti-2">✨</div>
-            <div class="confetti confetti-3">🎊</div>
-            <div class="confetti confetti-4">🌟</div>
-            <div class="confetti confetti-5">💫</div>
-          </div>
-          <Icon icon="mdi:trophy" class="w-16 h-16 mx-auto mb-2 text-yellow-400 relative z-10" />
-          <p class="text-3xl font-black mb-2 relative z-10">{{ winner.nickname }}</p>
-          <p class="text-xl text-yellow-300 relative z-10">Wins with {{ winner.votes }} votes!</p>
+    <div v-else-if="roomState.gamePhase === 'results'" class="space-y-4 sm:space-y-6">
+      <div class="card-poster p-6 sm:p-8">
+        <h2 class="font-display text-xl sm:text-2xl font-bold uppercase tracking-wide mb-4 text-center">Results</h2>
+
+        <!-- Winner Highlight -->
+        <div v-if="winner" ref="winnerRef" class="bg-volt/15 border-2 border-volt/50 rounded-lg p-6 mb-4 text-center">
+          <Icon icon="mdi:trophy" class="w-14 h-14 sm:w-16 sm:h-16 mx-auto mb-2 text-volt" />
+          <p class="text-2xl sm:text-3xl font-display font-bold uppercase tracking-wide mb-2">{{ winner.nickname }}</p>
+          <p class="text-lg sm:text-xl text-volt font-display uppercase tracking-wide">Wins with {{ winner.votes }} votes!</p>
         </div>
-        
-        <!-- All Results with Vote Distribution Animation -->
+
+        <!-- All Results with Vote Distribution -->
         <div class="space-y-3">
           <div
             v-for="(player, index) in sortedPlayers"
             :key="player.socketId"
             :class="[
-              'rounded-xl p-4 transition-all duration-500',
-              player.socketId === winner?.socketId 
-                ? 'bg-yellow-500/20 border-2 border-yellow-500/50 shadow-lg shadow-yellow-500/30' 
+              'rounded-lg p-4 transition-all duration-500',
+              player.socketId === winner?.socketId
+                ? 'bg-volt/15 border-2 border-volt/50'
                 : 'bg-white/5 border border-white/10'
             ]"
-            :style="{ animationDelay: index * 100 + 'ms' }"
-            class="animate-slide-up"
           >
             <div class="flex items-center justify-between mb-2">
               <div class="flex items-center gap-3">
-                <div class="w-10 h-10 rounded-full bg-gradient-to-r from-purple-500 to-pink-500 flex items-center justify-center font-bold">
+                <div class="w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-hot text-ink flex items-center justify-center font-display font-bold">
                   {{ player.nickname.charAt(0).toUpperCase() }}
                 </div>
-                <span class="font-bold text-lg">{{ player.nickname }}</span>
-                <span v-if="player.isHost" class="text-xs text-purple-400">👑</span>
+                <span class="font-display font-bold uppercase tracking-wide">{{ player.nickname }}</span>
+                <Icon v-if="player.isHost" icon="mdi:crown" class="w-4 h-4 text-volt" />
               </div>
-              <span class="text-2xl font-black text-purple-400">{{ player.votes }} votes</span>
+              <span class="text-xl sm:text-2xl font-display font-bold text-hot">{{ player.votes }} votes</span>
             </div>
-            
-            <!-- Vote Bar with Animation -->
-            <div class="w-full bg-white/10 rounded-full h-3 mb-2 overflow-hidden">
-              <div 
-                class="bg-gradient-to-r from-purple-500 to-pink-500 h-3 rounded-full transition-all duration-1000 ease-out"
+
+            <!-- Vote Bar -->
+            <div class="w-full bg-white/10 rounded-full h-2.5 sm:h-3 mb-2 overflow-hidden">
+              <div
+                class="h-2.5 sm:h-3 rounded-full transition-all duration-1000 ease-out"
+                :class="player.socketId === winner?.socketId ? 'bg-volt' : 'bg-hot'"
                 :style="{ width: (player.votes / totalVotes) * 100 + '%' }"
               ></div>
             </div>
-            
+
             <!-- Who voted (if public) -->
-            <div v-if="roomState.answerVisibility === 'public' && player.voters.length > 0" class="mt-2 text-sm text-white/60">
+            <div v-if="roomState.answerVisibility === 'public' && player.voters.length > 0" class="mt-2 text-sm text-paper/60">
               Voted by: {{ player.voters.map((v: any) => v.nickname || 'Player').join(', ') }}
             </div>
             <!-- Anonymous: only show vote count (already shown above) -->
@@ -158,13 +151,13 @@
       </div>
 
       <!-- Host Controls for Next Round -->
-      <div v-if="isHost" class="bg-purple-500/20 rounded-xl p-6 border border-purple-500/30">
+      <div v-if="isHost" class="card-poster p-4 sm:p-6">
         <button
-          @click="getNextQuestion"
+          @click="handleNext"
           :disabled="isLoading"
-          class="w-full bg-gradient-to-r from-purple-600 via-pink-600 to-purple-600 hover:from-purple-500 hover:via-pink-500 hover:to-purple-500 text-white px-6 py-3 rounded-xl font-black shadow-xl transition-all transform hover:scale-105 disabled:opacity-50"
+          class="w-full bg-hot text-ink shadow-hard hover:brightness-110 px-6 py-2.5 sm:py-3 rounded-lg font-display font-bold uppercase tracking-wide transition-[filter] disabled:opacity-50 flex items-center justify-center gap-2"
         >
-          <Icon icon="mdi:arrow-right" class="w-5 h-5 inline mr-2" />
+          <Icon icon="mdi:arrow-right" class="w-5 h-5" />
           {{ isLoading ? 'Loading...' : 'Next Question' }}
         </button>
       </div>
@@ -177,20 +170,20 @@
     </div>
 
     <!-- Game Started but No Question Yet -->
-    <div v-else-if="roomState.gamePhase === 'playing' && !roomState.currentPrompt" class="space-y-6">
-      <div class="bg-white/10 backdrop-blur-md rounded-2xl p-8 border border-white/20 text-center">
-        <Icon icon="mdi:thought-bubble" class="w-16 h-16 mx-auto mb-4 text-purple-400" />
-        <p class="text-xl font-semibold mb-4">Game Started!</p>
-        <p class="text-white/60 mb-6">Waiting for host to load the first question...</p>
-        
+    <div v-else-if="roomState.gamePhase === 'playing' && !roomState.currentPrompt" class="space-y-4 sm:space-y-6">
+      <div class="card-poster p-8 text-center">
+        <Icon icon="mdi:thought-bubble" class="w-14 h-14 sm:w-16 sm:h-16 mx-auto mb-4 text-hot" />
+        <p class="text-lg sm:text-xl font-display font-bold uppercase tracking-wide mb-2">Game Started!</p>
+        <p class="text-paper/60 mb-6">Waiting for host to load the first question...</p>
+
         <!-- Host: Load First Question -->
-        <div v-if="isHost" class="bg-purple-500/20 rounded-xl p-6 border border-purple-500/30">
+        <div v-if="isHost">
           <button
-            @click="getNextQuestion"
+            @click="handleNext"
             :disabled="isLoading"
-            class="w-full bg-gradient-to-r from-purple-600 via-pink-600 to-purple-600 hover:from-purple-500 hover:via-pink-500 hover:to-purple-500 text-white px-6 py-3 rounded-xl font-black shadow-xl transition-all transform hover:scale-105 disabled:opacity-50"
+            class="w-full bg-hot text-ink shadow-hard hover:brightness-110 px-6 py-2.5 sm:py-3 rounded-lg font-display font-bold uppercase tracking-wide transition-[filter] disabled:opacity-50 flex items-center justify-center gap-2"
           >
-            <Icon icon="mdi:arrow-right" class="w-5 h-5 inline mr-2" />
+            <Icon icon="mdi:arrow-right" class="w-5 h-5" />
             {{ isLoading ? 'Loading...' : 'Load First Question' }}
           </button>
         </div>
@@ -210,7 +203,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, type DeepReadonly } from 'vue'
+import { ref, computed, onMounted, watch, nextTick, type DeepReadonly } from 'vue'
 import { Icon } from '@iconify/vue'
 import { useRouter } from 'vue-router'
 import { navigateTo } from '#app'
@@ -220,6 +213,7 @@ import MultiplayerPlayerList from './MultiplayerPlayerList.vue'
 import { useMultiplayer, type RoomState } from '~/composables/useMultiplayer'
 import { useMultiplayerVoting } from '~/composables/useMultiplayerVoting'
 import { useMultiplayerQuestions } from '~/composables/useMultiplayerQuestions'
+import { staggerReveal, punchScale, celebrateBurst } from '~/composables/useGameAnimations'
 
 interface Props {
   roomState: DeepReadonly<RoomState>
@@ -249,6 +243,11 @@ const handleBackToLobby = () => {
 
 const isSubmitting = ref(false)
 
+// Animation refs
+const headerRowRef = ref<HTMLElement | null>(null)
+const titleBlockRef = ref<HTMLElement | null>(null)
+const winnerRef = ref<HTMLElement | null>(null)
+
 // Get host name
 const hostName = computed(() => {
   const host = roomState.value.players.find((p: any) => p.isHost)
@@ -270,7 +269,7 @@ const sortedPlayers = computed(() => {
       ...player,
       votes: playerVotes.length,
       // Public: show who voted, Anonymous: empty array
-      voters: roomState.value.answerVisibility === 'public' 
+      voters: roomState.value.answerVisibility === 'public'
         ? playerVotes.map((v: any) => ({ nickname: v.nickname, socketId: v.socketId }))
         : []
     }
@@ -312,6 +311,11 @@ const submitVote = async (playerSocketId: string) => {
   } finally {
     isSubmitting.value = false
   }
+}
+
+const handleVote = (playerSocketId: string, evt: MouseEvent) => {
+  punchScale(evt.currentTarget as HTMLElement)
+  submitVote(playerSocketId)
 }
 
 const showResults = () => {
@@ -365,70 +369,34 @@ const handleSkipQuestion = () => withHostLoading(async () => {
   }
 })
 
+const handleNext = (evt: MouseEvent) => {
+  punchScale(evt.currentTarget as HTMLElement)
+  getNextQuestion()
+}
+
+const handleSkip = (evt: MouseEvent) => {
+  punchScale(evt.currentTarget as HTMLElement)
+  handleSkipQuestion()
+}
+
+// Celebrate with a GSAP particle burst instead of CSS confetti emoji when a
+// winner is revealed.
+watch(winner, async (newWinner, oldWinner) => {
+  if (newWinner && !oldWinner) {
+    await nextTick()
+    celebrateBurst(winnerRef.value)
+  }
+})
+
 onMounted(() => {
   loadInitialQuestions(loadQuestions)
+  nextTick(() => {
+    staggerReveal([headerRowRef.value, titleBlockRef.value])
+  })
 })
 </script>
 
 <style scoped>
-@keyframes slide-up {
-  from {
-    opacity: 0;
-    transform: translateY(20px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-.animate-slide-up {
-  animation: slide-up 0.5s ease-out forwards;
-  opacity: 0;
-}
-
-@keyframes confetti-fall {
-  0% {
-    transform: translateY(-100vh) rotate(0deg);
-    opacity: 1;
-  }
-  100% {
-    transform: translateY(100vh) rotate(720deg);
-    opacity: 0;
-  }
-}
-
-.confetti {
-  position: absolute;
-  font-size: 1.5rem;
-  animation: confetti-fall 3s linear infinite;
-  pointer-events: none;
-}
-
-.confetti-1 {
-  left: 10%;
-  animation-delay: 0s;
-}
-
-.confetti-2 {
-  left: 30%;
-  animation-delay: 0.5s;
-}
-
-.confetti-3 {
-  left: 50%;
-  animation-delay: 1s;
-}
-
-.confetti-4 {
-  left: 70%;
-  animation-delay: 1.5s;
-}
-
-.confetti-5 {
-  left: 90%;
-  animation-delay: 2s;
-}
-
 .fade-enter-active,
 .fade-leave-active {
   transition: opacity 0.3s;

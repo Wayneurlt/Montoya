@@ -1,110 +1,96 @@
 <template>
   <div class="max-w-3xl mx-auto relative z-10 pt-4 sm:pt-6 md:pt-8">
     <!-- Header -->
-    <MultiplayerGameHeader
-      :room-code="roomState.roomCode"
-      :is-host="isHost"
-      @back-to-lobby="handleBackToLobby"
-      @change-game="handleChangeGame"
-    />
+    <div ref="headerRowRef">
+      <MultiplayerGameHeader
+        :room-code="roomState.roomCode"
+        :is-host="isHost"
+        @back-to-lobby="handleBackToLobby"
+        @change-game="handleChangeGame"
+      />
+    </div>
 
     <!-- Game Title -->
-    <div class="text-center mb-8">
-      <h1 class="text-4xl sm:text-5xl md:text-6xl font-black mb-4 bg-clip-text text-transparent bg-gradient-to-r from-purple-400 via-pink-500 to-cyan-400 drop-shadow-2xl">
-        🤔 Would You Rather
+    <div ref="titleBlockRef" class="text-center mb-6 sm:mb-8">
+      <h1 class="font-display text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold uppercase mb-2 sm:mb-4 text-paper">
+        Would You <span class="text-hot">Rather</span>
       </h1>
-      <p class="text-purple-200/80 text-sm font-medium">{{ roomState.answerVisibility === 'anonymous' ? 'Anonymous Mode' : 'Public Mode' }}</p>
+      <p class="text-paper/60 text-xs sm:text-sm font-medium">{{ roomState.answerVisibility === 'anonymous' ? 'Anonymous Mode' : 'Public Mode' }}</p>
     </div>
 
     <!-- Loading State -->
-    <div v-if="questionsLoading" class="mb-6 bg-blue-500/20 border border-blue-400/30 rounded-xl p-4 text-center">
+    <div v-if="questionsLoading" class="mb-4 sm:mb-6 card-poster p-4 text-center">
       <div class="flex items-center justify-center gap-3">
-        <Icon icon="svg-spinners:3-dots-fade" class="w-6 h-6" />
+        <Icon icon="svg-spinners:3-dots-fade" class="w-6 h-6 text-hot" />
         <span class="font-medium">Loading questions from database...</span>
       </div>
     </div>
 
     <!-- Playing Phase: Show Question and Voting -->
-    <div v-if="roomState.gamePhase === 'playing' && roomState.currentPrompt && parsedOptions" class="space-y-6">
-      <!-- Two Options as Tappable Cards -->
-      <div class="relative grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+    <div v-if="roomState.gamePhase === 'playing' && roomState.currentPrompt && parsedOptions" class="space-y-4 sm:space-y-6">
+      <!-- Two Options as full choice cards -->
+      <div class="relative grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4 mb-2">
         <!-- Option A -->
         <button
-          @click="submitVote('Option A')"
+          @click="handleVote('Option A', $event)"
           :disabled="isSubmitting || hasVoted"
           :class="[
-            'group cursor-pointer bg-gradient-to-br from-red-800/30 to-red-950/20 hover:from-red-800/40 hover:to-red-950/30 backdrop-blur-md rounded-2xl p-8 border-2 border-red-600/40 hover:border-red-500/70 transition-all duration-300 transform hover:scale-105 min-h-[250px] flex flex-col justify-center relative',
-            { 'ring-4 ring-red-500 scale-105': myVote === 'Option A' },
+            'mode-card min-h-[180px] sm:min-h-[220px]',
+            { 'is-active': myVote === 'Option A' },
             { 'opacity-50 cursor-not-allowed': hasVoted && myVote !== 'Option A' }
           ]"
         >
-          <div class="text-center">
-            <div class="mb-4">
-              <span class="inline-block bg-red-600 text-white px-4 py-2 rounded-full font-bold text-lg">
-                Option A
-              </span>
-            </div>
-            <p class="text-xl md:text-2xl font-bold text-white leading-relaxed">
-              {{ parsedOptions.optionA }}
-            </p>
-            <div v-if="myVote === 'Option A'" class="mt-4">
-              <Icon icon="mdi:check-circle" class="w-8 h-8 text-red-400 mx-auto animate-bounce" />
-            </div>
-          </div>
+          <span class="mode-card-title">Option A</span>
+          <p class="text-sm sm:text-base font-medium text-center leading-relaxed">
+            {{ parsedOptions.optionA }}
+          </p>
+          <Icon icon="mdi:check-circle" class="mode-card-check" />
         </button>
 
         <!-- VS Badge -->
         <div class="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 z-20 hidden md:block">
-          <div class="bg-gradient-to-r from-red-700 to-orange-700 px-4 py-2 rounded-full shadow-2xl border-2 border-amber-500/40">
-            <span class="text-xl font-black">VS</span>
+          <div class="bg-ink border-2 border-white/20 px-4 py-2 rounded-full shadow-hard-sm">
+            <span class="font-display font-bold uppercase text-sm text-paper/70">VS</span>
           </div>
         </div>
 
         <!-- Option B -->
         <button
-          @click="submitVote('Option B')"
+          @click="handleVote('Option B', $event)"
           :disabled="isSubmitting || hasVoted"
           :class="[
-            'group cursor-pointer bg-gradient-to-br from-orange-800/30 to-orange-950/20 hover:from-orange-800/40 hover:to-orange-950/30 backdrop-blur-md rounded-2xl p-8 border-2 border-orange-600/40 hover:border-orange-500/70 transition-all duration-300 transform hover:scale-105 min-h-[250px] flex flex-col justify-center relative',
-            { 'ring-4 ring-orange-500 scale-105': myVote === 'Option B' },
+            'mode-card is-volt min-h-[180px] sm:min-h-[220px]',
+            { 'is-active': myVote === 'Option B' },
             { 'opacity-50 cursor-not-allowed': hasVoted && myVote !== 'Option B' }
           ]"
         >
-          <div class="text-center">
-            <div class="mb-4">
-              <span class="inline-block bg-orange-600 text-white px-4 py-2 rounded-full font-bold text-lg">
-                Option B
-              </span>
-            </div>
-            <p class="text-xl md:text-2xl font-bold text-white leading-relaxed">
-              {{ parsedOptions.optionB }}
-            </p>
-            <div v-if="myVote === 'Option B'" class="mt-4">
-              <Icon icon="mdi:check-circle" class="w-8 h-8 text-orange-400 mx-auto animate-bounce" />
-            </div>
-          </div>
+          <span class="mode-card-title">Option B</span>
+          <p class="text-sm sm:text-base font-medium text-center leading-relaxed">
+            {{ parsedOptions.optionB }}
+          </p>
+          <Icon icon="mdi:check-circle" class="mode-card-check" />
         </button>
       </div>
 
       <!-- Already Voted -->
-      <div v-if="hasVoted" class="bg-purple-500/20 border-2 border-purple-500/50 rounded-xl p-6 text-center">
-        <Icon icon="mdi:check-circle" class="w-16 h-16 mx-auto mb-4 text-green-400" />
-        <p class="text-xl font-semibold">You've voted! Waiting for others...</p>
+      <div v-if="hasVoted" class="bg-volt/10 border-2 border-volt/40 rounded-lg p-4 sm:p-6 text-center">
+        <Icon icon="mdi:check-circle" class="w-12 h-12 sm:w-14 sm:h-14 mx-auto mb-3 text-volt" />
+        <p class="text-lg sm:text-xl font-display font-bold uppercase tracking-wide">You've voted! Waiting for others...</p>
       </div>
 
       <!-- Live Vote Count - Real-time Animation -->
-      <div v-if="votes.length > 0" class="bg-white/10 backdrop-blur-md rounded-xl p-4 border border-white/20">
-        <h3 class="font-bold mb-3">Live Results</h3>
+      <div v-if="votes.length > 0" class="card-poster p-4">
+        <h3 class="font-display uppercase tracking-wide text-sm text-paper/70 mb-3">Live Results</h3>
         <div class="space-y-3">
           <!-- Option A -->
           <div>
             <div class="flex items-center justify-between mb-2">
-              <span class="font-semibold">Option A:</span>
-              <span class="text-red-400 font-bold">{{ optionACount }} votes ({{ optionAPercentage }}%)</span>
+              <span class="font-medium">Option A:</span>
+              <span class="text-hot font-bold">{{ optionACount }} votes ({{ optionAPercentage }}%)</span>
             </div>
-            <div class="w-full bg-white/10 rounded-full h-4 overflow-hidden">
-              <div 
-                class="bg-red-500 h-4 rounded-full transition-all duration-500 ease-out"
+            <div class="w-full bg-white/10 rounded-full h-3 sm:h-4 overflow-hidden">
+              <div
+                class="bg-hot h-3 sm:h-4 rounded-full transition-all duration-500 ease-out"
                 :style="{ width: optionAPercentage + '%' }"
               ></div>
             </div>
@@ -113,22 +99,22 @@
               <div
                 v-for="vote in optionAVotes"
                 :key="vote.socketId || Math.random()"
-                class="text-sm text-white/80 animate-fade-in"
+                class="text-sm text-paper/70"
               >
                 {{ vote.nickname || 'Player' }}
               </div>
             </div>
           </div>
-          
+
           <!-- Option B -->
           <div>
             <div class="flex items-center justify-between mb-2">
-              <span class="font-semibold">Option B:</span>
-              <span class="text-orange-400 font-bold">{{ optionBCount }} votes ({{ optionBPercentage }}%)</span>
+              <span class="font-medium">Option B:</span>
+              <span class="text-volt font-bold">{{ optionBCount }} votes ({{ optionBPercentage }}%)</span>
             </div>
-            <div class="w-full bg-white/10 rounded-full h-4 overflow-hidden">
-              <div 
-                class="bg-orange-500 h-4 rounded-full transition-all duration-500 ease-out"
+            <div class="w-full bg-white/10 rounded-full h-3 sm:h-4 overflow-hidden">
+              <div
+                class="bg-volt h-3 sm:h-4 rounded-full transition-all duration-500 ease-out"
                 :style="{ width: optionBPercentage + '%' }"
               ></div>
             </div>
@@ -137,53 +123,53 @@
               <div
                 v-for="vote in optionBVotes"
                 :key="vote.socketId || Math.random()"
-                class="text-sm text-white/80 animate-fade-in"
+                class="text-sm text-paper/70"
               >
                 {{ vote.nickname || 'Player' }}
               </div>
             </div>
           </div>
-          
-          <div class="text-sm text-white/60 text-center">
+
+          <div class="text-sm text-paper/50 text-center">
             {{ votes.length }} / {{ roomState.players.length }} players voted
           </div>
         </div>
       </div>
 
       <!-- Host: Skip Question Button -->
-      <div v-if="isHost" class="bg-yellow-500/20 rounded-xl p-4 border border-yellow-500/30">
+      <div v-if="isHost" class="card-poster p-4">
         <button
-          @click="handleSkipQuestion"
+          @click="handleSkip"
           :disabled="isLoading"
-          class="w-full bg-gradient-to-r from-yellow-500 to-orange-500 hover:from-yellow-600 hover:to-orange-600 text-white px-6 py-3 rounded-xl font-black shadow-xl transition-all transform hover:scale-105 disabled:opacity-50"
+          class="w-full bg-card border border-white/10 hover:border-volt/50 text-paper px-6 py-2.5 sm:py-3 rounded-lg font-display font-bold uppercase tracking-wide transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
         >
-          <Icon icon="mdi:skip-next" class="w-5 h-5 inline mr-2" />
+          <Icon icon="mdi:skip-next" class="w-5 h-5" />
           Skip Question
         </button>
       </div>
     </div>
 
     <!-- Results Phase -->
-    <div v-else-if="roomState.gamePhase === 'results'" class="space-y-6">
-      <div class="bg-white/10 backdrop-blur-md rounded-2xl p-6 border border-white/20">
-        <h2 class="text-2xl font-bold mb-4 text-center">Results</h2>
-        
-        <div class="space-y-4">
+    <div v-else-if="roomState.gamePhase === 'results'" class="space-y-4 sm:space-y-6">
+      <div class="card-poster p-6 sm:p-8">
+        <h2 class="font-display text-xl sm:text-2xl font-bold uppercase tracking-wide mb-4 text-center">Results</h2>
+
+        <div class="space-y-3 sm:space-y-4">
           <!-- Option A -->
-          <div class="bg-red-500/20 border-2 border-red-500/50 rounded-xl p-4">
+          <div class="bg-hot/10 border-2 border-hot/40 rounded-lg p-4">
             <div class="flex items-center justify-between mb-2">
-              <span class="font-bold text-lg">Option A</span>
-              <span class="text-2xl font-black text-red-400">{{ optionACount }} ({{ optionAPercentage }}%)</span>
+              <span class="font-display font-bold uppercase tracking-wide">Option A</span>
+              <span class="text-2xl font-display font-bold text-hot">{{ optionACount }} ({{ optionAPercentage }}%)</span>
             </div>
-            <div class="w-full bg-white/10 rounded-full h-4 mb-2">
-              <div class="bg-red-500 h-4 rounded-full" :style="{ width: optionAPercentage + '%' }"></div>
+            <div class="w-full bg-white/10 rounded-full h-3 sm:h-4 mb-2">
+              <div class="bg-hot h-3 sm:h-4 rounded-full" :style="{ width: optionAPercentage + '%' }"></div>
             </div>
             <!-- Public: Show who picked -->
             <div v-if="roomState.answerVisibility === 'public' && optionAVotes.length > 0" class="mt-2 space-y-1">
               <div
                 v-for="vote in optionAVotes"
                 :key="vote.socketId || Math.random()"
-                class="text-sm text-white/80"
+                class="text-sm text-paper/70"
               >
                 {{ vote.nickname || 'Player' }}
               </div>
@@ -191,20 +177,20 @@
           </div>
 
           <!-- Option B -->
-          <div class="bg-orange-500/20 border-2 border-orange-500/50 rounded-xl p-4">
+          <div class="bg-volt/10 border-2 border-volt/40 rounded-lg p-4">
             <div class="flex items-center justify-between mb-2">
-              <span class="font-bold text-lg">Option B</span>
-              <span class="text-2xl font-black text-orange-400">{{ optionBCount }} ({{ optionBPercentage }}%)</span>
+              <span class="font-display font-bold uppercase tracking-wide">Option B</span>
+              <span class="text-2xl font-display font-bold text-volt">{{ optionBCount }} ({{ optionBPercentage }}%)</span>
             </div>
-            <div class="w-full bg-white/10 rounded-full h-4 mb-2">
-              <div class="bg-orange-500 h-4 rounded-full" :style="{ width: optionBPercentage + '%' }"></div>
+            <div class="w-full bg-white/10 rounded-full h-3 sm:h-4 mb-2">
+              <div class="bg-volt h-3 sm:h-4 rounded-full" :style="{ width: optionBPercentage + '%' }"></div>
             </div>
             <!-- Public: Show who picked -->
             <div v-if="roomState.answerVisibility === 'public' && optionBVotes.length > 0" class="mt-2 space-y-1">
               <div
                 v-for="vote in optionBVotes"
                 :key="vote.socketId || Math.random()"
-                class="text-sm text-white/80"
+                class="text-sm text-paper/70"
               >
                 {{ vote.nickname || 'Player' }}
               </div>
@@ -214,13 +200,13 @@
       </div>
 
       <!-- Host Controls for Next Round -->
-      <div v-if="isHost" class="bg-purple-500/20 rounded-xl p-6 border border-purple-500/30">
+      <div v-if="isHost" class="card-poster p-4 sm:p-6">
         <button
-          @click="getNextQuestion"
+          @click="handleNext"
           :disabled="isLoading"
-          class="w-full bg-gradient-to-r from-purple-600 via-pink-600 to-purple-600 hover:from-purple-500 hover:via-pink-500 hover:to-purple-500 text-white px-6 py-3 rounded-xl font-black shadow-xl transition-all transform hover:scale-105 disabled:opacity-50"
+          class="w-full bg-hot text-ink shadow-hard hover:brightness-110 px-6 py-2.5 sm:py-3 rounded-lg font-display font-bold uppercase tracking-wide transition-[filter] disabled:opacity-50 flex items-center justify-center gap-2"
         >
-          <Icon icon="mdi:arrow-right" class="w-5 h-5 inline mr-2" />
+          <Icon icon="mdi:arrow-right" class="w-5 h-5" />
           {{ isLoading ? 'Loading...' : 'Next Question' }}
         </button>
       </div>
@@ -233,20 +219,20 @@
     </div>
 
     <!-- Game Started but No Question Yet -->
-    <div v-else-if="roomState.gamePhase === 'playing' && !roomState.currentPrompt" class="space-y-6">
-      <div class="bg-white/10 backdrop-blur-md rounded-2xl p-8 border border-white/20 text-center">
-        <Icon icon="mdi:thought-bubble" class="w-16 h-16 mx-auto mb-4 text-purple-400" />
-        <p class="text-xl font-semibold mb-4">Game Started!</p>
-        <p class="text-white/60 mb-6">Waiting for host to load the first question...</p>
-        
+    <div v-else-if="roomState.gamePhase === 'playing' && !roomState.currentPrompt" class="space-y-4 sm:space-y-6">
+      <div class="card-poster p-8 text-center">
+        <Icon icon="mdi:thought-bubble" class="w-14 h-14 sm:w-16 sm:h-16 mx-auto mb-4 text-hot" />
+        <p class="text-lg sm:text-xl font-display font-bold uppercase tracking-wide mb-2">Game Started!</p>
+        <p class="text-paper/60 mb-6">Waiting for host to load the first question...</p>
+
         <!-- Host: Load First Question -->
-        <div v-if="isHost" class="bg-purple-500/20 rounded-xl p-6 border border-purple-500/30">
+        <div v-if="isHost">
           <button
-            @click="getNextQuestion"
+            @click="handleNext"
             :disabled="isLoading"
-            class="w-full bg-gradient-to-r from-purple-600 via-pink-600 to-purple-600 hover:from-purple-500 hover:via-pink-500 hover:to-purple-500 text-white px-6 py-3 rounded-xl font-black shadow-xl transition-all transform hover:scale-105 disabled:opacity-50"
+            class="w-full bg-hot text-ink shadow-hard hover:brightness-110 px-6 py-2.5 sm:py-3 rounded-lg font-display font-bold uppercase tracking-wide transition-[filter] disabled:opacity-50 flex items-center justify-center gap-2"
           >
-            <Icon icon="mdi:arrow-right" class="w-5 h-5 inline mr-2" />
+            <Icon icon="mdi:arrow-right" class="w-5 h-5" />
             {{ isLoading ? 'Loading...' : 'Load First Question' }}
           </button>
         </div>
@@ -266,7 +252,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, type DeepReadonly } from 'vue'
+import { ref, computed, onMounted, nextTick, type DeepReadonly } from 'vue'
 import { Icon } from '@iconify/vue'
 import { useRouter } from 'vue-router'
 import { navigateTo } from '#app'
@@ -276,6 +262,7 @@ import MultiplayerPlayerList from './MultiplayerPlayerList.vue'
 import { useMultiplayer, type RoomState } from '~/composables/useMultiplayer'
 import { useMultiplayerVoting } from '~/composables/useMultiplayerVoting'
 import { useMultiplayerQuestions } from '~/composables/useMultiplayerQuestions'
+import { staggerReveal, punchScale } from '~/composables/useGameAnimations'
 
 interface Props {
   roomState: DeepReadonly<RoomState>
@@ -308,7 +295,9 @@ const handleBackToLobby = () => {
 
 const isSubmitting = ref(false)
 
-const votes = computed(() => multiplayer.votes.value || [])
+// Animation refs
+const headerRowRef = ref<HTMLElement | null>(null)
+const titleBlockRef = ref<HTMLElement | null>(null)
 
 // Get host name
 const hostName = computed(() => {
@@ -316,10 +305,12 @@ const hostName = computed(() => {
   return host?.nickname || 'Host'
 })
 
+const votes = computed(() => multiplayer.votes.value || [])
+
 const parsedOptions = computed(() => {
   const prompt = roomState.value.currentPrompt
   if (!prompt) return null
-  
+
   const text = prompt.text || prompt
   // Parse "Would you rather X or Y?" format
   const match = text.match(/Would you rather (.+?) or (.+?)\??$/i)
@@ -329,7 +320,7 @@ const parsedOptions = computed(() => {
       optionB: match[2].trim()
     }
   }
-  
+
   // Fallback: split by " or "
   const parts = text.split(' or ')
   if (parts.length === 2) {
@@ -338,7 +329,7 @@ const parsedOptions = computed(() => {
       optionB: parts[1].trim()
     }
   }
-  
+
   return null
 })
 
@@ -377,6 +368,11 @@ const submitVote = async (vote: 'Option A' | 'Option B') => {
   } finally {
     isSubmitting.value = false
   }
+}
+
+const handleVote = (vote: 'Option A' | 'Option B', evt: MouseEvent) => {
+  punchScale(evt.currentTarget as HTMLElement)
+  submitVote(vote)
 }
 
 const showResults = () => {
@@ -430,26 +426,25 @@ const handleSkipQuestion = () => withHostLoading(async () => {
   }
 })
 
+const handleNext = (evt: MouseEvent) => {
+  punchScale(evt.currentTarget as HTMLElement)
+  getNextQuestion()
+}
+
+const handleSkip = (evt: MouseEvent) => {
+  punchScale(evt.currentTarget as HTMLElement)
+  handleSkipQuestion()
+}
+
 onMounted(() => {
   loadInitialQuestions(loadQuestions)
+  nextTick(() => {
+    staggerReveal([headerRowRef.value, titleBlockRef.value])
+  })
 })
 </script>
 
 <style scoped>
-@keyframes fade-in {
-  from {
-    opacity: 0;
-    transform: translateY(-10px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-.animate-fade-in {
-  animation: fade-in 0.3s ease-out;
-}
-
 .fade-enter-active,
 .fade-leave-active {
   transition: opacity 0.3s;

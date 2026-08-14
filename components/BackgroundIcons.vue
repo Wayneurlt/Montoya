@@ -25,12 +25,12 @@ import { Icon } from "@iconify/vue";
 
 // All available games with their icons
 const gameIcons = [
-  { icon: "mdi:cards-heart", color: "text-pink-400" },
-  { icon: "mdi:dice-6", color: "text-purple-400" },
-  { icon: "mdi:glass-cocktail", color: "text-cyan-400" },
-  { icon: "mdi:hand-back-right", color: "text-orange-400" },
-  { icon: "mdi:account-group-outline", color: "text-pink-300" },
-  { icon: "mdi:help-circle", color: "text-purple-300" },
+  { icon: "mdi:cards-heart", color: "text-hot" },
+  { icon: "mdi:dice-6", color: "text-volt" },
+  { icon: "mdi:glass-cocktail", color: "text-hot" },
+  { icon: "mdi:hand-back-right", color: "text-volt" },
+  { icon: "mdi:account-group-outline", color: "text-paper" },
+  { icon: "mdi:help-circle", color: "text-paper" },
 ];
 
 // Seeded random function for consistent patterns
