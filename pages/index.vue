@@ -39,10 +39,47 @@
       </div>
 
       <!-- Tagline -->
-      <p ref="taglineRef" class="text-sm sm:text-base md:text-lg lg:text-xl xl:text-2xl mb-4 sm:mb-6 md:mb-8 lg:mb-12 text-paper/70 font-bold tracking-wide px-2 flex flex-wrap items-center justify-center gap-2">
+      <p ref="taglineRef" class="text-sm sm:text-base md:text-lg lg:text-xl xl:text-2xl mb-4 sm:mb-6 md:mb-8 text-paper/70 font-bold tracking-wide px-2 flex flex-wrap items-center justify-center gap-2">
         <span>Where bad decisions make <span class="text-hot">dangerous memories</span></span>
         <Icon icon="mdi:fire" class="w-5 h-5 sm:w-6 sm:h-6 text-hot" />
       </p>
+
+      <!-- How to play: the one decision every visitor needs to make, right up
+           front — a compact tap-row per path (icon, name, one line, arrow)
+           rather than a tall feature card, so both fit above the fold together
+           with the hero instead of being buried below the game grid. -->
+      <div ref="buttonsRef" class="flex flex-col gap-3 max-w-md mx-auto px-4 mb-6 sm:mb-8 md:mb-10 text-left">
+        <NuxtLink
+          to="/setup"
+          @click="punchScale($event.currentTarget)"
+          class="group card-poster p-3 sm:p-4 flex items-center gap-3 sm:gap-4 hover:-translate-y-0.5 transition-transform border-2 border-transparent hover:border-hot"
+        >
+          <Icon icon="mdi:gamepad-variant" class="w-9 h-9 sm:w-10 sm:h-10 text-hot flex-shrink-0 group-hover:scale-110 transition-transform" />
+          <div class="flex-1 min-w-0">
+            <div class="flex items-center gap-2 mb-0.5 flex-wrap">
+              <h2 class="font-display text-base sm:text-lg font-bold uppercase text-paper">Pass &amp; Play</h2>
+              <span class="badge-stamp bg-hot text-ink text-[9px] px-2 py-0.5">1 Phone</span>
+            </div>
+            <p class="text-xs sm:text-sm text-paper/70">One phone, everyone takes turns.</p>
+          </div>
+          <Icon icon="mdi:chevron-right" class="w-6 h-6 sm:w-7 sm:h-7 text-hot flex-shrink-0 group-hover:translate-x-1 transition-transform" />
+        </NuxtLink>
+        <NuxtLink
+          to="/lobby"
+          @click="punchScale($event.currentTarget)"
+          class="group card-poster-volt card-poster p-3 sm:p-4 flex items-center gap-3 sm:gap-4 hover:-translate-y-0.5 transition-transform border-2 border-transparent hover:border-volt"
+        >
+          <Icon icon="mdi:account-group" class="w-9 h-9 sm:w-10 sm:h-10 text-volt flex-shrink-0 group-hover:scale-110 transition-transform" />
+          <div class="flex-1 min-w-0">
+            <div class="flex items-center gap-2 mb-0.5 flex-wrap">
+              <h2 class="font-display text-base sm:text-lg font-bold uppercase text-paper">Multiplayer</h2>
+              <span class="badge-stamp bg-volt text-ink text-[9px] px-2 py-0.5">Group</span>
+            </div>
+            <p class="text-xs sm:text-sm text-paper/70">Everyone joins from their own phone.</p>
+          </div>
+          <Icon icon="mdi:chevron-right" class="w-6 h-6 sm:w-7 sm:h-7 text-volt flex-shrink-0 group-hover:translate-x-1 transition-transform" />
+        </NuxtLink>
+      </div>
 
       <!-- Game Preview: a spread of mini cards, family games in volt, adult in hot -->
       <div ref="previewGridRef" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2 sm:gap-2.5 md:gap-3 lg:gap-4 mb-4 sm:mb-6 md:mb-8 lg:mb-12 max-w-5xl mx-auto px-4">
@@ -58,52 +95,6 @@
           <h3 class="font-display text-xs sm:text-sm md:text-base font-bold uppercase mb-0.5 sm:mb-1 text-paper">{{ name }}</h3>
           <p class="text-[10px] sm:text-xs text-paper/60">{{ tag }}</p>
         </div>
-      </div>
-
-      <!-- How to play: two full paths, not two plain buttons -->
-      <div ref="buttonsRef" class="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-5 md:gap-6 max-w-4xl mx-auto px-4 mb-4 sm:mb-6 md:mb-8 text-left">
-        <NuxtLink
-          to="/setup"
-          @click="punchScale($event.currentTarget)"
-          class="group card-poster p-4 sm:p-5 md:p-6 flex flex-col hover:-translate-y-1 transition-transform border-2 border-transparent hover:border-hot"
-        >
-          <div class="flex items-center justify-between mb-3 sm:mb-4">
-            <Icon icon="mdi:gamepad-variant" class="w-9 h-9 sm:w-10 sm:h-10 md:w-12 md:h-12 text-hot group-hover:scale-110 transition-transform" />
-            <span class="badge-stamp bg-hot text-ink text-[10px] sm:text-xs px-2.5 sm:px-3 py-1">1 Phone</span>
-          </div>
-          <h2 class="font-display text-lg sm:text-xl md:text-2xl font-bold uppercase mb-1 text-paper">Pass &amp; Play</h2>
-          <p class="text-xs sm:text-sm md:text-base text-paper/70 mb-3">Everyone huddles around one phone and passes it around.</p>
-          <ul class="space-y-1.5 sm:space-y-2 text-xs sm:text-sm text-paper/70">
-            <li class="flex items-center gap-1.5"><Icon icon="mdi:check-circle" class="w-4 h-4 text-hot flex-shrink-0" />No setup, start instantly</li>
-            <li class="flex items-center gap-1.5"><Icon icon="mdi:check-circle" class="w-4 h-4 text-hot flex-shrink-0" />Great for a small group</li>
-          </ul>
-          <div class="mt-auto pt-3 sm:pt-4">
-            <div class="flex items-center justify-center gap-2 bg-white/5 border border-white/10 px-3 py-2 rounded-md">
-              <p class="text-xs sm:text-sm font-bold font-display uppercase tracking-wide text-hot">Join Using One Device</p>
-            </div>
-          </div>
-        </NuxtLink>
-        <NuxtLink
-          to="/lobby"
-          @click="punchScale($event.currentTarget)"
-          class="group card-poster-volt card-poster p-4 sm:p-5 md:p-6 flex flex-col hover:-translate-y-1 transition-transform border-2 border-transparent hover:border-volt"
-        >
-          <div class="flex items-center justify-between mb-3 sm:mb-4">
-            <Icon icon="mdi:account-group" class="w-9 h-9 sm:w-10 sm:h-10 md:w-12 md:h-12 text-volt group-hover:scale-110 transition-transform" />
-            <span class="badge-stamp bg-volt text-ink text-[10px] sm:text-xs px-2.5 sm:px-3 py-1">Group</span>
-          </div>
-          <h2 class="font-display text-lg sm:text-xl md:text-2xl font-bold uppercase mb-1 text-paper">Multiplayer</h2>
-          <p class="text-xs sm:text-sm md:text-base text-paper/70 mb-3">Everyone joins from their own phone — the host runs the room.</p>
-          <ul class="space-y-1.5 sm:space-y-2 text-xs sm:text-sm text-paper/70">
-            <li class="flex items-center gap-1.5"><Icon icon="mdi:check-circle" class="w-4 h-4 text-volt flex-shrink-0" />Real-time, synced across the room</li>
-            <li class="flex items-center gap-1.5"><Icon icon="mdi:check-circle" class="w-4 h-4 text-volt flex-shrink-0" />Private prompts stay private</li>
-          </ul>
-          <div class="mt-auto pt-3 sm:pt-4">
-            <div class="flex items-center justify-center gap-2 bg-white/5 border border-white/10 px-3 py-2 rounded-md">
-              <p class="text-xs sm:text-sm font-bold font-display uppercase tracking-wide text-volt">Join Using Multiple Devices</p>
-            </div>
-          </div>
-        </NuxtLink>
       </div>
 
       <!-- Feature Pills -->
@@ -261,7 +252,7 @@ onMounted(() => {
     localStorage.removeItem('montoya_game_state');
   }
 
-  staggerReveal([heroRef.value, taglineRef.value, previewGridRef.value, buttonsRef.value, pillsRef.value]);
+  staggerReveal([heroRef.value, taglineRef.value, buttonsRef.value, previewGridRef.value, pillsRef.value]);
   startHeroCardFloat();
 });
 
