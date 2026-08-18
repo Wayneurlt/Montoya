@@ -42,7 +42,7 @@
           <div class="text-center relative z-10 w-full">
             <!-- Never Have I Ever prefix -->
             <div class="mb-6 flex justify-center">
-              <div class="badge-stamp px-6 py-3 text-lg bg-hot text-ink">
+              <div class="badge-stamp px-6 py-3 text-lg bg-hot text-paper">
                 <Icon icon="mdi:hand-pointing-right" class="w-6 h-6" />
                 Never Have I Ever
               </div>
@@ -56,24 +56,26 @@
         </div>
       </div>
 
-      <!-- Action Buttons -->
-      <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-        <button
-          @click="handleFetchAnother"
-          class="bg-card hover:bg-white/5 border border-white/10 px-8 py-5 rounded-lg font-display font-bold uppercase tracking-wide text-lg flex items-center justify-center gap-3 transition-colors"
-        >
-          <Icon icon="mdi:refresh" class="w-6 h-6" />
-          <span>Next Question</span>
-        </button>
+      <!-- Primary Action Buttons: kept reachable without scrolling -->
+      <StickyActionBar>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 w-full">
+          <button
+            @click="handleFetchAnother"
+            class="bg-card hover:bg-white/5 border border-white/10 px-8 py-5 rounded-lg font-display font-bold uppercase tracking-wide text-lg flex items-center justify-center gap-3 transition-colors"
+          >
+            <Icon icon="mdi:refresh" class="w-6 h-6" />
+            <span>Next Question</span>
+          </button>
 
-        <button
-          @click="handleApplyPenaltyClick"
-          class="bg-hot text-ink shadow-hard hover:brightness-110 px-8 py-5 rounded-lg font-display font-bold uppercase tracking-wide text-lg flex items-center justify-center gap-3 transition-[filter]"
-        >
-          <Icon icon="mdi:glass-cocktail" class="w-6 h-6" />
-          <span>Drink Penalty</span>
-        </button>
-      </div>
+          <button
+            @click="handleApplyPenaltyClick"
+            class="bg-hot text-paper shadow-hard hover:brightness-110 px-8 py-5 rounded-lg font-display font-bold uppercase tracking-wide text-lg flex items-center justify-center gap-3 transition-[filter]"
+          >
+            <Icon icon="mdi:glass-cocktail" class="w-6 h-6" />
+            <span>Drink Penalty</span>
+          </button>
+        </div>
+      </StickyActionBar>
 
       <!-- Multiplayer Voting (if in multiplayer mode) -->
       <div v-if="isMultiplayer && roomState && roomState.gamePhase === 'playing'" class="mb-6 space-y-3">
@@ -142,14 +144,20 @@
         </div>
       </div>
 
-      <!-- Single-Device I Have Button -->
-      <div v-if="!isMultiplayer" class="mb-6">
+      <!-- Tertiary action: "I Have!" just admits + auto-advances to the next
+           question (same effective outcome as "Next Question", only slower —
+           see markAsDone()/fetchAnother() in the script), it doesn't log a
+           penalty the way "Drink Penalty" does. Demoted from a co-equal
+           full-width button to a small ghost link so it doesn't compete with
+           the two primary actions above, matching the tertiary-action
+           treatment in do-or-drink.vue. -->
+      <div v-if="!isMultiplayer" class="flex justify-center mb-6">
         <button
           @click="handleMarkAsDoneClick('yes', $event)"
-          class="w-full bg-volt text-ink shadow-hard hover:brightness-110 px-8 py-5 rounded-lg font-display font-bold uppercase tracking-wide text-lg flex items-center justify-center gap-3 transition-[filter]"
+          class="btn-ghost inline-flex items-center gap-2"
         >
-          <Icon icon="mdi:check-circle" class="w-6 h-6" />
-          <span>I Have!</span>
+          <Icon icon="mdi:check-circle" class="w-4 h-4" />
+          I Have!
         </button>
       </div>
 
@@ -167,18 +175,33 @@
         </div>
       </transition>
 
-      <!-- Game Stats -->
-      <div class="grid grid-cols-2 gap-4">
-        <div class="card-poster p-4 text-center">
-          <Icon icon="mdi:star-circle" class="w-8 h-8 mx-auto mb-2 text-hot" />
-          <p class="text-2xl font-display font-bold text-paper">{{ questionCount }}</p>
-          <p class="text-paper/50 text-sm font-display uppercase tracking-wide">Questions Asked</p>
-        </div>
+      <!-- Game Stats: collapsed by default so it doesn't eat gameplay space -->
+      <div class="card-poster overflow-hidden">
+        <button
+          type="button"
+          @click="toggleStats"
+          class="w-full flex items-center justify-between p-4 font-display uppercase tracking-wide text-sm text-paper/70"
+        >
+          <span class="flex items-center gap-2">
+            <Icon icon="mdi:chart-box" class="w-5 h-5" />
+            <span>Game Stats</span>
+          </span>
+          <Icon icon="mdi:chevron-down" class="w-5 h-5 transition-transform duration-200" :class="{ 'rotate-180': statsExpanded }" />
+        </button>
+        <div ref="statsBodyRef" class="overflow-hidden" style="height: 0">
+          <div class="grid grid-cols-2 gap-4 px-4 pb-4">
+            <div class="card-poster p-4 text-center">
+              <Icon icon="mdi:star-circle" class="w-8 h-8 mx-auto mb-2 text-hot" />
+              <p class="text-2xl font-display font-bold text-paper">{{ questionCount }}</p>
+              <p class="text-paper/50 text-sm font-display uppercase tracking-wide">Questions Asked</p>
+            </div>
 
-        <div class="card-poster card-poster-volt p-4 text-center">
-          <Icon icon="mdi:glass-cocktail" class="w-8 h-8 mx-auto mb-2 text-volt" />
-          <p class="text-2xl font-display font-bold text-paper">{{ penaltyCount }}</p>
-          <p class="text-paper/50 text-sm font-display uppercase tracking-wide">Penalties Given</p>
+            <div class="card-poster card-poster-volt p-4 text-center">
+              <Icon icon="mdi:glass-cocktail" class="w-8 h-8 mx-auto mb-2 text-volt" />
+              <p class="text-2xl font-display font-bold text-paper">{{ penaltyCount }}</p>
+              <p class="text-paper/50 text-sm font-display uppercase tracking-wide">Penalties Given</p>
+            </div>
+          </div>
         </div>
       </div>
     </div>
@@ -219,6 +242,7 @@ const { roomState, votes, isHost, submitVote, showResults, nextRound, connect } 
 let questionTracker = null;
 const showPenalty = ref(false);
 const penaltyMessage = ref('');
+const statsExpanded = ref(false);
 
 // Game statistics
 const questionCount = ref(0);
@@ -265,6 +289,32 @@ const titleBlockRef = ref(null);
 const questionCardRef = ref(null);
 const questionTextRef = ref(null);
 const penaltyBlockRef = ref(null);
+const statsBodyRef = ref(null);
+
+// Collapsed by default so the stats grid doesn't permanently eat gameplay
+// space — animate the height open/closed rather than a plain v-if (same
+// disclosure pattern as the Game Log accordion in truth-or-dare.vue /
+// do-or-drink.vue).
+const toggleStats = () => {
+  statsExpanded.value = !statsExpanded.value;
+  nextTick(() => {
+    if (!statsBodyRef.value) return;
+    if (statsExpanded.value) {
+      const targetHeight = statsBodyRef.value.scrollHeight;
+      gsap.fromTo(
+        statsBodyRef.value,
+        { height: 0 },
+        { height: targetHeight, duration: 0.35, ease: 'power2.out', onComplete: () => gsap.set(statsBodyRef.value, { height: 'auto' }) }
+      );
+    } else {
+      gsap.fromTo(
+        statsBodyRef.value,
+        { height: statsBodyRef.value.scrollHeight },
+        { height: 0, duration: 0.28, ease: 'power2.in' }
+      );
+    }
+  });
+};
 
 // Reveal beat: whenever the displayed question changes, settle the text in
 // with a quick fade/rise instead of an instant swap — mirrors how

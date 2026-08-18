@@ -41,7 +41,7 @@
                 : "Elimination"
             }}
           </span>
-          <span class="badge-stamp px-2.5 sm:px-3 py-1 sm:py-1.5 text-xs sm:text-sm bg-hot text-ink">
+          <span class="badge-stamp px-2.5 sm:px-3 py-1 sm:py-1.5 text-xs sm:text-sm bg-hot text-paper">
             Lv {{ gameLevel }}
           </span>
         </div>
@@ -196,7 +196,7 @@
               <div class="text-center w-full">
                 <!-- Level Badge -->
                 <div class="mb-6 flex justify-center">
-                  <div ref="typeBadgeRef" class="badge-stamp px-6 py-3 text-lg bg-hot text-ink">
+                  <div ref="typeBadgeRef" class="badge-stamp px-6 py-3 text-lg bg-hot text-paper">
                     <Icon :icon="intensityIcon" class="w-6 h-6" />
                     Level {{ currentCard.intensity }}
                   </div>
@@ -225,31 +225,38 @@
         </div>
       </div>
 
-      <!-- Action Buttons -->
-      <div v-if="currentCard && cardFlipped" class="grid grid-cols-1 gap-3 mb-6">
-        <button
-          ref="completeButtonRef"
-          @click="handleCompleteChallenge($event)"
-          class="w-full bg-volt text-ink shadow-hard hover:brightness-110 py-4 rounded-lg font-display font-bold uppercase tracking-wide text-lg transition-[filter] flex items-center justify-center gap-2"
-        >
-          <Icon icon="mdi:check-bold" class="w-6 h-6" />
-          Completed
-        </button>
-        <button
-          @click="handleTakeDrink($event)"
-          class="w-full bg-hot text-ink shadow-hard hover:brightness-110 py-4 rounded-lg font-display font-bold uppercase tracking-wide text-lg transition-[filter] flex items-center justify-center gap-2"
-        >
-          <Icon icon="mdi:glass-cocktail" class="w-6 h-6" />
-          Take Drink Instead ({{ currentCard.drinkAmount }})
-        </button>
+      <!-- Tertiary action: demoted from a co-equal stacked button to a small
+           text link, so the two primary actions below don't compete with it. -->
+      <div v-if="currentCard && cardFlipped" class="flex justify-center mb-2">
         <button
           @click="handleResetCard($event)"
-          class="w-full bg-card hover:bg-white/5 border border-white/10 py-3 rounded-lg font-medium transition-colors flex items-center justify-center gap-2"
+          class="btn-ghost inline-flex items-center gap-2"
         >
-          <Icon icon="mdi:refresh" class="w-5 h-5" />
+          <Icon icon="mdi:refresh" class="w-4 h-4" />
           Choose Different Card
         </button>
       </div>
+
+      <!-- Primary Action Buttons: kept reachable without scrolling -->
+      <StickyActionBar v-if="currentCard && cardFlipped">
+        <div class="flex flex-col gap-3 w-full">
+          <button
+            ref="completeButtonRef"
+            @click="handleCompleteChallenge($event)"
+            class="w-full bg-volt text-ink shadow-hard hover:brightness-110 py-4 rounded-lg font-display font-bold uppercase tracking-wide text-lg transition-[filter] flex items-center justify-center gap-2"
+          >
+            <Icon icon="mdi:check-bold" class="w-6 h-6" />
+            Completed
+          </button>
+          <button
+            @click="handleTakeDrink($event)"
+            class="w-full bg-hot text-paper shadow-hard hover:brightness-110 py-4 rounded-lg font-display font-bold uppercase tracking-wide text-lg transition-[filter] flex items-center justify-center gap-2"
+          >
+            <Icon icon="mdi:glass-cocktail" class="w-6 h-6" />
+            Take Drink Instead ({{ currentCard.drinkAmount }})
+          </button>
+        </div>
+      </StickyActionBar>
 
       <!-- Hesitation Timer -->
       <div v-if="currentCard && cardFlipped" ref="timerBlockRef" class="card-poster p-4 mb-6">

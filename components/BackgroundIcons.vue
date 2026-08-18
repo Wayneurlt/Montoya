@@ -1,129 +1,80 @@
 <template>
   <ClientOnly>
     <div class="absolute inset-0 pointer-events-none overflow-hidden">
-      <div class="absolute inset-0 game-icons-pattern">
-        <div
-          v-for="(icon, index) in backgroundIcons"
-          :key="`icon-${index}`"
-          class="absolute game-icon"
-          :style="getIconStyle(index)"
-        >
-          <Icon
-            :icon="icon.icon"
-            :class="icon.color"
-            class="w-8 h-8 md:w-12 md:h-12"
-          />
-        </div>
-      </div>
+      <div
+        v-for="orb in orbs"
+        :key="orb.id"
+        class="ambient-orb"
+        :style="orb.style"
+      />
     </div>
   </ClientOnly>
 </template>
 
 <script setup>
 import { computed } from "vue";
-import { Icon } from "@iconify/vue";
 
-// All available games with their icons
-const gameIcons = [
-  { icon: "mdi:cards-heart", color: "text-hot" },
-  { icon: "mdi:dice-6", color: "text-volt" },
-  { icon: "mdi:glass-cocktail", color: "text-hot" },
-  { icon: "mdi:hand-back-right", color: "text-volt" },
-  { icon: "mdi:account-group-outline", color: "text-paper" },
-  { icon: "mdi:help-circle", color: "text-paper" },
-];
-
-// Seeded random function for consistent patterns
+// A handful of large, very low-opacity ambient glow orbs (crimson/gold)
+// that drift slowly — replaces the old tiled icon wallpaper with a
+// restrained, cinematic backdrop instead of clip-art.
 const seededRandom = (seed) => {
   const x = Math.sin(seed) * 10000;
   return x - Math.floor(x);
 };
 
-// Generate background icons pattern (WhatsApp style)
-const backgroundIcons = computed(() => {
-  const icons = [];
-  // Create a grid pattern with ~100-120 icons for good coverage
-  const iconCount = 120;
-  for (let i = 0; i < iconCount; i++) {
-    icons.push(gameIcons[i % gameIcons.length]);
-  }
-  return icons;
-});
+const orbDefs = [
+  { color: "hot", top: 8, left: 10, size: 34 },
+  { color: "volt", top: 65, left: 82, size: 30 },
+  { color: "hot", top: 78, left: 18, size: 26 },
+  { color: "volt", top: 20, left: 88, size: 22 },
+];
 
-// Generate deterministic but varied positions for icons
-const getIconStyle = (index) => {
-  // Create a tiled pattern similar to WhatsApp
-  const cols = 10; // 10 columns for better coverage
-  const rows = Math.ceil(backgroundIcons.value.length / cols);
-  const col = index % cols;
-  const row = Math.floor(index / cols);
-  
-  // Use seeded random for consistent but varied positions
-  const seed = index * 7919; // Prime number for better distribution
-  const randomX = seededRandom(seed);
-  const randomY = seededRandom(seed + 1);
-  const randomRot = seededRandom(seed + 2);
-  const randomSize = seededRandom(seed + 3);
-  const randomDelay = seededRandom(seed + 4);
-  
-  // Add some randomness to break the grid but keep it organized
-  const baseX = (col * (100 / cols)) + (randomX * 8 - 4);
-  const baseY = (row * (100 / rows)) + (randomY * 8 - 4);
-  
-  // Random rotation for variety (0-360 degrees)
-  const rotation = randomRot * 360;
-  
-  // Random size variation (0.7x to 1.1x)
-  const sizeVariation = 0.7 + randomSize * 0.4;
-  
-  return {
-    left: `${Math.max(0, Math.min(100, baseX))}%`,
-    top: `${Math.max(0, Math.min(100, baseY))}%`,
-    '--rotation': `${rotation}deg`,
-    '--scale': sizeVariation,
-    animationDelay: `${randomDelay * 20}s`,
-  };
-};
+const orbs = computed(() =>
+  orbDefs.map((orb, index) => {
+    const seed = index * 7919;
+    const duration = 22 + seededRandom(seed) * 10;
+    const delay = seededRandom(seed + 1) * -20;
+    return {
+      id: index,
+      style: {
+        top: `${orb.top}%`,
+        left: `${orb.left}%`,
+        width: `${orb.size}vmax`,
+        height: `${orb.size}vmax`,
+        background:
+          orb.color === "hot"
+            ? "radial-gradient(circle, rgba(200,37,63,0.28), transparent 70%)"
+            : "radial-gradient(circle, rgba(212,175,106,0.2), transparent 70%)",
+        animationDuration: `${duration}s`,
+        animationDelay: `${delay}s`,
+      },
+    };
+  })
+);
 </script>
 
 <style scoped>
-/* WhatsApp-style background pattern */
-.game-icons-pattern {
-  width: 100%;
-  height: 100%;
-  position: relative;
-}
-
-.game-icon {
-  animation: icon-float 20s ease-in-out infinite;
+.ambient-orb {
+  position: absolute;
+  border-radius: 999px;
+  transform: translate(-50%, -50%);
+  filter: blur(2px);
+  animation: orb-drift ease-in-out infinite;
   will-change: transform;
-  transform-origin: center center;
-  transform: rotate(var(--rotation, 0deg)) scale(var(--scale, 1));
-  opacity: 0.08;
 }
 
-/* Subtle animation for icons - only animates translateY to preserve inline transform */
-@keyframes icon-float {
+@keyframes orb-drift {
   0%, 100% {
-    transform: translateY(0) rotate(var(--rotation, 0deg)) scale(var(--scale, 1));
+    transform: translate(-50%, -50%) scale(1);
   }
   50% {
-    transform: translateY(-15px) rotate(var(--rotation, 0deg)) scale(var(--scale, 1));
+    transform: translate(calc(-50% + 4vmax), calc(-50% - 3vmax)) scale(1.08);
   }
 }
 
-/* Responsive adjustments */
-@media (max-width: 768px) {
-  .game-icon {
-    opacity: 0.08;
+@media (prefers-reduced-motion: reduce) {
+  .ambient-orb {
+    animation: none;
   }
-}
-
-/* Ensure icons don't interfere with content */
-.game-icons-pattern {
-  z-index: 0;
 }
 </style>
-
-
-

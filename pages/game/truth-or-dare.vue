@@ -161,7 +161,7 @@
                 <!-- Type Badge -->
                 <div class="mb-6 flex justify-center">
                   <div ref="typeBadgeRef" class="badge-stamp px-6 py-3 text-lg"
-                    :class="currentCard.type === 'TRUTH' ? 'bg-hot text-ink' : 'bg-volt text-ink'">
+                    :class="currentCard.type === 'TRUTH' ? 'bg-hot text-paper' : 'bg-volt text-ink'">
                     <Icon :icon="currentCard.type === 'TRUTH' ? 'mdi:chat-question' : 'mdi:fire'" class="w-6 h-6" />
                     {{ currentCard.type === 'TRUTH' ? 'TRUTH' : 'DARE' }}
                   </div>
@@ -187,7 +187,8 @@
       </div>
 
       <!-- Complete/Reset Buttons -->
-      <div v-if="currentCard && cardFlipped" class="grid grid-cols-1 gap-3 mb-6">
+      <StickyActionBar v-if="currentCard && cardFlipped" class="mb-6">
+        <div class="grid grid-cols-1 gap-3 w-full">
           <button
             ref="completeButtonRef"
             @click="handleCompleteChallenge($event)"
@@ -203,7 +204,8 @@
           <Icon icon="mdi:refresh" class="w-5 h-5" />
             Choose Different Card
           </button>
-      </div>
+        </div>
+      </StickyActionBar>
 
       <!-- Hesitation Timer -->
       <div v-if="currentCard && cardFlipped" ref="timerBlockRef" class="card-poster p-4 mb-6">

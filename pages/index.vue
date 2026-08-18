@@ -58,7 +58,7 @@
           <div class="flex-1 min-w-0">
             <div class="flex items-center gap-2 mb-0.5 flex-wrap">
               <h2 class="font-display text-base sm:text-lg font-bold uppercase text-paper">Pass &amp; Play</h2>
-              <span class="badge-stamp bg-hot text-ink text-[9px] px-2 py-0.5">1 Phone</span>
+              <span class="badge-stamp bg-hot text-paper text-[9px] px-2 py-0.5">1 Phone</span>
             </div>
             <p class="text-xs sm:text-sm text-paper/70">One phone, everyone takes turns.</p>
           </div>
@@ -82,11 +82,11 @@
       </div>
 
       <!-- Game Preview: a spread of mini cards, family games in volt, adult in hot -->
-      <div ref="previewGridRef" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2 sm:gap-2.5 md:gap-3 lg:gap-4 mb-4 sm:mb-6 md:mb-8 lg:mb-12 max-w-5xl mx-auto px-4">
+      <div ref="previewGridRef" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2.5 sm:gap-3 md:gap-3 lg:gap-4 mb-4 sm:mb-6 md:mb-8 lg:mb-12 max-w-5xl mx-auto px-4">
         <div
           v-for="{ name, tag, icon, mode, code, accent } in gamePreviews"
           :key="name"
-          class="card-face p-2.5 sm:p-3 md:p-4 hover:-translate-y-1 transition-transform"
+          class="card-face p-3 sm:p-3.5 md:p-4 hover:-translate-y-1 transition-transform"
           :class="{ 'is-volt': mode === 'family' }"
         >
           <div class="card-index card-index-tl" :class="accent">{{ code }}</div>
@@ -123,34 +123,22 @@
       </div>
 
       <!-- iOS install instructions (no programmatic install prompt exists on iOS Safari) -->
-      <Teleport to="body">
-        <div
-          v-if="showIosInstructions"
-          class="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-4 bg-black/70"
-          @click.self="showIosInstructions = false"
-        >
-          <div class="card-poster p-5 sm:p-6 max-w-sm w-full text-center relative">
-            <button
-              @click="showIosInstructions = false"
-              class="absolute top-3 right-3 text-paper/60 hover:text-paper transition-colors"
-            >
-              <Icon icon="mdi:close" class="w-5 h-5" />
-            </button>
-            <Icon icon="mdi:cellphone-arrow-down" class="w-10 h-10 mx-auto mb-3 text-hot" />
-            <h3 class="font-display text-lg font-bold uppercase mb-2 text-paper">Install Montoya</h3>
-            <p class="text-sm text-paper/70">
-              Tap the <Icon icon="mdi:export-variant" class="inline w-4 h-4 -mt-1" /> <strong class="text-paper">Share</strong> icon in Safari's toolbar, then choose
-              <strong class="text-paper">"Add to Home Screen."</strong>
-            </p>
-            <button
-              @click="showIosInstructions = false"
-              class="mt-4 bg-hot text-ink shadow-hard-sm hover:brightness-110 px-6 py-2 rounded-md font-display font-bold uppercase tracking-wide text-sm transition-[filter]"
-            >
-              Got it
-            </button>
-          </div>
+      <BottomSheet v-model="showIosInstructions">
+        <div class="text-center">
+          <Icon icon="mdi:cellphone-arrow-down" class="w-10 h-10 mx-auto mb-3 text-hot" />
+          <h3 class="font-display text-lg font-bold uppercase mb-2 text-paper">Install Montoya</h3>
+          <p class="text-sm text-paper/70">
+            Tap the <Icon icon="mdi:export-variant" class="inline w-4 h-4 -mt-1" /> <strong class="text-paper">Share</strong> icon in Safari's toolbar, then choose
+            <strong class="text-paper">"Add to Home Screen."</strong>
+          </p>
+          <button
+            @click="showIosInstructions = false"
+            class="mt-4 bg-hot text-paper shadow-hard-sm hover:brightness-110 px-6 py-2 rounded-md font-display font-bold uppercase tracking-wide text-sm transition-[filter]"
+          >
+            Got it
+          </button>
         </div>
-      </Teleport>
+      </BottomSheet>
     </div>
 
   </div>
@@ -188,8 +176,8 @@ const setHeroCardRef = (el, key) => {
 };
 
 // Game preview tiles — icons match the ones used for the same games in setup.vue.
-// `mode` drives the card-face color (family = volt, adult = hot, matching
-// mode-select.vue), `code` is the two-letter corner-index mark, and `accent`
+// `mode` drives the card-face color (family = volt, adult = hot), `code`
+// is the two-letter corner-index mark, and `accent`
 // is the matching text-color utility precomputed here rather than re-derived
 // with a ternary at each of the three usage sites in the template.
 const gamePreviews = [

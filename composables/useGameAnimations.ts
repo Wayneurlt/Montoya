@@ -20,15 +20,25 @@ export function staggerReveal(els: Array<Element | null | undefined>, opts: { de
 }
 
 /**
- * A physical "card flip" transition: rotate to edge-on (invisible), run
- * `swap()` to change the DOM content (e.g. toggle a v-if), then rotate back
- * to face-on. Falls back to calling `swap()` immediately if there's no element
- * (e.g. first render, or reduced-motion contexts where refs aren't mounted).
+ * A physical "card flip" transition: build a brief anticipatory pulse/glow,
+ * rotate to edge-on (invisible), run `swap()` to change the DOM content (e.g.
+ * toggle a v-if), then rotate back to face-on. Falls back to calling `swap()`
+ * immediately if there's no element (e.g. first render, or reduced-motion
+ * contexts where refs aren't mounted).
  */
-export async function flipTransition(el: Element | null | undefined, swap: () => void) {
+export async function flipTransition(
+  el: Element | null | undefined,
+  swap: () => void,
+  opts: { anticipation?: boolean } = {}
+) {
   if (!el) {
     swap()
     return
+  }
+  if (opts.anticipation ?? true) {
+    await gsap.timeline()
+      .to(el, { scale: 1.03, filter: 'brightness(1.15)', duration: 0.22, ease: 'power1.inOut' })
+      .to(el, { scale: 1, filter: 'brightness(1)', duration: 0.18, ease: 'power1.in' })
   }
   await gsap.to(el, { rotationY: 90, duration: 0.2, ease: 'power1.in' })
   swap()
@@ -72,7 +82,7 @@ export function tickPulse(el: Element | null | undefined, opts: { scale?: number
  */
 export function celebrateBurst(el: Element | null | undefined, opts: { colors?: string[] } = {}) {
   if (!el || typeof document === 'undefined') return
-  const colors = opts.colors ?? ['#f472b6', '#c084fc', '#22d3ee', '#facc15']
+  const colors = opts.colors ?? ['#c8253f', '#d4af6a', '#7c1226', '#f2ece2']
 
   gsap.timeline()
     .to(el, { scale: 1.06, duration: 0.12, ease: 'power2.out' })

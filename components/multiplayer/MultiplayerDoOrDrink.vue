@@ -115,9 +115,9 @@
     </div>
 
     <!-- Action Buttons -->
-    <div class="space-y-3 sm:space-y-4 mb-4 sm:mb-6">
-      <div v-if="currentCard && cardFlipped" class="space-y-3 sm:space-y-4">
-        <div v-if="isHost" class="grid grid-cols-2 gap-3 sm:gap-4">
+    <div v-if="currentCard && cardFlipped" class="mb-4 sm:mb-6">
+      <StickyActionBar v-if="isHost">
+        <div class="grid grid-cols-2 gap-3 sm:gap-4 w-full">
           <button
             @click="handleComplete"
             class="bg-volt text-ink shadow-hard hover:brightness-110 py-3 sm:py-4 rounded-lg font-display font-bold uppercase tracking-wide text-sm sm:text-base transition-[filter] flex items-center justify-center gap-2"
@@ -127,23 +127,23 @@
           </button>
           <button
             @click="handleDrink"
-            class="bg-hot text-ink shadow-hard hover:brightness-110 py-3 sm:py-4 rounded-lg font-display font-bold uppercase tracking-wide text-sm sm:text-base transition-[filter] flex items-center justify-center gap-2"
+            class="bg-hot text-paper shadow-hard hover:brightness-110 py-3 sm:py-4 rounded-lg font-display font-bold uppercase tracking-wide text-sm sm:text-base transition-[filter] flex items-center justify-center gap-2"
           >
             <Icon icon="mdi:glass-cocktail" class="w-5 h-5 sm:w-6 sm:h-6" />
             Take Drink
           </button>
         </div>
-        <p v-else class="text-center text-paper/60 text-sm">Waiting for host to mark Completed or Take Drink</p>
-        <!-- Host: Skip Question Button -->
-        <button
-          v-if="isHost"
-          @click="handleSkip"
-          class="w-full bg-card border border-white/10 hover:border-volt/50 text-paper py-2.5 sm:py-3 rounded-lg font-display font-bold uppercase tracking-wide text-sm sm:text-base transition-colors flex items-center justify-center gap-2"
-        >
-          <Icon icon="mdi:skip-next" class="w-4 h-4 sm:w-5 sm:h-5" />
-          Skip Question
-        </button>
-      </div>
+      </StickyActionBar>
+      <p v-else class="text-center text-paper/60 text-sm">Waiting for host to mark Completed or Take Drink</p>
+      <!-- Host: Skip Question Button -->
+      <button
+        v-if="isHost"
+        @click="handleSkip"
+        class="w-full bg-card border border-white/10 hover:border-volt/50 text-paper py-2.5 sm:py-3 rounded-lg font-display font-bold uppercase tracking-wide text-sm sm:text-base transition-colors flex items-center justify-center gap-2 mt-3 sm:mt-4"
+      >
+        <Icon icon="mdi:skip-next" class="w-4 h-4 sm:w-5 sm:h-5" />
+        Skip Question
+      </button>
     </div>
 
     <!-- Hesitation Timer -->
@@ -225,8 +225,8 @@ const isHost = computed(() => props.multiplayer.isHost.value)
 // Intensity levels: flat hot/volt badge + penalty text treatment (no gradients)
 const INTENSITY_LEVELS = [
   { bgColor: "bg-volt text-ink", textColor: "text-volt" },
-  { bgColor: "bg-hot text-ink", textColor: "text-hot" },
-  { bgColor: "bg-hot text-ink", textColor: "text-hot" },
+  { bgColor: "bg-hot text-paper", textColor: "text-hot" },
+  { bgColor: "bg-hot text-paper", textColor: "text-hot" },
 ]
 
 // Game State

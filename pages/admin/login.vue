@@ -1,5 +1,5 @@
 <template>
-  <div class="min-h-screen flex items-center justify-center bg-gradient-to-br from-purple-900 via-pink-900 to-red-900 py-12 px-4 sm:px-6 lg:px-8">
+  <div class="min-h-screen flex items-center justify-center bg-nightlife py-12 px-4 sm:px-6 lg:px-8">
     <div class="max-w-md w-full">
       <!-- Logo/Icon Section -->
       <div class="text-center mb-8">
@@ -11,7 +11,7 @@
       </div>
 
       <!-- Login Card -->
-      <div class="bg-white/10 backdrop-blur-md border border-white/20 rounded-2xl p-8 shadow-2xl transition-all duration-300 hover:shadow-3xl">
+      <div class="card-poster p-8">
         <form @submit.prevent="handleLogin" class="space-y-6">
           <!-- Username Field -->
           <div>
@@ -25,7 +25,7 @@
               type="text"
               placeholder="Enter your username"
               :disabled="loading"
-              :class="['w-full', { 'border-red-500/50': errors.username }]"
+              :class="['w-full', { 'border-wine/60': errors.username }]"
               icon="i-heroicons-user-circle"
               size="lg"
               autocomplete="username"
@@ -33,7 +33,7 @@
               @blur="validateField('username')"
               @input="clearError('username')"
             />
-            <p v-if="errors.username" class="mt-1.5 text-sm text-red-300 flex items-center gap-1">
+            <p v-if="errors.username" class="mt-1.5 text-sm text-wine flex items-center gap-1">
               <Icon name="i-heroicons-exclamation-circle" class="h-4 w-4" />
               {{ errors.username }}
             </p>
@@ -52,7 +52,7 @@
                 :type="showPassword ? 'text' : 'password'"
                 placeholder="Enter your password"
                 :disabled="loading"
-                :class="['w-full', { 'border-red-500/50': errors.password }]"
+                :class="['w-full', { 'border-wine/60': errors.password }]"
                 icon="i-heroicons-lock-closed"
                 size="lg"
                 autocomplete="current-password"
@@ -70,7 +70,7 @@
                 <Icon :name="showPassword ? 'i-heroicons-eye-slash' : 'i-heroicons-eye'" class="h-5 w-5" />
               </button>
             </div>
-            <p v-if="errors.password" class="mt-1.5 text-sm text-red-300 flex items-center gap-1">
+            <p v-if="errors.password" class="mt-1.5 text-sm text-wine flex items-center gap-1">
               <Icon name="i-heroicons-exclamation-circle" class="h-4 w-4" />
               {{ errors.password }}
             </p>
@@ -113,16 +113,16 @@
             leave-from-class="opacity-100 translate-y-0"
             leave-to-class="opacity-0 translate-y-2"
           >
-            <div v-if="error" class="p-4 bg-red-500/20 border border-red-500/40 rounded-xl backdrop-blur-sm">
+            <div v-if="error" class="p-4 bg-wine/20 border border-wine/40 rounded-xl">
               <div class="flex items-start gap-3">
-                <Icon name="i-heroicons-exclamation-triangle" class="h-5 w-5 text-red-300 flex-shrink-0 mt-0.5" />
+                <Icon name="i-heroicons-exclamation-triangle" class="h-5 w-5 text-wine flex-shrink-0 mt-0.5" />
                 <div class="flex-1">
-                  <p class="text-red-200 text-sm font-medium">Login failed</p>
-                  <p class="text-red-300/90 text-sm mt-0.5">{{ error }}</p>
+                  <p class="text-paper text-sm font-medium">Login failed</p>
+                  <p class="text-paper/70 text-sm mt-0.5">{{ error }}</p>
                 </div>
                 <button
                   @click="error = ''"
-                  class="text-red-300/70 hover:text-red-200 transition-colors focus:outline-none focus:ring-2 focus:ring-red-500/50 rounded p-1"
+                  class="text-paper/60 hover:text-paper transition-colors focus:outline-none focus:ring-2 focus:ring-wine/50 rounded p-1"
                   aria-label="Dismiss error"
                 >
                   <Icon name="i-heroicons-x-mark" class="h-4 w-4" />

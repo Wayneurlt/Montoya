@@ -77,7 +77,7 @@
       <div v-if="!currentPrompt && !timerActive" class="text-center py-8 sm:py-10 md:py-12">
         <button
           @click="handleDrawPrompt($event)"
-          class="bg-hot text-ink shadow-hard hover:brightness-110 px-8 sm:px-10 md:px-12 py-4 sm:py-5 rounded-lg font-display font-bold uppercase tracking-wide text-lg sm:text-xl transition-[filter]"
+          class="bg-hot text-paper shadow-hard hover:brightness-110 px-8 sm:px-10 md:px-12 py-4 sm:py-5 rounded-lg font-display font-bold uppercase tracking-wide text-lg sm:text-xl transition-[filter]"
         >
           <Icon icon="mdi:cards" class="w-6 h-6 sm:w-7 sm:h-7 inline-block mr-2 -mt-1" />
           Draw Card
@@ -103,39 +103,50 @@
         </div>
 
         <!-- Action Buttons -->
-        <div class="grid grid-cols-2 gap-3 sm:gap-4">
-          <button
-            @click="handleCorrectGuess($event)"
-            class="bg-volt text-ink shadow-hard hover:brightness-110 py-3 sm:py-4 rounded-lg font-display font-bold uppercase tracking-wide text-base sm:text-lg transition-[filter] flex items-center justify-center gap-2"
-          >
-            <Icon icon="mdi:check-circle" class="w-5 h-5 sm:w-6 sm:h-6" />
-            Correct!
-          </button>
-          <button
-            @click="handleSkipPrompt($event)"
-            class="bg-card hover:bg-white/5 border border-white/10 py-3 sm:py-4 rounded-lg font-display font-bold uppercase tracking-wide text-base sm:text-lg transition-colors flex items-center justify-center gap-2"
-          >
-            <Icon icon="mdi:skip-next" class="w-5 h-5 sm:w-6 sm:h-6" />
-            Skip
-          </button>
-        </div>
+        <StickyActionBar>
+          <div class="grid grid-cols-2 gap-3 sm:gap-4 w-full">
+            <button
+              @click="handleCorrectGuess($event)"
+              class="bg-volt text-ink shadow-hard hover:brightness-110 py-3 sm:py-4 rounded-lg font-display font-bold uppercase tracking-wide text-base sm:text-lg transition-[filter] flex items-center justify-center gap-2"
+            >
+              <Icon icon="mdi:check-circle" class="w-5 h-5 sm:w-6 sm:h-6" />
+              Correct!
+            </button>
+            <button
+              @click="handleSkipPrompt($event)"
+              class="bg-card hover:bg-white/5 border border-white/10 py-3 sm:py-4 rounded-lg font-display font-bold uppercase tracking-wide text-base sm:text-lg transition-colors flex items-center justify-center gap-2"
+            >
+              <Icon icon="mdi:skip-next" class="w-5 h-5 sm:w-6 sm:h-6" />
+              Skip
+            </button>
+          </div>
+        </StickyActionBar>
       </div>
 
-      <!-- Score Board -->
-      <div class="card-poster p-4 sm:p-5 md:p-6">
-        <h3 class="font-display uppercase tracking-wide font-bold text-lg sm:text-xl mb-3 sm:mb-4 flex items-center gap-2">
-          <Icon icon="mdi:trophy" class="w-5 h-5 sm:w-6 sm:h-6 text-volt" />
-          <span>Scoreboard</span>
-        </h3>
-        <div class="space-y-2 sm:space-y-3">
-          <div
-            v-for="player in players"
-            :key="player.id"
-            class="flex justify-between items-center p-2 sm:p-3 rounded-md border"
-            :class="player.id === currentPlayer?.id ? 'bg-hot/15 border-hot/30' : 'bg-white/5 border-transparent'"
-          >
-            <span class="font-medium text-sm sm:text-base">{{ player.name }}</span>
-            <span class="font-bold font-display text-lg sm:text-xl text-volt">{{ scores[player.id] || 0 }}</span>
+      <!-- Score Board: collapsed by default so it doesn't eat gameplay space -->
+      <div class="card-poster overflow-hidden">
+        <button
+          type="button"
+          @click="toggleScoreboard"
+          class="w-full flex items-center justify-between p-4 font-display uppercase tracking-wide text-sm text-paper/70"
+        >
+          <span class="flex items-center gap-2">
+            <Icon icon="mdi:trophy" class="w-5 h-5 text-volt" />
+            <span>Scoreboard</span>
+          </span>
+          <Icon icon="mdi:chevron-down" class="w-5 h-5 transition-transform duration-200" :class="{ 'rotate-180': scoreboardExpanded }" />
+        </button>
+        <div ref="scoreboardBodyRef" class="overflow-hidden" style="height: 0">
+          <div class="space-y-2 sm:space-y-3 px-4 pb-4 sm:pb-5 md:pb-6">
+            <div
+              v-for="player in players"
+              :key="player.id"
+              class="flex justify-between items-center p-2 sm:p-3 rounded-md border"
+              :class="player.id === currentPlayer?.id ? 'bg-hot/15 border-hot/30' : 'bg-white/5 border-transparent'"
+            >
+              <span class="font-medium text-sm sm:text-base">{{ player.name }}</span>
+              <span class="font-bold font-display text-lg sm:text-xl text-volt">{{ scores[player.id] || 0 }}</span>
+            </div>
           </div>
         </div>
       </div>
@@ -147,6 +158,7 @@
 import { ref, computed, onMounted, onBeforeUnmount, nextTick } from "vue";
 import { Icon } from "@iconify/vue";
 import { push } from "notivue";
+import gsap from "gsap";
 import { useGameStore } from "~/stores/game";
 import { useAnalytics } from "~/composables/useAnalytics";
 import { staggerReveal, punchScale, tickPulse, shake } from "~/composables/useGameAnimations";
@@ -163,6 +175,7 @@ const currentPrompt = ref("");
 const currentCategory = ref("");
 const roundCount = ref(1);
 const scores = ref({});
+const scoreboardExpanded = ref(false);
 
 // Animation refs
 const headerRowRef = ref(null);
@@ -171,6 +184,7 @@ const turnBlockRef = ref(null);
 const timerBlockRef = ref(null);
 const timerNumberRef = ref(null);
 const promptCardRef = ref(null);
+const scoreboardBodyRef = ref(null);
 
 const players = computed(() => gameStore.players);
 const currentPlayer = computed(() => gameStore.currentPlayer);
@@ -292,6 +306,30 @@ function handleCorrectGuess(evt) {
 function handleSkipPrompt(evt) {
   punchScale(evt?.currentTarget);
   skipPrompt();
+}
+
+// Collapsed by default so the scoreboard doesn't permanently eat gameplay
+// space — mirrors the Game Log accordion pattern used in truth-or-dare.vue
+// and do-or-drink.vue (animate the height open/closed rather than a plain v-if).
+function toggleScoreboard() {
+  scoreboardExpanded.value = !scoreboardExpanded.value;
+  nextTick(() => {
+    if (!scoreboardBodyRef.value) return;
+    if (scoreboardExpanded.value) {
+      const targetHeight = scoreboardBodyRef.value.scrollHeight;
+      gsap.fromTo(
+        scoreboardBodyRef.value,
+        { height: 0 },
+        { height: targetHeight, duration: 0.35, ease: 'power2.out', onComplete: () => gsap.set(scoreboardBodyRef.value, { height: 'auto' }) }
+      );
+    } else {
+      gsap.fromTo(
+        scoreboardBodyRef.value,
+        { height: scoreboardBodyRef.value.scrollHeight },
+        { height: 0, duration: 0.28, ease: 'power2.in' }
+      );
+    }
+  });
 }
 
 function startTimer() {

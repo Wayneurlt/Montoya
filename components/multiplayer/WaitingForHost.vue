@@ -10,7 +10,7 @@
     <button
       @click="handleRingHost"
       :disabled="isRinging || canRingIn === 0"
-      class="bg-hot text-ink shadow-hard hover:brightness-110 px-6 sm:px-8 py-3 sm:py-4 rounded-lg font-display font-bold uppercase tracking-wide text-sm sm:text-base transition-[filter] disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 mx-auto"
+      class="bg-hot text-paper shadow-hard hover:brightness-110 px-6 sm:px-8 py-3 sm:py-4 rounded-lg font-display font-bold uppercase tracking-wide text-sm sm:text-base transition-[filter] disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 mx-auto"
     >
       <Icon icon="mdi:bell-ring" class="w-5 h-5 sm:w-6 sm:h-6" />
       <span>{{ isRinging ? 'Ringing...' : canRingIn > 0 ? `Ring Host (${canRingIn}s)` : 'Ring Host' }}</span>

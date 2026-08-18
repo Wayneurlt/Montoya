@@ -1,5 +1,5 @@
 <template>
-  <div class="min-h-screen bg-gradient-to-b from-slate-900 to-black text-white overflow-x-hidden overflow-y-auto">
+  <div class="min-h-screen bg-ink text-paper overflow-x-hidden overflow-y-auto">
     <!-- Mobile top bar -->
     <div class="md:hidden sticky top-0 z-40 bg-black/40 backdrop-blur border-b border-white/10">
       <div class="flex items-center justify-between px-4 py-3">
@@ -12,10 +12,10 @@
     </div>
 
     <!-- Sidebar for desktop -->
-    <aside class="hidden md:flex md:flex-col md:w-64 md:fixed md:inset-y-0 md:z-30 bg-gradient-to-b from-slate-900/95 to-black/95 backdrop-blur-sm border-r border-white/10 overflow-y-auto">
+    <aside class="hidden md:flex md:flex-col md:w-64 md:fixed md:inset-y-0 md:z-30 bg-card/95 backdrop-blur-sm border-r border-white/10 overflow-y-auto">
       <div class="h-16 flex items-center px-5 border-b border-white/10 bg-white/5">
         <NuxtLink to="/" class="font-bold text-lg hover:text-white transition-colors flex items-center gap-2">
-          <Icon name="mdi:shield-crown" class="w-6 h-6 text-purple-400" />
+          <Icon name="mdi:shield-crown" class="w-6 h-6 text-hot" />
           <span>Montoya Admin</span>
         </NuxtLink>
       </div>
@@ -79,7 +79,7 @@
     <transition name="fade">
       <div v-if="isSidebarOpen" class="fixed inset-0 z-40 md:hidden">
         <div class="absolute inset-0 bg-black/60" @click="isSidebarOpen = false"></div>
-        <div class="absolute inset-y-0 left-0 w-72 bg-gradient-to-b from-slate-900 to-black backdrop-blur-sm border-r border-white/10 p-4 z-50">
+        <div class="absolute inset-y-0 left-0 w-72 bg-card backdrop-blur-sm border-r border-white/10 p-4 z-50">
           <div class="flex items-center justify-between h-12">
             <div class="font-semibold">Admin</div>
             <button @click="isSidebarOpen = false" class="p-2 rounded-md bg-white/10 hover:bg-white/20">

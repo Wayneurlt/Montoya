@@ -48,7 +48,7 @@
             :disabled="isSubmitting"
             class="bg-card border border-white/10 hover:border-hot/50 rounded-lg p-3 sm:p-4 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            <div class="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-hot text-ink flex items-center justify-center font-display font-bold mx-auto mb-2">
+            <div class="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-hot text-paper flex items-center justify-center font-display font-bold mx-auto mb-2">
               {{ player.nickname.charAt(0).toUpperCase() }}
             </div>
             <div class="text-xs sm:text-sm font-display uppercase tracking-wide flex items-center justify-center gap-1 truncate">
@@ -85,7 +85,7 @@
       </div>
 
       <!-- Host: Skip Question Button -->
-      <div v-if="isHost" class="card-poster p-4">
+      <StickyActionBar v-if="isHost">
         <button
           @click="handleSkip"
           :disabled="isLoading"
@@ -94,7 +94,7 @@
           <Icon icon="mdi:skip-next" class="w-5 h-5" />
           Skip Question
         </button>
-      </div>
+      </StickyActionBar>
     </div>
 
     <!-- Results Phase - Reveal with Animation -->
@@ -123,7 +123,7 @@
           >
             <div class="flex items-center justify-between mb-2">
               <div class="flex items-center gap-3">
-                <div class="w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-hot text-ink flex items-center justify-center font-display font-bold">
+                <div class="w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-hot text-paper flex items-center justify-center font-display font-bold">
                   {{ player.nickname.charAt(0).toUpperCase() }}
                 </div>
                 <span class="font-display font-bold uppercase tracking-wide">{{ player.nickname }}</span>
@@ -151,16 +151,16 @@
       </div>
 
       <!-- Host Controls for Next Round -->
-      <div v-if="isHost" class="card-poster p-4 sm:p-6">
+      <StickyActionBar v-if="isHost">
         <button
           @click="handleNext"
           :disabled="isLoading"
-          class="w-full bg-hot text-ink shadow-hard hover:brightness-110 px-6 py-2.5 sm:py-3 rounded-lg font-display font-bold uppercase tracking-wide transition-[filter] disabled:opacity-50 flex items-center justify-center gap-2"
+          class="w-full bg-hot text-paper shadow-hard hover:brightness-110 px-6 py-2.5 sm:py-3 rounded-lg font-display font-bold uppercase tracking-wide transition-[filter] disabled:opacity-50 flex items-center justify-center gap-2"
         >
           <Icon icon="mdi:arrow-right" class="w-5 h-5" />
           {{ isLoading ? 'Loading...' : 'Next Question' }}
         </button>
-      </div>
+      </StickyActionBar>
       <WaitingForHost
         v-else
         :host-name="hostName"
@@ -175,19 +175,19 @@
         <Icon icon="mdi:thought-bubble" class="w-14 h-14 sm:w-16 sm:h-16 mx-auto mb-4 text-hot" />
         <p class="text-lg sm:text-xl font-display font-bold uppercase tracking-wide mb-2">Game Started!</p>
         <p class="text-paper/60 mb-6">Waiting for host to load the first question...</p>
-
-        <!-- Host: Load First Question -->
-        <div v-if="isHost">
-          <button
-            @click="handleNext"
-            :disabled="isLoading"
-            class="w-full bg-hot text-ink shadow-hard hover:brightness-110 px-6 py-2.5 sm:py-3 rounded-lg font-display font-bold uppercase tracking-wide transition-[filter] disabled:opacity-50 flex items-center justify-center gap-2"
-          >
-            <Icon icon="mdi:arrow-right" class="w-5 h-5" />
-            {{ isLoading ? 'Loading...' : 'Load First Question' }}
-          </button>
-        </div>
       </div>
+
+      <!-- Host: Load First Question -->
+      <StickyActionBar v-if="isHost">
+        <button
+          @click="handleNext"
+          :disabled="isLoading"
+          class="w-full bg-hot text-paper shadow-hard hover:brightness-110 px-6 py-2.5 sm:py-3 rounded-lg font-display font-bold uppercase tracking-wide transition-[filter] disabled:opacity-50 flex items-center justify-center gap-2"
+        >
+          <Icon icon="mdi:arrow-right" class="w-5 h-5" />
+          {{ isLoading ? 'Loading...' : 'Load First Question' }}
+        </button>
+      </StickyActionBar>
     </div>
 
     <!-- Waiting State -->
@@ -235,9 +235,12 @@ const handleChangeGame = () => {
   navigateTo('/lobby')
 }
 
-// Note: originally a plain NuxtLink with no endGame call (unlike the other
-// multiplayer games) — preserved as-is so this stays a faithful refactor.
 const handleBackToLobby = () => {
+  // If host, end the game first (matches every other multiplayer game),
+  // otherwise just navigate.
+  if (isHost.value) {
+    multiplayer.endGame()
+  }
   navigateTo('/lobby')
 }
 

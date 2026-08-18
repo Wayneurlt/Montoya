@@ -3,9 +3,10 @@
     <!-- Background Icons Pattern -->
     <BackgroundIcons />
 
-    <div class="max-w-4xl mx-auto relative z-10 pt-4 sm:pt-6 md:pt-8 pb-32 sm:pb-36" style="padding-bottom: max(8rem, env(safe-area-inset-bottom, 0px) + 4rem);">
-      <!-- Header -->
-      <div ref="headerRef" class="flex items-center justify-between mb-6 sm:mb-8">
+    <div class="max-w-4xl mx-auto relative z-10 pt-4 sm:pt-6 md:pt-8 safe-bottom">
+      <!-- Header: sticky-top so the room code stays visible (for sharing)
+           while scrolling the player list / game grid below. -->
+      <div ref="headerRef" class="lobby-sticky-header flex items-center justify-between mb-6 sm:mb-8">
         <NuxtLink to="/" class="bg-card border border-white/10 hover:border-hot/50 px-3 sm:px-4 py-1.5 sm:py-2 rounded-md transition-colors flex items-center gap-2">
           <Icon icon="mdi:home" class="w-5 h-5" />
           <span class="font-medium">Home</span>
@@ -40,7 +41,7 @@
           <button
             type="button"
             @click="retryConnection"
-            class="shrink-0 bg-hot text-ink shadow-hard-sm hover:brightness-110 px-4 py-2 rounded-md font-display font-bold uppercase tracking-wide text-sm transition-[filter]"
+            class="shrink-0 bg-hot text-paper shadow-hard-sm hover:brightness-110 px-4 py-2 rounded-md font-display font-bold uppercase tracking-wide text-sm transition-[filter]"
           >
             Retry
           </button>
@@ -98,13 +99,13 @@
                 :class="{ 'border-hot': player.isHost, 'opacity-50': !player.connected }"
               >
                 <div class="flex items-center gap-3">
-                  <div class="w-10 h-10 rounded-full bg-hot text-ink flex items-center justify-center font-display font-bold">
+                  <div class="w-10 h-10 rounded-full bg-hot text-paper flex items-center justify-center font-display font-bold">
                     {{ player.nickname.charAt(0).toUpperCase() }}
                   </div>
                   <div>
                     <div class="font-semibold flex items-center gap-2">
                       {{ player.nickname }}
-                      <span v-if="player.isHost" class="badge-stamp bg-hot text-ink text-[10px] px-2 py-0.5">Host</span>
+                      <span v-if="player.isHost" class="badge-stamp bg-hot text-paper text-[10px] px-2 py-0.5">Host</span>
                     </div>
                     <div class="text-xs text-paper/50">
                       {{ player.connected ? 'Connected' : 'Disconnected' }}
@@ -116,68 +117,28 @@
           </div>
 
 
-          <!-- Host Controls - Always show if room exists, but disable if not host -->
-          <div class="space-y-4">
-            <div class="card-poster p-4">
-              <h3 class="font-display font-bold uppercase tracking-wide mb-3 flex items-center gap-2 text-paper">
-                <Icon icon="mdi:gamepad-variant" class="w-5 h-5 text-hot" />
-                Select Game
-              </h3>
-              <div class="grid grid-cols-2 sm:grid-cols-3 gap-3">
-                <button
-                  v-for="game in multiplayerGames"
-                  :key="game.value"
-                  @click="selectedGame = game.value"
-                  :disabled="!isHost"
-                  :class="selectedGame === game.value
-                    ? 'border-hot bg-hot/15 shadow-hard-sm'
-                    : 'border-white/10 bg-white/5 hover:border-hot/30'"
-                  class="p-3 rounded-md border-2 transition-all text-center disabled:opacity-40 disabled:cursor-not-allowed"
-                >
-                  <Icon :icon="game.icon" class="w-6 h-6 mx-auto mb-1 text-hot" />
-                  <div class="text-xs font-display font-bold uppercase tracking-wide">{{ game.name }}</div>
-                </button>
-              </div>
-            </div>
-
-            <!-- Start Game Button -->
-            <div class="space-y-2">
+          <!-- Select Game - Always show if room exists, but disable if not host.
+               Start Game / Ring Host live in the sticky action bar below so
+               they stay reachable regardless of player-list/grid length. -->
+          <div class="card-poster p-4">
+            <h3 class="font-display font-bold uppercase tracking-wide mb-3 flex items-center gap-2 text-paper">
+              <Icon icon="mdi:gamepad-variant" class="w-5 h-5 text-hot" />
+              Select Game
+            </h3>
+            <div class="grid grid-cols-2 sm:grid-cols-3 gap-3">
               <button
-                @click="handleStartGame"
-                :disabled="!canStartGame || !selectedGame || !isHost || isStartingGame"
-                class="w-full bg-volt text-ink shadow-hard hover:brightness-110 px-8 py-4 rounded-lg font-display font-bold uppercase tracking-wide text-lg transition-[filter] disabled:opacity-50 disabled:cursor-not-allowed disabled:shadow-none flex items-center justify-center gap-2"
+                v-for="game in multiplayerGames"
+                :key="game.value"
+                @click="selectedGame = game.value"
+                :disabled="!isHost"
+                :class="selectedGame === game.value
+                  ? 'border-hot bg-hot/15 shadow-hard-sm'
+                  : 'border-white/10 bg-white/5 hover:border-hot/30'"
+                class="p-3 rounded-md border-2 transition-all text-center disabled:opacity-40 disabled:cursor-not-allowed"
               >
-                <Icon :icon="isStartingGame ? 'mdi:loading' : 'mdi:play-circle'" :class="['w-6 h-6', { 'animate-spin': isStartingGame }]" />
-                <span>{{ isStartingGame ? 'Starting...' : 'Start Game' }}</span>
+                <Icon :icon="game.icon" class="w-6 h-6 mx-auto mb-1 text-hot" />
+                <div class="text-xs font-display font-bold uppercase tracking-wide">{{ game.name }}</div>
               </button>
-
-              <!-- Helper messages -->
-              <div v-if="!isHost" class="text-center space-y-2">
-                <p class="text-sm text-hot">
-                  <Icon icon="mdi:information" class="w-4 h-4 inline mr-1" />
-                  Only the host can start the game
-                </p>
-                <button
-                  @click="handleRingHost"
-                  :disabled="isRinging || ringHostCooldown > 0"
-                  class="inline-flex items-center gap-2 bg-hot text-ink shadow-hard-sm hover:brightness-110 px-4 py-2 rounded-md font-display font-bold uppercase tracking-wide text-sm transition-[filter] disabled:opacity-50 disabled:cursor-not-allowed disabled:shadow-none"
-                >
-                  <Icon icon="mdi:bell-ring" class="w-4 h-4" />
-                  {{ isRinging ? 'Ringing...' : ringHostCooldown > 0 ? `Ring Host (${ringHostCooldown}s)` : 'Ring Host' }}
-                </button>
-              </div>
-              <div v-else-if="!selectedGame" class="text-center text-sm text-hot">
-                <Icon icon="mdi:information" class="w-4 h-4 inline mr-1" />
-                Please select a game first
-              </div>
-              <div v-else-if="playerCount < 2" class="text-center text-sm text-hot">
-                <Icon icon="mdi:information" class="w-4 h-4 inline mr-1" />
-                Need at least 2 players to start ({{ playerCount }}/2)
-              </div>
-              <div v-else-if="!canStartGame" class="text-center text-sm text-hot">
-                <Icon icon="mdi:information" class="w-4 h-4 inline mr-1" />
-                Waiting for more players...
-              </div>
             </div>
           </div>
 
@@ -281,37 +242,8 @@
             </div>
             <div>
               <label class="block text-sm font-semibold mb-1.5">Gender</label>
-              <div class="grid grid-cols-3 gap-2">
-                <button
-                  @click="createForm.gender = 'male'"
-                  :class="createForm.gender === 'male' ? 'bg-hot text-ink' : 'bg-white/5 border border-white/10 text-paper/70 hover:bg-white/10'"
-                  class="p-2.5 rounded-md transition-all font-semibold"
-                >
-                  <Icon icon="mdi:gender-male" class="w-5 h-5 mx-auto" />
-                </button>
-                <button
-                  @click="createForm.gender = 'female'"
-                  :class="createForm.gender === 'female' ? 'bg-volt text-ink' : 'bg-white/5 border border-white/10 text-paper/70 hover:bg-white/10'"
-                  class="p-2.5 rounded-md transition-all font-semibold"
-                >
-                  <Icon icon="mdi:gender-female" class="w-5 h-5 mx-auto" />
-                </button>
-                <button
-                  @click="createForm.gender = 'other'"
-                  :class="createForm.gender === 'other' ? 'bg-paper text-ink' : 'bg-white/5 border border-white/10 text-paper/70 hover:bg-white/10'"
-                  class="p-2.5 rounded-md transition-all font-semibold"
-                >
-                  <Icon icon="mdi:account" class="w-5 h-5 mx-auto" />
-                </button>
-              </div>
+              <GenderPicker v-model="createForm.gender" aria-label="Your gender" />
             </div>
-            <button
-              @click="handleCreateRoom"
-              :disabled="!createForm.nickname.trim() || isConnecting"
-              class="w-full bg-hot text-ink shadow-hard hover:brightness-110 px-8 py-3 rounded-lg font-display font-bold uppercase tracking-wide text-base sm:text-lg transition-[filter] disabled:opacity-50 disabled:cursor-not-allowed disabled:shadow-none"
-            >
-              {{ isConnecting ? 'Connecting...' : 'Create Room' }}
-            </button>
           </div>
 
           <!-- Join Room Form -->
@@ -339,39 +271,64 @@
             </div>
             <div>
               <label class="block text-sm font-semibold mb-1.5">Gender</label>
-              <div class="grid grid-cols-3 gap-2">
-                <button
-                  @click="joinForm.gender = 'male'"
-                  :class="joinForm.gender === 'male' ? 'bg-hot text-ink' : 'bg-white/5 border border-white/10 text-paper/70 hover:bg-white/10'"
-                  class="p-2.5 rounded-md transition-all font-semibold"
-                >
-                  <Icon icon="mdi:gender-male" class="w-5 h-5 mx-auto" />
-                </button>
-                <button
-                  @click="joinForm.gender = 'female'"
-                  :class="joinForm.gender === 'female' ? 'bg-volt text-ink' : 'bg-white/5 border border-white/10 text-paper/70 hover:bg-white/10'"
-                  class="p-2.5 rounded-md transition-all font-semibold"
-                >
-                  <Icon icon="mdi:gender-female" class="w-5 h-5 mx-auto" />
-                </button>
-                <button
-                  @click="joinForm.gender = 'other'"
-                  :class="joinForm.gender === 'other' ? 'bg-paper text-ink' : 'bg-white/5 border border-white/10 text-paper/70 hover:bg-white/10'"
-                  class="p-2.5 rounded-md transition-all font-semibold"
-                >
-                  <Icon icon="mdi:account" class="w-5 h-5 mx-auto" />
-                </button>
-              </div>
+              <GenderPicker v-model="joinForm.gender" aria-label="Your gender" />
             </div>
-            <button
-              @click="handleJoinRoom"
-              :disabled="!joinForm.roomCode || joinForm.roomCode.length !== 6 || !joinForm.nickname.trim() || isConnecting"
-              class="w-full bg-hot text-ink shadow-hard hover:brightness-110 px-8 py-3 rounded-lg font-display font-bold uppercase tracking-wide text-base sm:text-lg transition-[filter] disabled:opacity-50 disabled:cursor-not-allowed disabled:shadow-none"
-            >
-              {{ isConnecting ? 'Connecting...' : 'Join Room' }}
-            </button>
           </div>
         </div>
+
+        <!-- Sticky primary action: Start Game/Ring Host once a room exists,
+             otherwise Create/Join Room submit — always reachable regardless
+             of player-list or game-grid length. -->
+        <StickyActionBar>
+          <div class="w-full">
+            <template v-if="safeRoomState.roomCode">
+              <p v-if="!isHost" class="text-center text-sm text-hot mb-2">
+                <Icon icon="mdi:information" class="w-4 h-4 inline mr-1" />
+                Only the host can start the game
+              </p>
+              <p v-else-if="lobbyActionHint" class="text-center text-sm text-hot mb-2">
+                <Icon icon="mdi:information" class="w-4 h-4 inline mr-1" />
+                {{ lobbyActionHint }}
+              </p>
+              <button
+                v-if="isHost"
+                @click="handleStartGame"
+                :disabled="!canStartGame || !selectedGame || isStartingGame"
+                class="w-full bg-volt text-ink shadow-hard hover:brightness-110 px-8 py-4 rounded-lg font-display font-bold uppercase tracking-wide text-lg transition-[filter] disabled:opacity-50 disabled:cursor-not-allowed disabled:shadow-none flex items-center justify-center gap-2"
+              >
+                <Icon :icon="isStartingGame ? 'mdi:loading' : 'mdi:play-circle'" :class="['w-6 h-6', { 'animate-spin': isStartingGame }]" />
+                <span>{{ isStartingGame ? 'Starting...' : 'Start Game' }}</span>
+              </button>
+              <button
+                v-else
+                @click="handleRingHost"
+                :disabled="isRinging || ringHostCooldown > 0"
+                class="w-full inline-flex items-center justify-center gap-2 bg-hot text-paper shadow-hard hover:brightness-110 px-4 py-3 rounded-lg font-display font-bold uppercase tracking-wide text-sm transition-[filter] disabled:opacity-50 disabled:cursor-not-allowed disabled:shadow-none"
+              >
+                <Icon icon="mdi:bell-ring" class="w-4 h-4" />
+                {{ isRinging ? 'Ringing...' : ringHostCooldown > 0 ? `Ring Host (${ringHostCooldown}s)` : 'Ring Host' }}
+              </button>
+            </template>
+            <template v-else-if="isCreating">
+              <button
+                @click="handleCreateRoom"
+                :disabled="!createForm.nickname.trim() || isConnecting"
+                class="w-full bg-hot text-paper shadow-hard hover:brightness-110 px-8 py-3 rounded-lg font-display font-bold uppercase tracking-wide text-base sm:text-lg transition-[filter] disabled:opacity-50 disabled:cursor-not-allowed disabled:shadow-none"
+              >
+                {{ isConnecting ? 'Connecting...' : 'Create Room' }}
+              </button>
+            </template>
+            <template v-else>
+              <button
+                @click="handleJoinRoom"
+                :disabled="!joinForm.roomCode || joinForm.roomCode.length !== 6 || !joinForm.nickname.trim() || isConnecting"
+                class="w-full bg-hot text-paper shadow-hard hover:brightness-110 px-8 py-3 rounded-lg font-display font-bold uppercase tracking-wide text-base sm:text-lg transition-[filter] disabled:opacity-50 disabled:cursor-not-allowed disabled:shadow-none"
+              >
+                {{ isConnecting ? 'Connecting...' : 'Join Room' }}
+              </button>
+            </template>
+          </div>
+        </StickyActionBar>
       </div>
 
       <!-- Game Phase - Redirect to game -->
@@ -512,6 +469,15 @@ const safeRoomState = computed(() => {
     }
   }
   return roomState.value
+})
+
+// Reason the sticky Start Game button is disabled, for the host only —
+// non-hosts get the fixed "only the host can start" message instead.
+const lobbyActionHint = computed(() => {
+  if (!selectedGame.value) return 'Please select a game first'
+  if (playerCount.value < 2) return `Need at least 2 players to start (${playerCount.value}/2)`
+  if (!canStartGame.value) return 'Waiting for more players...'
+  return null
 })
 
 // Multiplayer games (excluding single-device only games)
@@ -803,5 +769,15 @@ onBeforeUnmount(() => {
 .fade-enter-from,
 .fade-leave-to {
   opacity: 0;
+}
+
+.lobby-sticky-header {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  padding: 0.5rem 0;
+  margin: -0.5rem 0 0;
+  background-color: rgba(10, 10, 13, 0.85);
+  backdrop-filter: blur(8px);
 }
 </style>

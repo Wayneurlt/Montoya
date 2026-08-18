@@ -123,7 +123,7 @@
                 <div
                   ref="typeBadgeRef"
                   class="badge-stamp px-5 sm:px-6 py-2.5 sm:py-3 text-base sm:text-lg"
-                  :class="roomState.currentPrompt.type === 'TRUTH' ? 'bg-hot text-ink' : 'bg-volt text-ink'"
+                  :class="roomState.currentPrompt.type === 'TRUTH' ? 'bg-hot text-paper' : 'bg-volt text-ink'"
                 >
                   <Icon :icon="roomState.currentPrompt.type === 'TRUTH' ? 'mdi:chat-question' : 'mdi:fire'" class="w-5 h-5 sm:w-6 sm:h-6" />
                   {{ roomState.currentPrompt.type === 'TRUTH' ? 'TRUTH' : 'DARE' }}
@@ -172,22 +172,24 @@
     </div>
 
     <!-- Action Buttons (Host only - host marks completed/failed) -->
-    <div v-if="roomState.currentPrompt && roomState.currentPrompt.text && cardFlipped && isHost" class="grid grid-cols-2 gap-3 sm:gap-4 mb-4 sm:mb-6">
-      <button
-        @click="handleComplete"
-        class="bg-volt text-ink shadow-hard hover:brightness-110 py-3 sm:py-4 rounded-lg font-display font-bold uppercase tracking-wide text-sm sm:text-base transition-[filter] flex items-center justify-center gap-2"
-      >
-        <Icon icon="mdi:check-bold" class="w-5 h-5 sm:w-6 sm:h-6" />
-        Completed
-      </button>
-      <button
-        @click="handleFail"
-        class="bg-hot text-ink shadow-hard hover:brightness-110 py-3 sm:py-4 rounded-lg font-display font-bold uppercase tracking-wide text-sm sm:text-base transition-[filter] flex items-center justify-center gap-2"
-      >
-        <Icon icon="mdi:close-thick" class="w-5 h-5 sm:w-6 sm:h-6" />
-        Failed
-      </button>
-    </div>
+    <StickyActionBar v-if="roomState.currentPrompt && roomState.currentPrompt.text && cardFlipped && isHost">
+      <div class="grid grid-cols-2 gap-3 sm:gap-4 w-full">
+        <button
+          @click="handleComplete"
+          class="bg-volt text-ink shadow-hard hover:brightness-110 py-3 sm:py-4 rounded-lg font-display font-bold uppercase tracking-wide text-sm sm:text-base transition-[filter] flex items-center justify-center gap-2"
+        >
+          <Icon icon="mdi:check-bold" class="w-5 h-5 sm:w-6 sm:h-6" />
+          Completed
+        </button>
+        <button
+          @click="handleFail"
+          class="bg-hot text-paper shadow-hard hover:brightness-110 py-3 sm:py-4 rounded-lg font-display font-bold uppercase tracking-wide text-sm sm:text-base transition-[filter] flex items-center justify-center gap-2"
+        >
+          <Icon icon="mdi:close-thick" class="w-5 h-5 sm:w-6 sm:h-6" />
+          Failed
+        </button>
+      </div>
+    </StickyActionBar>
     <p v-else-if="roomState.currentPrompt && roomState.currentPrompt.text && cardFlipped && !isHost" class="text-center text-paper/60 text-sm mb-4">
       Waiting for host to mark as Completed or Failed
     </p>

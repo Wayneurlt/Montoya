@@ -25,7 +25,7 @@
       <div class="flex items-center justify-center gap-3">
         <button
           @click="handleRetryConnection"
-          class="bg-hot text-ink shadow-hard-sm hover:brightness-110 px-4 py-2 rounded-md transition-[filter] font-display font-bold uppercase tracking-wide text-sm"
+          class="bg-hot text-paper shadow-hard-sm hover:brightness-110 px-4 py-2 rounded-md transition-[filter] font-display font-bold uppercase tracking-wide text-sm"
         >
           Retry
         </button>
@@ -43,6 +43,10 @@
       <div class="animate-pulse">
         <Icon icon="mdi:loading" class="w-16 h-16 mx-auto mb-4 text-hot animate-spin" />
         <p class="text-xl font-semibold">{{ isReconnecting ? 'Reconnecting to room...' : 'Connecting to room...' }}</p>
+        <p v-if="safeRoomState.roomCode || pendingRoomCode" class="text-sm text-paper/60 mt-1">
+          Room <span class="font-display font-bold text-hot">{{ safeRoomState.roomCode || pendingRoomCode }}</span>
+          · {{ gameDisplayName }}
+        </p>
         <button
           @click="handleLeaveRoom"
           class="mt-4 bg-card border border-white/10 hover:bg-white/5 px-4 py-2 rounded-md transition-all font-display uppercase tracking-wide text-sm"
@@ -143,6 +147,21 @@ const {
 
 const gameType = computed(() => route.params.game as string)
 
+const GAME_DISPLAY_NAMES: Record<string, string> = {
+  'truth-or-dare': 'Truth or Dare',
+  'dice-of-desire': 'Dice of Desire',
+  'do-or-drink': 'Do or Drink',
+  'never-have-i-ever': 'Never Have I Ever',
+  'most-likely-to': 'Most Likely To',
+  'would-you-rather': 'Would You Rather',
+}
+const gameDisplayName = computed(() => GAME_DISPLAY_NAMES[gameType.value] || gameType.value)
+
+// Populated from localStorage during the reconnect attempt below, so the
+// connecting/reconnecting spinner can show which room it's rejoining instead
+// of a bare, contextless spinner.
+const pendingRoomCode = ref<string | null>(null)
+
 let isComponentMounted = true
 onBeforeUnmount(() => {
   isComponentMounted = false
@@ -215,6 +234,7 @@ onMounted(() => {
       try {
         const info = JSON.parse(roomInfo)
         if (info.roomCode && info.nickname) {
+          pendingRoomCode.value = info.roomCode
           // Wait for connection, then rejoin — capped so a socket that never
           // connects doesn't leave the user staring at an infinite spinner.
           const reconnectDeadline = Date.now() + RECONNECT_POLL_TIMEOUT_MS
@@ -268,9 +288,9 @@ onMounted(() => {
       }
       const ringElement = document.querySelector('[data-host-ring]')
       if (ringElement) {
-        ringElement.classList.add('animate-pulse', 'ring-4', 'ring-yellow-500')
+        ringElement.classList.add('animate-pulse', 'ring-4', 'ring-volt')
         setTimeout(() => {
-          ringElement.classList.remove('animate-pulse', 'ring-4', 'ring-yellow-500')
+          ringElement.classList.remove('animate-pulse', 'ring-4', 'ring-volt')
         }, 2000)
       }
     }

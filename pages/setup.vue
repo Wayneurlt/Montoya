@@ -8,7 +8,7 @@
     <BackgroundIcons />
 
     <div
-      class="max-w-3xl mx-auto card-poster p-4 sm:p-5 md:p-8 relative z-10 min-h-full overflow-y-auto safe-bottom"
+      class="max-w-3xl mx-auto card-poster p-4 sm:p-5 md:p-8 relative z-10 min-h-full safe-bottom"
     >
       <!-- Back to Home -->
       <div ref="headerRef" class="mb-4 flex items-center justify-between">
@@ -33,7 +33,7 @@
         </span>
         <span
           v-else
-          class="badge-stamp bg-hot text-ink px-4 py-2 text-sm sm:text-base"
+          class="badge-stamp bg-hot text-paper px-4 py-2 text-sm sm:text-base"
         >
           <Icon icon="mdi:fire" class="w-5 h-5" />
           Adult Mode
@@ -51,7 +51,7 @@
                 currentStep > index
                   ? 'bg-volt text-ink'
                   : currentStep === index
-                  ? 'bg-hot text-ink scale-110 shadow-hard-sm'
+                  ? 'bg-hot text-paper scale-110 shadow-hard-sm'
                   : 'bg-white/10 text-paper/40'
               "
             >
@@ -120,10 +120,16 @@
               <span class="font-bold font-display text-sm sm:text-base">{{ tempPlayers.length }}</span>
               <span class="text-xs sm:text-sm text-paper/60">player{{ tempPlayers.length !== 1 ? 's' : '' }}</span>
             </div>
+            <p v-if="resumedPlayers" class="mt-2 text-xs text-volt/80 flex items-center justify-center gap-1.5">
+              <Icon icon="mdi:restore" class="w-3.5 h-3.5" />
+              Picking up where you left off
+            </p>
           </div>
 
-          <!-- Quick Add Buttons -->
-          <div v-if="tempPlayers.length === 0" class="mb-4 md:mb-6">
+          <!-- Quick Add Buttons: shown until the user starts naming players, since
+               the list is always pre-seeded with 2 blanks (an empty-list check
+               here would never actually show this shortcut). -->
+          <div v-if="tempPlayers.every((p) => !p.name.trim())" class="mb-4 md:mb-6">
             <p class="text-center text-paper/60 mb-3 md:mb-4 text-xs sm:text-sm px-2">Quick start with common group sizes:</p>
             <div class="flex flex-wrap justify-center gap-2 sm:gap-3">
               <button
@@ -149,7 +155,7 @@
                 <!-- Top row on mobile: Number badge + Name input -->
                 <div class="flex items-center gap-2 sm:gap-3 flex-1">
                   <!-- Player Number Badge -->
-                  <div class="flex-shrink-0 w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-hot text-ink flex items-center justify-center font-display font-bold text-sm sm:text-lg">
+                  <div class="flex-shrink-0 w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-hot text-paper flex items-center justify-center font-display font-bold text-sm sm:text-lg">
                     {{ index + 1 }}
                   </div>
 
@@ -169,40 +175,21 @@
                 </div>
 
                 <!-- Bottom row on mobile: Gender + Remove buttons -->
-                <div class="flex items-center gap-2 justify-between sm:justify-end">
+                <div class="flex items-center gap-2 sm:gap-3">
                   <!-- Gender Selection (Adult Mode Only) -->
-                  <div v-if="!isFamilyMode" class="flex gap-1.5 sm:gap-2 flex-shrink-0">
-                    <button
-                      @click="tempPlayers[index].gender = 'male'"
-                      :class="tempPlayers[index].gender === 'male' ? 'bg-hot text-ink' : 'bg-white/5 border border-white/10 hover:bg-white/10'"
-                      class="px-2 py-1.5 sm:px-3 sm:py-2 rounded-md transition-all"
-                      :title="'Male'"
-                    >
-                      <Icon icon="mdi:gender-male" class="w-4 h-4 sm:w-5 sm:h-5" />
-                    </button>
-                    <button
-                      @click="tempPlayers[index].gender = 'female'"
-                      :class="tempPlayers[index].gender === 'female' ? 'bg-volt text-ink' : 'bg-white/5 border border-white/10 hover:bg-white/10'"
-                      class="px-2 py-1.5 sm:px-3 sm:py-2 rounded-md transition-all"
-                      :title="'Female'"
-                    >
-                      <Icon icon="mdi:gender-female" class="w-4 h-4 sm:w-5 sm:h-5" />
-                    </button>
-                    <button
-                      @click="tempPlayers[index].gender = 'other'"
-                      :class="tempPlayers[index].gender === 'other' ? 'bg-paper text-ink' : 'bg-white/5 border border-white/10 hover:bg-white/10'"
-                      class="px-2 py-1.5 sm:px-3 sm:py-2 rounded-md transition-all"
-                      title="Other"
-                    >
-                      <Icon icon="mdi:account" class="w-4 h-4 sm:w-5 sm:h-5" />
-                    </button>
+                  <div v-if="!isFamilyMode" class="flex-1 sm:w-48 sm:flex-none">
+                    <GenderPicker
+                      :model-value="tempPlayers[index].gender"
+                      aria-label="Player gender"
+                      @update:model-value="tempPlayers[index].gender = $event"
+                    />
                   </div>
 
                   <!-- Remove Button -->
                   <button
                     @click="removePlayer(index)"
                     :disabled="tempPlayers.length < 3"
-                    class="flex-shrink-0 px-2 py-1.5 sm:px-3 sm:py-2 bg-hot/15 hover:bg-hot/25 text-hot disabled:opacity-30 disabled:cursor-not-allowed rounded-md transition-all"
+                    class="flex-shrink-0 min-w-[44px] min-h-[44px] flex items-center justify-center px-2.5 bg-hot/15 hover:bg-hot/25 text-hot disabled:opacity-30 disabled:cursor-not-allowed rounded-md transition-all"
                     :class="{ 'ml-auto': isFamilyMode }"
                     :title="tempPlayers.length < 3 ? 'Need at least 2 players' : 'Remove player'"
                   >
@@ -265,7 +252,7 @@
           <!-- Add Player Button -->
           <button
             @click="addPlayer(); punchScale($event.currentTarget)"
-            class="w-full bg-hot text-ink shadow-hard hover:brightness-110 rounded-md py-3 sm:py-4 text-sm sm:text-base font-display font-bold uppercase tracking-wide transition-[filter] flex items-center justify-center gap-2"
+            class="w-full bg-hot text-paper shadow-hard hover:brightness-110 rounded-md py-3 sm:py-4 text-sm sm:text-base font-display font-bold uppercase tracking-wide transition-[filter] flex items-center justify-center gap-2"
           >
             <Icon icon="mdi:account-plus" class="w-5 h-5 sm:w-6 sm:h-6" />
             Add Another Player
@@ -360,37 +347,46 @@
         </div>
       </div>
 
-      <!-- Navigation Buttons -->
-      <div class="flex justify-between mt-6 md:mt-8 gap-2 sm:gap-3">
-        <button
-          v-if="currentStep > 0"
-          @click="previousStep(); punchScale($event.currentTarget)"
-          class="bg-card border border-white/10 hover:bg-white/5 px-4 sm:px-5 md:px-6 py-2.5 sm:py-3 rounded-md text-sm sm:text-base font-display uppercase tracking-wide transition-all flex items-center gap-1.5 sm:gap-2"
-        >
-          <Icon icon="mdi:arrow-left" class="w-4 h-4 sm:w-5 sm:h-5" />
-          <span class="hidden xs:inline">Back</span>
-        </button>
-        <div v-else></div>
+      <!-- Navigation: sticky so Continue/Start Game stay reachable regardless
+           of how long the player list or game grid above gets. -->
+      <StickyActionBar>
+        <div class="w-full">
+          <p v-if="proceedHint" class="text-center text-hot text-xs sm:text-sm mb-2 flex items-center justify-center gap-1.5">
+            <Icon icon="mdi:alert" class="w-4 h-4" />
+            {{ proceedHint }}
+          </p>
+          <div class="flex justify-between gap-2 sm:gap-3">
+            <button
+              v-if="currentStep > 0"
+              @click="previousStep(); punchScale($event.currentTarget)"
+              class="bg-card border border-white/10 hover:bg-white/5 px-4 sm:px-5 md:px-6 py-2.5 sm:py-3 rounded-md text-sm sm:text-base font-display uppercase tracking-wide transition-all flex items-center gap-1.5 sm:gap-2"
+            >
+              <Icon icon="mdi:arrow-left" class="w-4 h-4 sm:w-5 sm:h-5" />
+              <span class="hidden xs:inline">Back</span>
+            </button>
+            <div v-else></div>
 
-        <button
-          v-if="currentStep < steps.length - 1"
-          @click="nextStep(); punchScale($event.currentTarget)"
-          :disabled="!canProceed"
-          class="bg-hot text-ink shadow-hard hover:brightness-110 disabled:opacity-50 disabled:cursor-not-allowed disabled:shadow-none px-6 sm:px-7 md:px-8 py-2.5 sm:py-3 rounded-md text-sm sm:text-base font-display font-bold uppercase tracking-wide transition-[filter] flex items-center gap-1.5 sm:gap-2 ml-auto"
-        >
-          <span>Continue</span>
-          <Icon icon="mdi:arrow-right" class="w-4 h-4 sm:w-5 sm:h-5" />
-        </button>
-        <button
-          v-else
-          @click="handleStartGame($event)"
-          :disabled="!gameStore.canStartGame"
-          class="bg-volt text-ink shadow-hard hover:brightness-110 disabled:opacity-50 disabled:cursor-not-allowed disabled:shadow-none px-6 sm:px-7 md:px-8 py-2.5 sm:py-3 rounded-md text-sm sm:text-base font-display font-bold uppercase tracking-wide transition-[filter] flex items-center gap-1.5 sm:gap-2 ml-auto"
-        >
-          <Icon icon="mdi:play" class="w-4 h-4 sm:w-5 sm:h-5" />
-          <span>Start Game</span>
-        </button>
-      </div>
+            <button
+              v-if="currentStep < steps.length - 1"
+              @click="nextStep(); punchScale($event.currentTarget)"
+              :disabled="!canProceed"
+              class="bg-hot text-paper shadow-hard hover:brightness-110 disabled:opacity-50 disabled:cursor-not-allowed disabled:shadow-none px-6 sm:px-7 md:px-8 py-2.5 sm:py-3 rounded-md text-sm sm:text-base font-display font-bold uppercase tracking-wide transition-[filter] flex items-center gap-1.5 sm:gap-2 ml-auto"
+            >
+              <span>Continue</span>
+              <Icon icon="mdi:arrow-right" class="w-4 h-4 sm:w-5 sm:h-5" />
+            </button>
+            <button
+              v-else
+              @click="handleStartGame($event)"
+              :disabled="!gameStore.canStartGame"
+              class="bg-volt text-ink shadow-hard hover:brightness-110 disabled:opacity-50 disabled:cursor-not-allowed disabled:shadow-none px-6 sm:px-7 md:px-8 py-2.5 sm:py-3 rounded-md text-sm sm:text-base font-display font-bold uppercase tracking-wide transition-[filter] flex items-center gap-1.5 sm:gap-2 ml-auto"
+            >
+              <Icon icon="mdi:play" class="w-4 h-4 sm:w-5 sm:h-5" />
+              <span>Start Game</span>
+            </button>
+          </div>
+        </div>
+      </StickyActionBar>
     </div>
   </div>
 </template>
@@ -414,6 +410,7 @@ const tempPlayers = ref([
   { id: generateId(), name: "", gender: "male" },
   { id: generateId(), name: "", gender: "female" },
 ]);
+const resumedPlayers = ref(false);
 
 // Animation refs
 const headerRef = ref(null);
@@ -678,6 +675,21 @@ const canProceed = computed(() => {
   return false;
 });
 
+// Short reason Continue/Start Game is disabled, shown right next to the
+// sticky nav bar (not just near the player list, which can scroll out of
+// view before the button does).
+const proceedHint = computed(() => {
+  if (canProceed.value) return null;
+  const playerStep = isFamilyMode.value ? 0 : 1;
+  const gameStep = isFamilyMode.value ? 1 : 2;
+  if (!isFamilyMode.value && currentStep.value === 0) return "Choose a game mode to continue";
+  if (currentStep.value === playerStep) {
+    return tempPlayers.value.length < 2 ? "Add at least 2 players" : "All players need a name";
+  }
+  if (currentStep.value === gameStep) return "Pick a game to continue";
+  return null;
+});
+
 function nextStep() {
   // Save players when moving from player step
   if ((isFamilyMode.value && currentStep.value === 0) || (!isFamilyMode.value && currentStep.value === 1)) {
@@ -740,6 +752,7 @@ onMounted(() => {
 
   // If players exist, populate temp players
   if (gameStore.players.length > 0) {
+    resumedPlayers.value = true;
     tempPlayers.value = gameStore.players.map((p) => ({
       ...p,
       gender: p.gender || 'male' // Ensure gender is set
@@ -855,7 +868,7 @@ input::placeholder {
     width: 100% !important;
     max-width: 100% !important;
     overflow: hidden !important;
-    background-color: #0b0b10 !important;
+    background-color: #0a0a0d !important;
   }
 
   /* Smooth scrolling for inner content */

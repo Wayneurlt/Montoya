@@ -42,26 +42,28 @@
       </div>
 
       <!-- Voting Options (if not voted yet) - Self-voting only -->
-      <div v-if="!hasVoted" class="grid grid-cols-2 gap-3 sm:gap-4">
-        <button
-          @click="handleVote('I Have', $event)"
-          :disabled="isSubmitting"
-          class="mode-card is-volt disabled:opacity-50 disabled:cursor-not-allowed"
-        >
-          <Icon icon="mdi:check-circle" class="w-8 h-8 sm:w-10 sm:h-10" />
-          <span class="mode-card-title text-base sm:text-lg">I Have</span>
-          <span class="mode-card-desc">Yep, done that</span>
-        </button>
-        <button
-          @click="handleVote('I Have Not', $event)"
-          :disabled="isSubmitting"
-          class="mode-card disabled:opacity-50 disabled:cursor-not-allowed"
-        >
-          <Icon icon="mdi:close-circle" class="w-8 h-8 sm:w-10 sm:h-10" />
-          <span class="mode-card-title text-base sm:text-lg">I Have Not</span>
-          <span class="mode-card-desc">Never done that</span>
-        </button>
-      </div>
+      <StickyActionBar v-if="!hasVoted">
+        <div class="grid grid-cols-2 gap-3 sm:gap-4 w-full">
+          <button
+            @click="handleVote('I Have', $event)"
+            :disabled="isSubmitting"
+            class="mode-card is-volt disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            <Icon icon="mdi:check-circle" class="w-8 h-8 sm:w-10 sm:h-10" />
+            <span class="mode-card-title text-base sm:text-lg">I Have</span>
+            <span class="mode-card-desc">Yep, done that</span>
+          </button>
+          <button
+            @click="handleVote('I Have Not', $event)"
+            :disabled="isSubmitting"
+            class="mode-card disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            <Icon icon="mdi:close-circle" class="w-8 h-8 sm:w-10 sm:h-10" />
+            <span class="mode-card-title text-base sm:text-lg">I Have Not</span>
+            <span class="mode-card-desc">Never done that</span>
+          </button>
+        </div>
+      </StickyActionBar>
 
       <!-- Already Voted - Waiting for others -->
       <div v-else class="bg-volt/10 border-2 border-volt/40 rounded-lg p-6 sm:p-8 text-center">
@@ -72,8 +74,18 @@
         </p>
       </div>
 
-      <!-- Host: Skip Question Button -->
-      <div v-if="isHost" class="card-poster p-4">
+      <!-- Host: Skip Question Button - sticky once it's the only action left (post-vote) -->
+      <StickyActionBar v-if="isHost && hasVoted">
+        <button
+          @click="handleSkip"
+          :disabled="isLoading"
+          class="w-full bg-card border border-white/10 hover:border-volt/50 text-paper px-6 py-2.5 sm:py-3 rounded-lg font-display font-bold uppercase tracking-wide transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
+        >
+          <Icon icon="mdi:skip-next" class="w-5 h-5" />
+          Skip Question
+        </button>
+      </StickyActionBar>
+      <div v-else-if="isHost" class="card-poster p-4">
         <button
           @click="handleSkip"
           :disabled="isLoading"
@@ -130,16 +142,16 @@
       </div>
 
       <!-- Host Controls for Next Round -->
-      <div v-if="isHost" class="card-poster p-4 sm:p-6">
+      <StickyActionBar v-if="isHost">
         <button
           @click="handleNext"
           :disabled="isLoading"
-          class="w-full bg-hot text-ink shadow-hard hover:brightness-110 px-6 py-2.5 sm:py-3 rounded-lg font-display font-bold uppercase tracking-wide transition-[filter] disabled:opacity-50 flex items-center justify-center gap-2"
+          class="w-full bg-hot text-paper shadow-hard hover:brightness-110 px-6 py-2.5 sm:py-3 rounded-lg font-display font-bold uppercase tracking-wide transition-[filter] disabled:opacity-50 flex items-center justify-center gap-2"
         >
           <Icon icon="mdi:arrow-right" class="w-5 h-5" />
           {{ isLoading ? 'Loading...' : 'Next Question' }}
         </button>
-      </div>
+      </StickyActionBar>
       <WaitingForHost
         v-else
         :host-name="hostName"
@@ -154,19 +166,19 @@
         <Icon icon="mdi:thought-bubble" class="w-14 h-14 sm:w-16 sm:h-16 mx-auto mb-4 text-hot" />
         <p class="text-lg sm:text-xl font-display font-bold uppercase tracking-wide mb-2">Game Started!</p>
         <p class="text-paper/60 mb-6">Waiting for host to load the first question...</p>
-
-        <!-- Host: Load First Question -->
-        <div v-if="isHost">
-          <button
-            @click="handleNext"
-            :disabled="isLoading"
-            class="w-full bg-hot text-ink shadow-hard hover:brightness-110 px-6 py-2.5 sm:py-3 rounded-lg font-display font-bold uppercase tracking-wide transition-[filter] disabled:opacity-50 flex items-center justify-center gap-2"
-          >
-            <Icon icon="mdi:arrow-right" class="w-5 h-5" />
-            {{ isLoading ? 'Loading...' : 'Load First Question' }}
-          </button>
-        </div>
       </div>
+
+      <!-- Host: Load First Question -->
+      <StickyActionBar v-if="isHost">
+        <button
+          @click="handleNext"
+          :disabled="isLoading"
+          class="w-full bg-hot text-paper shadow-hard hover:brightness-110 px-6 py-2.5 sm:py-3 rounded-lg font-display font-bold uppercase tracking-wide transition-[filter] disabled:opacity-50 flex items-center justify-center gap-2"
+        >
+          <Icon icon="mdi:arrow-right" class="w-5 h-5" />
+          {{ isLoading ? 'Loading...' : 'Load First Question' }}
+        </button>
+      </StickyActionBar>
     </div>
 
     <!-- Waiting State -->

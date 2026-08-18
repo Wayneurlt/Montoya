@@ -30,7 +30,7 @@ body {
 /* Focus styles for accessibility (keyboard / focus-visible) */
 a:focus-visible,
 button:focus-visible {
-  outline: 2px solid rgba(255, 46, 99, 0.8);
+  outline: 2px solid rgba(200, 37, 63, 0.85);
   outline-offset: 2px;
 }
 
@@ -49,11 +49,6 @@ button:focus-visible {
 /* Ensure proper scrolling containers */
 .overflow-y-auto {
   -webkit-overflow-scrolling: touch;
-}
-
-/* iPhone safe area: extra bottom padding so buttons aren't behind home indicator */
-.page-bottom-safe {
-  padding-bottom: max(1.5rem, env(safe-area-inset-bottom, 0px));
 }
 
 /* Mobile: keep bottom content above browser nav / home indicator (use on main page containers) */

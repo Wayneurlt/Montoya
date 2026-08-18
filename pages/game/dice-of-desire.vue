@@ -64,7 +64,7 @@
 
         <button
           @click="startGame"
-          class="w-full bg-hot text-ink shadow-hard hover:brightness-110 py-3 rounded-lg font-display font-bold uppercase tracking-wide transition-[filter] flex items-center justify-center gap-2"
+          class="w-full bg-hot text-paper shadow-hard hover:brightness-110 py-3 rounded-lg font-display font-bold uppercase tracking-wide transition-[filter] flex items-center justify-center gap-2"
         >
           <Icon icon="mdi:dice" class="w-5 h-5" />
           Start Game
@@ -103,7 +103,7 @@
               gameMode === "free-for-all" ? "FFA" : "Paired"
             }}</span>
           </span>
-          <span class="badge-stamp px-2.5 sm:px-3 py-1 sm:py-1.5 text-xs sm:text-sm bg-hot text-ink">Lv {{ gameLevel }}</span>
+          <span class="badge-stamp px-2.5 sm:px-3 py-1 sm:py-1.5 text-xs sm:text-sm bg-hot text-paper">Lv {{ gameLevel }}</span>
         </div>
       </div>
 
@@ -147,7 +147,7 @@
           <div
             ref="bodyDieRef"
             @click="handleRollDice($event)"
-            class="w-20 h-20 sm:w-24 sm:h-24 md:w-28 md:h-28 lg:w-32 lg:h-32 bg-hot text-ink rounded-lg shadow-hard flex flex-col justify-center items-center cursor-pointer transition-transform hover:brightness-110"
+            class="w-20 h-20 sm:w-24 sm:h-24 md:w-28 md:h-28 lg:w-32 lg:h-32 bg-hot text-paper rounded-lg shadow-hard flex flex-col justify-center items-center cursor-pointer transition-transform hover:brightness-110"
             :class="{
               'ring-2 ring-paper': !isRolling && currentRoll.body === 'Your Choice',
             }"
@@ -190,7 +190,7 @@
           ref="rollButtonRef"
           @click="handleRollDice($event)"
           :disabled="isRolling || isTimerRunning"
-          class="w-full bg-hot text-ink shadow-hard hover:brightness-110 py-3 sm:py-4 md:py-5 rounded-lg font-display font-bold uppercase tracking-wide text-base sm:text-lg md:text-xl transition-[filter] disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 sm:gap-3"
+          class="w-full bg-hot text-paper shadow-hard hover:brightness-110 py-3 sm:py-4 md:py-5 rounded-lg font-display font-bold uppercase tracking-wide text-base sm:text-lg md:text-xl transition-[filter] disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 sm:gap-3"
         >
           <Icon
             v-if="isRolling"
@@ -221,7 +221,36 @@
         <div
           class="bg-white/5 border border-white/10 rounded-md p-3 sm:p-4 md:p-6 mb-3 sm:mb-4 md:mb-6"
         >
-          <p ref="resultTextRef" class="font-display text-lg sm:text-xl md:text-2xl lg:text-3xl font-bold text-center leading-relaxed px-2 text-paper">{{ currentResult }}</p>
+          <div class="flex items-center justify-center gap-3 sm:gap-4">
+            <p ref="resultTextRef" class="font-display text-lg sm:text-xl md:text-2xl lg:text-3xl font-bold text-center leading-relaxed px-2 text-paper flex-1 min-w-0">{{ currentResult }}</p>
+
+            <!-- Hesitation timer: kept small and beside the result text so it no longer pushes Completed/Failed down the card -->
+            <div ref="timerWrapRef" class="relative w-12 h-12 sm:w-14 sm:h-14 md:w-16 md:h-16 flex-shrink-0">
+              <svg class="w-full h-full transform -rotate-90" viewBox="0 0 36 36">
+                <path
+                  d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
+                  fill="none"
+                  stroke="rgba(255,255,255,0.12)"
+                  stroke-width="3"
+                />
+                <path
+                  d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
+                  fill="none"
+                  :stroke="secondsLeft <= 5 ? '#c8253f' : '#d4af6a'"
+                  stroke-width="3"
+                  stroke-linecap="round"
+                  :stroke-dasharray="`${timerPercent}, 100`"
+                />
+              </svg>
+              <span
+                ref="secondsTextRef"
+                class="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 font-display font-bold text-[10px] sm:text-xs tabular-nums"
+                :class="secondsLeft <= 5 ? 'text-hot' : 'text-paper'"
+              >
+                {{ secondsLeft }}s
+              </span>
+            </div>
+          </div>
           <p
             v-if="specialEffect"
             class="text-center mt-4 font-display font-bold uppercase tracking-wide text-sm inline-flex items-center justify-center gap-2 bg-volt text-ink rounded-full px-6 py-3 mx-auto"
@@ -231,35 +260,9 @@
           </p>
         </div>
 
-        <!-- Timer -->
-        <div class="flex flex-col items-center">
-          <div ref="timerWrapRef" class="relative w-24 h-24 sm:w-28 sm:h-28 md:w-32 md:h-32 mb-3 sm:mb-4 md:mb-6">
-            <svg class="w-full h-full transform -rotate-90" viewBox="0 0 36 36">
-              <path
-                d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
-                fill="none"
-                stroke="rgba(255,255,255,0.12)"
-                stroke-width="3"
-              />
-              <path
-                d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
-                fill="none"
-                :stroke="secondsLeft <= 5 ? '#FF2E63' : '#C6FF3D'"
-                stroke-width="3"
-                stroke-linecap="round"
-                :stroke-dasharray="`${timerPercent}, 100`"
-              />
-            </svg>
-            <span
-              ref="secondsTextRef"
-              class="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 font-display font-bold text-2xl tabular-nums"
-              :class="secondsLeft <= 5 ? 'text-hot' : 'text-paper'"
-            >
-              {{ secondsLeft }}s
-            </span>
-          </div>
-
-          <div class="flex gap-2 sm:gap-3 md:gap-4">
+        <!-- Primary action: now directly after the result text/pill instead of below the timer graphic; sticky so it stays reachable regardless of card height -->
+        <StickyActionBar>
+          <div class="flex gap-2 sm:gap-3 md:gap-4 justify-center w-full">
             <button
               @click="handleCompleteAction($event)"
               class="bg-volt text-ink shadow-hard-sm hover:brightness-110 px-3 sm:px-4 md:px-6 py-1.5 sm:py-2 rounded-lg font-display font-bold uppercase tracking-wide flex items-center gap-1.5 sm:gap-2 text-xs sm:text-sm md:text-base transition-[filter]"
@@ -269,13 +272,13 @@
             </button>
             <button
               @click="handleFailAction($event)"
-              class="bg-hot text-ink shadow-hard-sm hover:brightness-110 px-3 sm:px-4 md:px-6 py-1.5 sm:py-2 rounded-lg font-display font-bold uppercase tracking-wide flex items-center gap-1.5 sm:gap-2 text-xs sm:text-sm md:text-base transition-[filter]"
+              class="bg-hot text-paper shadow-hard-sm hover:brightness-110 px-3 sm:px-4 md:px-6 py-1.5 sm:py-2 rounded-lg font-display font-bold uppercase tracking-wide flex items-center gap-1.5 sm:gap-2 text-xs sm:text-sm md:text-base transition-[filter]"
             >
               <Icon icon="mdi:close-thick" class="w-4 h-4 sm:w-5 sm:h-5" />
               Failed
             </button>
           </div>
-        </div>
+        </StickyActionBar>
       </div>
 
       <!-- History: collapsed by default so it doesn't eat gameplay space -->

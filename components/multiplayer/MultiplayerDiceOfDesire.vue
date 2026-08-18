@@ -45,7 +45,7 @@
         <!-- Body Part Die -->
         <div
           ref="bodyDieRef"
-          class="w-20 h-20 sm:w-24 sm:h-24 md:w-28 md:h-28 lg:w-32 lg:h-32 bg-hot text-ink rounded-lg sm:rounded-xl shadow-hard flex flex-col justify-center items-center"
+          class="w-20 h-20 sm:w-24 sm:h-24 md:w-28 md:h-28 lg:w-32 lg:h-32 bg-hot text-paper rounded-lg sm:rounded-xl shadow-hard flex flex-col justify-center items-center"
           :class="{
             'animate-spin': isRolling,
             'ring-4 ring-paper/50': !isRolling && currentRoll.body === 'Your Choice',
@@ -93,7 +93,7 @@
         v-if="isHost"
         @click="handleRoll"
         :disabled="isRolling || isTimerRunning"
-        class="w-full bg-hot text-ink shadow-hard hover:brightness-110 py-3 sm:py-4 md:py-5 rounded-lg font-display font-bold uppercase tracking-wide text-sm sm:text-base md:text-lg transition-[filter] disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 sm:gap-3"
+        class="w-full bg-hot text-paper shadow-hard hover:brightness-110 py-3 sm:py-4 md:py-5 rounded-lg font-display font-bold uppercase tracking-wide text-sm sm:text-base md:text-lg transition-[filter] disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 sm:gap-3"
       >
         <Icon v-if="isRolling" icon="svg-spinners:3-dots-fade" class="w-5 h-5 sm:w-6 sm:h-6" />
         <Icon v-else icon="mdi:dice" class="w-5 h-5 sm:w-6 sm:h-6" />
@@ -108,25 +108,30 @@
       <div class="card-index card-index-br text-hot"><Icon icon="mdi:fire" class="w-3.5 h-3.5" />CMD</div>
 
       <div class="mb-4 sm:mb-6 flex justify-center">
-        <div ref="typeBadgeRef" class="badge-stamp bg-hot text-ink px-5 sm:px-6 py-2.5 sm:py-3 text-sm sm:text-base">
+        <div ref="typeBadgeRef" class="badge-stamp bg-hot text-paper px-5 sm:px-6 py-2.5 sm:py-3 text-sm sm:text-base">
           <Icon icon="mdi:fire" class="w-5 h-5 sm:w-6 sm:h-6" />
           Your Command
         </div>
       </div>
 
-      <p ref="questionTextRef" class="font-display text-lg sm:text-xl md:text-2xl lg:text-3xl font-bold text-center leading-relaxed px-2 text-paper mb-4">
-        {{ currentResult }}
-      </p>
-      <div v-if="specialEffect" class="flex justify-center mb-2">
-        <p class="text-volt font-display font-bold uppercase tracking-wide text-xs sm:text-sm inline-flex items-center gap-2 bg-white/5 border border-white/10 rounded-full px-4 sm:px-5 py-2 sm:py-2.5">
-          <Icon :icon="specialEffectIcon" class="w-4 h-4 sm:w-5 sm:h-5" />
-          {{ specialEffect }}
-        </p>
-      </div>
+      <!-- Result text + a smaller inline timer ring beside it, instead of a
+           full-size ring stacked above the action buttons, so Completed/
+           Failed stay reachable without extra scrolling. -->
+      <div class="flex flex-col sm:flex-row items-center gap-4 sm:gap-6 mb-4">
+        <div class="flex-1 min-w-0 w-full">
+          <p ref="questionTextRef" class="font-display text-lg sm:text-xl md:text-2xl lg:text-3xl font-bold text-center sm:text-left leading-relaxed px-2 text-paper">
+            {{ currentResult }}
+          </p>
+          <div v-if="specialEffect" class="flex justify-center sm:justify-start mt-3">
+            <p class="text-volt font-display font-bold uppercase tracking-wide text-xs sm:text-sm inline-flex items-center gap-2 bg-white/5 border border-white/10 rounded-full px-4 sm:px-5 py-2 sm:py-2.5">
+              <Icon :icon="specialEffectIcon" class="w-4 h-4 sm:w-5 sm:h-5" />
+              {{ specialEffect }}
+            </p>
+          </div>
+        </div>
 
-      <!-- Timer -->
-      <div class="flex flex-col items-center mt-4 sm:mt-6">
-        <div class="relative w-24 h-24 sm:w-28 sm:h-28 md:w-32 md:h-32 mb-3 sm:mb-4 md:mb-6">
+        <!-- Timer: smaller, beside the text rather than a large block above the buttons -->
+        <div class="relative w-16 h-16 sm:w-20 sm:h-20 flex-shrink-0">
           <svg class="w-full h-full transform -rotate-90" viewBox="0 0 36 36">
             <path
               d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
@@ -137,7 +142,7 @@
             <path
               d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
               fill="none"
-              :stroke="secondsLeft <= 5 ? '#FF2E63' : '#C6FF3D'"
+              :stroke="secondsLeft <= 5 ? '#c8253f' : '#d4af6a'"
               stroke-width="3"
               stroke-linecap="round"
               :stroke-dasharray="`${timerPercent}, 100`"
@@ -145,14 +150,16 @@
           </svg>
           <span
             ref="timerNumberRef"
-            class="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-xl sm:text-2xl font-display font-bold tabular-nums"
+            class="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-sm sm:text-base font-display font-bold tabular-nums"
             :class="secondsLeft <= 5 ? 'text-hot' : 'text-paper'"
           >
             {{ secondsLeft }}s
           </span>
         </div>
+      </div>
 
-        <div v-if="isHost" class="flex gap-2 sm:gap-3 md:gap-4">
+      <StickyActionBar v-if="isHost">
+        <div class="flex justify-center gap-2 sm:gap-3 md:gap-4 w-full">
           <button
             @click="handleCompleteAction"
             class="bg-volt text-ink shadow-hard-sm hover:brightness-110 px-3 sm:px-4 md:px-6 py-1.5 sm:py-2 rounded-lg font-display font-bold uppercase tracking-wide flex items-center gap-1.5 sm:gap-2 text-xs sm:text-sm md:text-base"
@@ -162,14 +169,14 @@
           </button>
           <button
             @click="handleFailAction"
-            class="bg-hot text-ink shadow-hard-sm hover:brightness-110 px-3 sm:px-4 md:px-6 py-1.5 sm:py-2 rounded-lg font-display font-bold uppercase tracking-wide flex items-center gap-1.5 sm:gap-2 text-xs sm:text-sm md:text-base"
+            class="bg-hot text-paper shadow-hard-sm hover:brightness-110 px-3 sm:px-4 md:px-6 py-1.5 sm:py-2 rounded-lg font-display font-bold uppercase tracking-wide flex items-center gap-1.5 sm:gap-2 text-xs sm:text-sm md:text-base"
           >
             <Icon icon="mdi:close-thick" class="w-4 h-4 sm:w-5 sm:h-5" />
             Failed
           </button>
         </div>
-        <p v-else class="text-paper/60 text-sm">Waiting for host to mark Completed or Failed</p>
-      </div>
+      </StickyActionBar>
+      <p v-else class="text-paper/60 text-sm text-center">Waiting for host to mark Completed or Failed</p>
     </div>
 
     <!-- History: collapsed by default so it doesn't eat gameplay space -->

@@ -12,7 +12,7 @@
         class="rounded-md p-1.5 sm:p-2 text-center text-xs sm:text-sm transition-colors bg-white/5 border border-white/10"
         :class="{
           'border-volt/50': player.isHost && !(!!currentTurnSocketId && player.socketId === currentTurnSocketId),
-          'bg-hot text-ink border-hot shadow-hard-sm': !!currentTurnSocketId && player.socketId === currentTurnSocketId,
+          'bg-hot text-paper border-hot shadow-hard-sm': !!currentTurnSocketId && player.socketId === currentTurnSocketId,
         }"
       >
         <div class="font-display uppercase tracking-wide truncate">{{ player.nickname }}</div>
@@ -21,7 +21,7 @@
             v-if="player.isHost"
             icon="mdi:crown"
             class="w-3.5 h-3.5"
-            :class="!!currentTurnSocketId && player.socketId === currentTurnSocketId ? 'text-ink/70' : 'text-volt'"
+            :class="!!currentTurnSocketId && player.socketId === currentTurnSocketId ? 'text-paper/70' : 'text-volt'"
           />
           <span
             v-if="!!currentTurnSocketId && player.socketId === currentTurnSocketId"

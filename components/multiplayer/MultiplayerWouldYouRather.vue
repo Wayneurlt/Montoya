@@ -28,8 +28,14 @@
 
     <!-- Playing Phase: Show Question and Voting -->
     <div v-if="roomState.gamePhase === 'playing' && roomState.currentPrompt && parsedOptions" class="space-y-4 sm:space-y-6">
-      <!-- Two Options as full choice cards -->
-      <div class="relative grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4 mb-2">
+      <!-- Two Options as full choice cards. Deliberately NOT wrapped in
+           StickyActionBar: these are large content cards (~200px+ each, with
+           a VS badge), not a slim action row — docking them to the viewport
+           bottom would permanently cover most of the screen and overlap the
+           Live Results below, unlike every other screen's compact 1-2 button
+           sticky bar. Tapping a card directly casts the vote (no separate
+           confirm step), so there's no discrete small CTA to extract here. -->
+      <div class="relative grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4">
         <!-- Option A -->
         <button
           @click="handleVote('Option A', $event)"
@@ -200,16 +206,16 @@
       </div>
 
       <!-- Host Controls for Next Round -->
-      <div v-if="isHost" class="card-poster p-4 sm:p-6">
+      <StickyActionBar v-if="isHost">
         <button
           @click="handleNext"
           :disabled="isLoading"
-          class="w-full bg-hot text-ink shadow-hard hover:brightness-110 px-6 py-2.5 sm:py-3 rounded-lg font-display font-bold uppercase tracking-wide transition-[filter] disabled:opacity-50 flex items-center justify-center gap-2"
+          class="w-full bg-hot text-paper shadow-hard hover:brightness-110 px-6 py-2.5 sm:py-3 rounded-lg font-display font-bold uppercase tracking-wide transition-[filter] disabled:opacity-50 flex items-center justify-center gap-2"
         >
           <Icon icon="mdi:arrow-right" class="w-5 h-5" />
           {{ isLoading ? 'Loading...' : 'Next Question' }}
         </button>
-      </div>
+      </StickyActionBar>
       <WaitingForHost
         v-else
         :host-name="hostName"
@@ -224,19 +230,19 @@
         <Icon icon="mdi:thought-bubble" class="w-14 h-14 sm:w-16 sm:h-16 mx-auto mb-4 text-hot" />
         <p class="text-lg sm:text-xl font-display font-bold uppercase tracking-wide mb-2">Game Started!</p>
         <p class="text-paper/60 mb-6">Waiting for host to load the first question...</p>
-
-        <!-- Host: Load First Question -->
-        <div v-if="isHost">
-          <button
-            @click="handleNext"
-            :disabled="isLoading"
-            class="w-full bg-hot text-ink shadow-hard hover:brightness-110 px-6 py-2.5 sm:py-3 rounded-lg font-display font-bold uppercase tracking-wide transition-[filter] disabled:opacity-50 flex items-center justify-center gap-2"
-          >
-            <Icon icon="mdi:arrow-right" class="w-5 h-5" />
-            {{ isLoading ? 'Loading...' : 'Load First Question' }}
-          </button>
-        </div>
       </div>
+
+      <!-- Host: Load First Question -->
+      <StickyActionBar v-if="isHost">
+        <button
+          @click="handleNext"
+          :disabled="isLoading"
+          class="w-full bg-hot text-paper shadow-hard hover:brightness-110 px-6 py-2.5 sm:py-3 rounded-lg font-display font-bold uppercase tracking-wide transition-[filter] disabled:opacity-50 flex items-center justify-center gap-2"
+        >
+          <Icon icon="mdi:arrow-right" class="w-5 h-5" />
+          {{ isLoading ? 'Loading...' : 'Load First Question' }}
+        </button>
+      </StickyActionBar>
     </div>
 
     <!-- Waiting State -->

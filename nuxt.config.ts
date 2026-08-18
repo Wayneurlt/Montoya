@@ -98,8 +98,8 @@ export default defineNuxtConfig({
       name: "Montoya",
       short_name: "Montoya",
       description: "Montoya — multiplayer Truth or Dare and party games.",
-      theme_color: "#9333ea",
-      background_color: "#3b0764",
+      theme_color: "#c8253f",
+      background_color: "#0a0a0d",
       display: "standalone",
       start_url: "/",
       icons: [
