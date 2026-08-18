@@ -55,6 +55,29 @@ const roomState = ref<RoomState>({
   usedPromptKeys: [],
 })
 
+// Turn-based prompts (Truth or Dare etc.) are redacted in every broadcast the
+// server sends to the whole room — the full text only ever arrives via a
+// separate private `game:prompt:private` emit to the host + the player whose
+// turn it is, merged in locally below. But plenty of other things also cause
+// a fresh `room:sync`/`game:state:update` for the SAME prompt afterwards (the
+// receipt-ack rebroadcast, another player joining, a reconnect sync, ring-host,
+// the periodic stale-player cleanup...) and each one carries the server's
+// still-redacted `currentPrompt` — so a naive overwrite would wipe the text
+// back out moments after it was shown. This keeps the locally-merged text
+// whenever the incoming update is just a re-sync of the same prompt.
+function withPreservedPromptText(incoming: any): any {
+  const existing = roomState.value.currentPrompt
+  if (
+    existing?.promptId &&
+    incoming?.promptId === existing.promptId &&
+    existing.text &&
+    !incoming.text
+  ) {
+    return { ...incoming, text: existing.text }
+  }
+  return incoming
+}
+
 const votes = ref<VoteData[]>([])
 const error = ref<string | null>(null)
 const paymentRequired = ref(false)
@@ -219,7 +242,7 @@ export const useMultiplayer = () => {
     })
 
     socket.on('room:sync', (data: RoomState) => {
-      roomState.value = data
+      roomState.value = { ...data, currentPrompt: withPreservedPromptText(data.currentPrompt) }
       console.log('🔄 Room synced:', data.roomCode)
       console.log('👑 Host check:', {
         hostSocketId: roomState.value.hostSocketId,
@@ -256,7 +279,7 @@ export const useMultiplayer = () => {
     }) => {
       roomState.value.currentGame = data.currentGame
       roomState.value.gamePhase = data.gamePhase
-      roomState.value.currentPrompt = data.currentPrompt
+      roomState.value.currentPrompt = withPreservedPromptText(data.currentPrompt)
       roomState.value.nextUpPlayer = data.nextUpPlayer ?? null
       roomState.value.usedPromptKeys = data.usedPromptKeys ?? []
       console.log('🎮 Game state updated:', data)
