@@ -230,7 +230,9 @@
       <div v-if="currentCard && cardFlipped" class="flex justify-center mb-2">
         <button
           @click="handleResetCard($event)"
-          class="btn-ghost inline-flex items-center gap-2"
+          :disabled="skipsThisPrompt >= MAX_SKIPS_PER_PROMPT"
+          :title="skipsThisPrompt >= MAX_SKIPS_PER_PROMPT ? 'No more re-rolls for this turn' : `${MAX_SKIPS_PER_PROMPT - skipsThisPrompt} re-roll${MAX_SKIPS_PER_PROMPT - skipsThisPrompt === 1 ? '' : 's'} left`"
+          class="btn-ghost inline-flex items-center gap-2 disabled:opacity-40 disabled:cursor-not-allowed"
         >
           <Icon icon="mdi:refresh" class="w-4 h-4" />
           Choose Different Card
@@ -334,6 +336,7 @@ const gameStore = useGameStore();
 
 // Game Configuration
 const MAX_HESITATION_TIME = 15;
+const MAX_SKIPS_PER_PROMPT = 2;
 
 // Game State
 const showSettings = ref(false);
@@ -362,6 +365,7 @@ const hesitationTimer = ref(null);
 // a smooth per-tick animation instead of an instant jump + CSS transition.
 const hesitationPercent = reactive({ value: 100 });
 const isDrawing = ref(false);
+const skipsThisPrompt = ref(0);
 
 // Animation refs
 const headerRowRef = ref(null);
@@ -562,6 +566,8 @@ const handleDrawCard = (evt) => {
 };
 
 const handleResetCard = (evt) => {
+  if (skipsThisPrompt.value >= MAX_SKIPS_PER_PROMPT) return;
+  skipsThisPrompt.value++;
   punchScale(evt?.currentTarget);
   resetHesitationTimer();
   flipTransition(flipInnerRef.value, () => {
@@ -700,6 +706,7 @@ const handleElimination = () => {
 };
 
 const nextTurn = () => {
+  skipsThisPrompt.value = 0;
   resetHesitationTimer();
   flipTransition(flipInnerRef.value, () => {
     currentCard.value = null;

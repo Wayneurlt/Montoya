@@ -86,6 +86,10 @@
                 <span class="text-sm capitalize">{{ safeRoomState.answerVisibility }} Mode</span>
               </div>
             </div>
+            <div v-if="qrDataUrl" class="flex flex-col items-center mt-5">
+              <img :src="qrDataUrl" alt="Scan to join room" class="rounded-md border border-white/10 bg-white p-1.5" width="140" height="140" />
+              <p class="text-xs text-paper/50 mt-2">Scan to join</p>
+            </div>
           </div>
 
           <!-- Player List -->
@@ -348,12 +352,16 @@
 import { ref, computed, onMounted, onBeforeUnmount, watch } from 'vue'
 import { Icon } from '@iconify/vue'
 import { push } from 'notivue'
+import QRCode from 'qrcode'
+import { useRoute } from 'vue-router'
 import { useMultiplayer } from '~/composables/useMultiplayer'
 import { playRingSound, vibrateRing } from '~/composables/useRingSound'
 import { usePayment } from '~/composables/usePayment'
 import { useGameStore } from '~/stores/game'
 import MultiplayerPaywallModal from '~/components/payment/MultiplayerPaywallModal.vue'
 import { staggerReveal } from '~/composables/useGameAnimations'
+
+const route = useRoute()
 
 // Multiplayer room state lives in a process-wide singleton (see useMultiplayer.ts),
 // not per-request — rendering it during SSR could leak one user's live room into
@@ -385,7 +393,7 @@ const {
   clearPaymentRequired,
 } = multiplayer
 
-const { passActive, checkEntitlement, openPaywall } = usePayment()
+const { passActive, passToken, checkEntitlement, openPaywall } = usePayment()
 
 const isRinging = ref(false)
 const ringHostCooldown = ref(0)
@@ -431,6 +439,7 @@ const selectedGame = ref<string | null>(null)
 const isConnecting = ref(false)
 const isStartingGame = ref(false)
 const copied = ref(false)
+const qrDataUrl = ref<string | null>(null)
 const localError = ref<string | null>(null)
 // Tracks which action the paywall was opened for, so a successful payment
 // retries the right thing instead of always re-attempting room creation.
@@ -470,6 +479,22 @@ const safeRoomState = computed(() => {
   }
   return roomState.value
 })
+
+// Regenerate the join QR whenever a room code appears/changes, so scanning it
+// takes a player straight to a pre-filled join form instead of a bare code.
+watch(() => safeRoomState.value.roomCode, async (code) => {
+  if (!code || typeof window === 'undefined') {
+    qrDataUrl.value = null
+    return
+  }
+  try {
+    const joinUrl = `${window.location.origin}/lobby?join=1&code=${code}`
+    qrDataUrl.value = await QRCode.toDataURL(joinUrl, { width: 180, margin: 1 })
+  } catch (e) {
+    console.error('Failed to generate join QR code:', e)
+    qrDataUrl.value = null
+  }
+}, { immediate: true })
 
 // Reason the sticky Start Game button is disabled, for the host only —
 // non-hosts get the fixed "only the host can start" message instead.
@@ -532,6 +557,7 @@ const handleCreateRoom = async () => {
       answerVisibility: createForm.value.answerVisibility,
       nickname: createForm.value.nickname,
       gender: createForm.value.gender,
+      passToken: passToken.value,
     })
 
     // Store room info for reconnection (will be updated when room is created)
@@ -619,7 +645,7 @@ const handleStartGame = () => {
   pendingPaywallAction.value = 'start'
   isStartingGame.value = true
   gameStore.setSelectedGame(selectedGame.value as any)
-  startGame(selectedGame.value)
+  startGame(selectedGame.value, undefined, passToken.value)
 
   // Navigation happens reactively once the server confirms gamePhase → 'playing'
   // (see the roomState.gamePhase watcher below). Every client — host included —
@@ -690,6 +716,12 @@ watch(error, (message) => {
 onMounted(() => {
   connect()
   checkEntitlement()
+
+  // Arriving via a scanned join QR: jump to the Join tab and pre-fill the code.
+  if (route.query.join === '1' && typeof route.query.code === 'string') {
+    isCreating.value = false
+    joinForm.value.roomCode = route.query.code.toUpperCase().replace(/[^A-Z0-9]/g, '')
+  }
 
   // Host ring: show toast + sound when a player rings (host is on lobby)
   if (typeof window !== 'undefined') {

@@ -9,14 +9,21 @@ const isPaywallOpen = ref(false)
 const isPolling = ref(false)
 const passActive = ref(false)
 const expiresAt = ref<string | null>(null)
+// The signed pass token itself, not just a boolean — a socket that connected
+// before payment finished never sees the httpOnly cookie set afterward (the
+// handshake's cookie header is captured once and never refreshes), so callers
+// thread this through room:create/game:start so the server can re-verify
+// entitlement per-action instead of relying solely on that stale handshake.
+const passToken = ref<string | null>(null)
 const error = ref<string | null>(null)
 
 export const usePayment = () => {
   const checkEntitlement = async () => {
     try {
-      const result = await $fetch<{ active: boolean; expiresAt?: string }>('/api/payment/entitlement')
+      const result = await $fetch<{ active: boolean; expiresAt?: string; token?: string }>('/api/payment/entitlement')
       passActive.value = result.active
       expiresAt.value = result.expiresAt ?? null
+      passToken.value = result.token ?? null
     } catch (e) {
       console.warn('Failed to check multiplayer pass entitlement:', e)
     }
@@ -50,13 +57,14 @@ export const usePayment = () => {
     isPolling.value = true
     try {
       for (let attempt = 0; attempt < POLL_MAX_ATTEMPTS; attempt++) {
-        const result = await $fetch<{ status: string; expiresAt?: string }>('/api/payment/status', {
+        const result = await $fetch<{ status: string; expiresAt?: string; token?: string }>('/api/payment/status', {
           query: { ref: apiRef },
         })
 
         if (result.status === 'ACTIVE') {
           passActive.value = true
           expiresAt.value = result.expiresAt ?? null
+          passToken.value = result.token ?? null
           isPaywallOpen.value = false
           return true
         }
@@ -81,6 +89,7 @@ export const usePayment = () => {
     isPolling,
     passActive,
     expiresAt,
+    passToken,
     error,
     checkEntitlement,
     openPaywall,

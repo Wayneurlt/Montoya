@@ -47,7 +47,6 @@
           ref="bodyDieRef"
           class="w-20 h-20 sm:w-24 sm:h-24 md:w-28 md:h-28 lg:w-32 lg:h-32 bg-hot text-paper rounded-lg sm:rounded-xl shadow-hard flex flex-col justify-center items-center"
           :class="{
-            'animate-spin': isRolling,
             'ring-4 ring-paper/50': !isRolling && currentRoll.body === 'Your Choice',
           }"
         >
@@ -59,9 +58,13 @@
               {{ currentRoll.body || "?" }}
             </p>
           </div>
-          <div v-else class="text-center">
-            <p class="text-[10px] sm:text-xs font-display uppercase tracking-wide opacity-80">Rolling</p>
-            <Icon icon="mdi:dice-multiple" class="w-6 h-6 sm:w-7 sm:h-7 mx-auto mt-1" />
+          <div v-else class="text-center px-1 sm:px-2">
+            <p class="text-[10px] sm:text-xs md:text-sm font-display uppercase tracking-wide opacity-80 mb-0.5 sm:mb-1">
+              Body Part
+            </p>
+            <p class="text-xs sm:text-sm md:text-base lg:text-lg font-display font-bold leading-tight blur-[0.5px] opacity-80">
+              {{ rollingBody }}
+            </p>
           </div>
         </div>
 
@@ -70,7 +73,6 @@
           ref="actionDieRef"
           class="w-20 h-20 sm:w-24 sm:h-24 md:w-28 md:h-28 lg:w-32 lg:h-32 bg-volt text-ink rounded-lg sm:rounded-xl shadow-hard flex flex-col justify-center items-center"
           :class="{
-            'animate-spin': isRolling,
             'ring-4 ring-paper/50': !isRolling && currentRoll.action === 'Your Choice',
           }"
         >
@@ -82,9 +84,13 @@
               {{ currentRoll.action || "?" }}
             </p>
           </div>
-          <div v-else class="text-center">
-            <p class="text-[10px] sm:text-xs font-display uppercase tracking-wide opacity-80">Rolling</p>
-            <Icon icon="mdi:dice-multiple" class="w-6 h-6 sm:w-7 sm:h-7 mx-auto mt-1" />
+          <div v-else class="text-center px-1 sm:px-2">
+            <p class="text-[10px] sm:text-xs md:text-sm font-display uppercase tracking-wide opacity-80 mb-0.5 sm:mb-1">
+              Action
+            </p>
+            <p class="text-xs sm:text-sm md:text-base lg:text-lg font-display font-bold leading-tight blur-[0.5px] opacity-80">
+              {{ rollingAction }}
+            </p>
           </div>
         </div>
       </div>
@@ -314,6 +320,9 @@ const timer = ref<any>(null);
 const specialEffect = ref("");
 const specialEffectIcon = ref("mdi:star");
 const currentRoll = ref({ body: "", action: "" });
+const rollingBody = ref("");
+const rollingAction = ref("");
+let rollCycleInterval: ReturnType<typeof setTimeout> | null = null;
 const currentResult = ref("");
 const history = ref<any[]>([]);
 const logExpanded = ref(false);
@@ -339,7 +348,7 @@ const toggleLog = () => {
       gsap.fromTo(
         logBodyRef.value,
         { height: 0 },
-        { height: targetHeight, duration: 0.35, ease: 'power2.out', onComplete: () => gsap.set(logBodyRef.value, { height: 'auto' }) }
+        { height: targetHeight, duration: 0.35, ease: 'power2.out', onComplete: () => { gsap.set(logBodyRef.value, { height: 'auto' }); } }
       );
     } else {
       gsap.fromTo(
@@ -427,6 +436,39 @@ const getEffectIcon = (effectText: string) => {
   return "mdi:star";
 };
 
+// A short tactile "tumble" for the two dice while rolling — rocks them back
+// and forth and settles flat, standing in for a physical dice-roll motion.
+const tumbleDice = () => {
+  const targets = [bodyDieRef.value, actionDieRef.value].filter(Boolean);
+  if (!targets.length) return;
+  gsap.timeline()
+    .to(targets, { rotation: 12, scale: 1.08, duration: 0.1, ease: 'power1.out' })
+    .to(targets, { rotation: -14, duration: 0.12, ease: 'power1.inOut' })
+    .to(targets, { rotation: 10, duration: 0.12, ease: 'power1.inOut' })
+    .to(targets, { rotation: -6, duration: 0.12, ease: 'power1.inOut' })
+    .to(targets, { rotation: 0, scale: 1, duration: 0.3, ease: 'back.out(1.7)' });
+};
+
+// Slot-machine-style flicker: while rolling, rapidly swap each die's face
+// through random words so it reads as spinning rather than just waiting,
+// slowing down near the end so it feels like it's settling on a result.
+const startRollCycle = () => {
+  let tick = 0;
+  const roll = () => {
+    rollingBody.value = BODY_PARTS[Math.floor(Math.random() * BODY_PARTS.length)];
+    rollingAction.value = ACTIONS[Math.floor(Math.random() * ACTIONS.length)];
+    tick++;
+    const delay = tick < 8 ? 70 : tick < 12 ? 130 : 200;
+    rollCycleInterval = setTimeout(roll, delay);
+  };
+  roll();
+};
+
+const stopRollCycle = () => {
+  if (rollCycleInterval) clearTimeout(rollCycleInterval);
+  rollCycleInterval = null;
+};
+
 // Roll Dice
 const rollDice = async () => {
   if (isRolling.value || isTimerRunning.value || !props.isHost) return;
@@ -434,8 +476,11 @@ const rollDice = async () => {
   currentResult.value = "";
   specialEffect.value = "";
   isRolling.value = true;
+  tumbleDice();
+  startRollCycle();
 
   await new Promise((resolve) => setTimeout(resolve, 1000));
+  stopRollCycle();
 
   const bodyIndex = Math.floor(Math.random() * BODY_PARTS.length);
   const actionIndex = Math.floor(Math.random() * ACTIONS.length);
@@ -614,6 +659,7 @@ watch(
 
 onBeforeUnmount(() => {
   clearInterval(timer.value);
+  stopRollCycle();
 });
 
 onMounted(() => {

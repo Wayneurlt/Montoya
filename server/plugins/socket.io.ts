@@ -3,7 +3,7 @@ import type { Server as HTTPServer, IncomingMessage } from 'http'
 import jwt from 'jsonwebtoken'
 import { realtimeAnalytics } from '~/server/utils/realtimeAnalytics'
 import { JWT_SECRET } from '~/server/utils/jwtSecret'
-import { extractMultiplayerPassFromCookieHeader } from '~/server/utils/multiplayerPass'
+import { extractMultiplayerPassFromCookieHeader, verifyMultiplayerPassToken } from '~/server/utils/multiplayerPass'
 
 function isRequestFromAdmin(request: IncomingMessage): boolean {
   const cookieHeader = request.headers.cookie
@@ -20,8 +20,18 @@ function isRequestFromAdmin(request: IncomingMessage): boolean {
   }
 }
 
-function hasValidMultiplayerPass(request: IncomingMessage): boolean {
-  return extractMultiplayerPassFromCookieHeader(request.headers.cookie) !== null
+// `request` is the original handshake request, captured once when the socket
+// first connected — its cookie header never refreshes for the life of the
+// connection. A socket that connected (e.g. on page load) before the user
+// finished paying would otherwise never be recognized as entitled, even after
+// the httpOnly pass cookie is set. `passToken` is an explicit fallback: the
+// same signed token, handed to the client by /api/payment/status or
+// /api/payment/entitlement and threaded through the room:create/game:start
+// payload, verified here exactly like the cookie would be.
+function hasValidMultiplayerPass(request: IncomingMessage, passToken?: string | null): boolean {
+  if (extractMultiplayerPassFromCookieHeader(request.headers.cookie) !== null) return true
+  if (passToken && verifyMultiplayerPassToken(passToken) !== null) return true
+  return false
 }
 
 // Room state management
@@ -34,6 +44,7 @@ interface RoomPlayer {
   hasVoted?: boolean
   vote?: any
   lastRingTime?: number
+  lastReactionTime?: number
   lastDisconnectedAt?: number // for cleanup; set when connected -> false
 }
 
@@ -50,6 +61,11 @@ interface RoomState {
   currentPrompt: any
   nextUpPlayer: { socketId: string; nickname: string } | null // who is up when no card is showing (Truth or Dare etc.)
   votes: Map<string, any> // socketId -> vote data
+  // Prompt keys already shown this game, room-wide (not per-device), so a host
+  // handoff mid-game doesn't repeat something a previous host already picked.
+  // Reset whenever currentGame changes. Keys are game-specific (e.g. a pool
+  // index or DB id) and only ever compared within the same currentGame session.
+  usedPromptKeys: Set<string>
   createdAt: number
   lastUpdated: number
 }
@@ -59,6 +75,9 @@ const rooms = new Map<string, RoomState>()
 function makePromptId() {
   return `p_${Date.now()}_${Math.random().toString(36).slice(2, 10)}`
 }
+
+// Fixed small set so a reaction is always a real emoji, not arbitrary text.
+const ALLOWED_REACTIONS = new Set(['😂', '😮', '🔥', '😳', '❤️', '👏'])
 
 // Generate a 6-character room code
 function generateRoomCode(): string {
@@ -112,6 +131,7 @@ function broadcastRoomSync(room: RoomState) {
     gamePhase: room.gamePhase,
     currentPrompt: room.currentPrompt,
     nextUpPlayer: room.nextUpPlayer ?? null,
+    usedPromptKeys: Array.from(room.usedPromptKeys),
   })
 }
 
@@ -312,9 +332,10 @@ export default defineNitroPlugin((nitroApp) => {
       answerVisibility: 'anonymous' | 'public'
       nickname?: string
       gender?: 'male' | 'female' | 'other'
+      passToken?: string | null
     }) => {
       try {
-        if (!hasValidMultiplayerPass(socket.request)) {
+        if (!hasValidMultiplayerPass(socket.request, data.passToken)) {
           socket.emit('room:error', {
             message: 'Payment required to host a room',
             code: 'PAYMENT_REQUIRED',
@@ -338,6 +359,7 @@ export default defineNitroPlugin((nitroApp) => {
           currentPrompt: null,
           nextUpPlayer: null,
           votes: new Map(),
+          usedPromptKeys: new Set(),
           createdAt: Date.now(),
           lastUpdated: Date.now(),
         }
@@ -476,6 +498,7 @@ export default defineNitroPlugin((nitroApp) => {
           gamePhase: room.gamePhase,
           currentPrompt: room.currentPrompt,
           nextUpPlayer: room.nextUpPlayer ?? null,
+          usedPromptKeys: Array.from(room.usedPromptKeys),
         })
       } catch (error) {
         console.error('❌ Error joining room:', error)
@@ -507,7 +530,7 @@ export default defineNitroPlugin((nitroApp) => {
     })
 
     // Start game
-    socket.on('game:start', (data: { gameType: string; prompt?: any }) => {
+    socket.on('game:start', (data: { gameType: string; prompt?: any; passToken?: string | null }) => {
       try {
         const room = findRoomBySocketId(socket.id)
         if (!room) {
@@ -523,7 +546,7 @@ export default defineNitroPlugin((nitroApp) => {
 
         // Re-check the host's multiplayer pass here too (not just at room:create) so
         // a pass that expired since the room was created can't be used to start a new game.
-        if (!hasValidMultiplayerPass(socket.request)) {
+        if (!hasValidMultiplayerPass(socket.request, data.passToken)) {
           socket.emit('room:error', {
             message: 'Your multiplayer pass has expired. Renew it to start a game.',
             code: 'PAYMENT_REQUIRED',
@@ -533,6 +556,7 @@ export default defineNitroPlugin((nitroApp) => {
 
         room.currentGame = data.gameType
         room.gamePhase = 'playing'
+        room.usedPromptKeys = new Set()
 
         // Track analytics for all players in room
         room.players.forEach((player) => {
@@ -545,6 +569,9 @@ export default defineNitroPlugin((nitroApp) => {
         })
         room.currentPrompt = data.prompt || null
         room.nextUpPlayer = room.currentPrompt ? null : getNextPlayerInRoom(room, null)
+        if (data.prompt?.promptKey !== undefined && data.prompt?.promptKey !== null) {
+          room.usedPromptKeys.add(String(data.prompt.promptKey))
+        }
         room.votes.clear()
         room.lastUpdated = Date.now()
 
@@ -562,6 +589,7 @@ export default defineNitroPlugin((nitroApp) => {
             gamePhase: room.gamePhase,
             currentPrompt: room.currentPrompt,
             nextUpPlayer: room.nextUpPlayer,
+            usedPromptKeys: Array.from(room.usedPromptKeys),
           })
         }
       } catch (error) {
@@ -644,6 +672,7 @@ export default defineNitroPlugin((nitroApp) => {
               gamePhase: room.gamePhase,
               currentPrompt: room.currentPrompt,
               nextUpPlayer: room.nextUpPlayer ?? null,
+              usedPromptKeys: Array.from(room.usedPromptKeys),
             })
 
             console.log(`✅ All players voted in room ${room.roomCode}, auto-showing results for ${room.currentGame}`)
@@ -676,6 +705,7 @@ export default defineNitroPlugin((nitroApp) => {
         room.currentPrompt = null
         room.nextUpPlayer = null
         room.votes.clear()
+        room.usedPromptKeys = new Set()
         room.lastUpdated = Date.now()
 
         // Reset all player votes
@@ -713,6 +743,7 @@ export default defineNitroPlugin((nitroApp) => {
             gamePhase: room.gamePhase,
             currentPrompt: room.currentPrompt,
             nextUpPlayer: room.nextUpPlayer ?? null,
+            usedPromptKeys: Array.from(room.usedPromptKeys),
           })
         }
       } catch (error) {
@@ -795,6 +826,9 @@ export default defineNitroPlugin((nitroApp) => {
             room.currentPrompt = data.prompt
           }
           room.nextUpPlayer = null
+          if (data.prompt?.promptKey !== undefined && data.prompt?.promptKey !== null) {
+            room.usedPromptKeys.add(String(data.prompt.promptKey))
+          }
         } else {
           const lastSocketId = room.currentPrompt?.player?.socketId ?? null
           room.nextUpPlayer = getNextPlayerInRoom(room, lastSocketId)
@@ -816,6 +850,7 @@ export default defineNitroPlugin((nitroApp) => {
             gamePhase: room.gamePhase,
             currentPrompt: room.currentPrompt,
             nextUpPlayer: room.nextUpPlayer,
+            usedPromptKeys: Array.from(room.usedPromptKeys),
           })
 
           // Deliver full prompt privately to the selected player and the host.
@@ -859,6 +894,7 @@ export default defineNitroPlugin((nitroApp) => {
             gamePhase: room.gamePhase,
             currentPrompt: room.currentPrompt,
             nextUpPlayer: room.nextUpPlayer,
+            usedPromptKeys: Array.from(room.usedPromptKeys),
           })
         }
       } catch (error) {
@@ -886,6 +922,9 @@ export default defineNitroPlugin((nitroApp) => {
         if (data?.prompt) {
           room.currentPrompt = data.prompt
           room.nextUpPlayer = null
+          if (data.prompt?.promptKey !== undefined && data.prompt?.promptKey !== null) {
+            room.usedPromptKeys.add(String(data.prompt.promptKey))
+          }
         } else {
           const lastSocketId = room.currentPrompt?.player?.socketId ?? null
           room.nextUpPlayer = getNextPlayerInRoom(room, lastSocketId)
@@ -907,6 +946,7 @@ export default defineNitroPlugin((nitroApp) => {
             gamePhase: room.gamePhase,
             currentPrompt: room.currentPrompt,
             nextUpPlayer: room.nextUpPlayer,
+            usedPromptKeys: Array.from(room.usedPromptKeys),
           })
         }
       } catch (error) {
@@ -963,6 +1003,46 @@ export default defineNitroPlugin((nitroApp) => {
       }
     })
 
+    // Send a quick emoji reaction to the room
+    socket.on('room:reaction', (data: { emoji: string }) => {
+      try {
+        const room = findRoomBySocketId(socket.id)
+        if (!room) {
+          socket.emit('room:error', { message: 'Not in a room' })
+          return
+        }
+
+        const player = room.players.get(socket.id)
+        if (!player) {
+          socket.emit('room:error', { message: 'Player not found' })
+          return
+        }
+
+        if (!data?.emoji || !ALLOWED_REACTIONS.has(data.emoji)) {
+          return
+        }
+
+        // Rate limit: at most one reaction every 2 seconds per player
+        const now = Date.now()
+        if (!player.lastReactionTime) {
+          player.lastReactionTime = 0
+        }
+        if (now - player.lastReactionTime < 2000) {
+          return
+        }
+        player.lastReactionTime = now
+
+        if (io) {
+          io.to(room.roomId).emit('reaction:notify', {
+            emoji: data.emoji,
+            fromNickname: player.nickname,
+          })
+        }
+      } catch (error) {
+        console.error('❌ Error sending reaction:', error)
+      }
+    })
+
     // Leave room - if host leaves, end game and notify all players
     socket.on('room:leave', () => {
       try {
@@ -987,7 +1067,8 @@ export default defineNitroPlugin((nitroApp) => {
           room.currentGame = null
           room.currentPrompt = null
           room.votes.clear()
-          
+          room.usedPromptKeys = new Set()
+
           // Migrate host if there are other players
           const newHost = migrateHost(room)
           if (newHost) {
@@ -1030,6 +1111,7 @@ export default defineNitroPlugin((nitroApp) => {
           gamePhase: room.gamePhase,
           currentPrompt: room.currentPrompt,
           nextUpPlayer: room.nextUpPlayer ?? null,
+          usedPromptKeys: Array.from(room.usedPromptKeys),
         })
         }
       } catch (error) {
@@ -1115,6 +1197,7 @@ export default defineNitroPlugin((nitroApp) => {
             gamePhase: room.gamePhase,
             currentPrompt: room.currentPrompt,
             nextUpPlayer: room.nextUpPlayer ?? null,
+            usedPromptKeys: Array.from(room.usedPromptKeys),
           })
         }
       } catch (error) {
@@ -1163,6 +1246,7 @@ export default defineNitroPlugin((nitroApp) => {
             gamePhase: room.gamePhase,
             currentPrompt: room.currentPrompt,
             nextUpPlayer: room.nextUpPlayer ?? null,
+            usedPromptKeys: Array.from(room.usedPromptKeys),
           })
         }
       }

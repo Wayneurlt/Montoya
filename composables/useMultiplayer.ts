@@ -22,6 +22,10 @@ export interface RoomState {
   gamePhase: 'lobby' | 'playing' | 'voting' | 'results'
   currentPrompt: any
   nextUpPlayer?: { socketId: string; nickname: string } | null
+  // Prompt keys already shown this game, room-wide — pass this as the
+  // exclusion set to a question tracker's getNextQuestion() so a host handoff
+  // mid-game doesn't repeat something a previous host already picked.
+  usedPromptKeys?: string[]
 }
 
 export interface VoteData {
@@ -48,6 +52,7 @@ const roomState = ref<RoomState>({
   currentGame: null,
   gamePhase: 'lobby',
   currentPrompt: null,
+  usedPromptKeys: [],
 })
 
 const votes = ref<VoteData[]>([])
@@ -247,11 +252,13 @@ export const useMultiplayer = () => {
       gamePhase: 'lobby' | 'playing' | 'voting' | 'results'
       currentPrompt: any
       nextUpPlayer?: { socketId: string; nickname: string } | null
+      usedPromptKeys?: string[]
     }) => {
       roomState.value.currentGame = data.currentGame
       roomState.value.gamePhase = data.gamePhase
       roomState.value.currentPrompt = data.currentPrompt
       roomState.value.nextUpPlayer = data.nextUpPlayer ?? null
+      roomState.value.usedPromptKeys = data.usedPromptKeys ?? []
       console.log('🎮 Game state updated:', data)
     })
 
@@ -294,6 +301,12 @@ export const useMultiplayer = () => {
       console.log('🔔 Ring notification (host):', data.message)
       if (typeof window !== 'undefined') {
         window.dispatchEvent(new CustomEvent('host-ring', { detail: data }))
+      }
+    })
+
+    socket.on('reaction:notify', (data: { emoji: string; fromNickname: string }) => {
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(new CustomEvent('room-reaction', { detail: data }))
       }
     })
 
@@ -379,6 +392,11 @@ export const useMultiplayer = () => {
     answerVisibility?: 'anonymous' | 'public'
     nickname?: string
     gender?: 'male' | 'female' | 'other'
+    // See usePayment.ts's passToken: the socket's handshake cookie is fixed at
+    // connect time, so a socket that connected before payment finished would
+    // never pick up the pass cookie set afterward. Passing the token explicitly
+    // lets the server re-verify entitlement here instead of only at handshake.
+    passToken?: string | null
   }) => {
     if (!socket || !socket.connected) {
       connect()
@@ -391,6 +409,7 @@ export const useMultiplayer = () => {
         answerVisibility: options.answerVisibility || 'anonymous',
         nickname: options.nickname,
         gender: options.gender,
+        passToken: options.passToken,
       })
     }
   }
@@ -418,9 +437,9 @@ export const useMultiplayer = () => {
   }
 
   // Start game
-  const startGame = (gameType: string, prompt?: any) => {
+  const startGame = (gameType: string, prompt?: any, passToken?: string | null) => {
     if (socket && socket.connected && isHost.value) {
-      socket.emit('game:start', { gameType, prompt })
+      socket.emit('game:start', { gameType, prompt, passToken })
     }
   }
 
@@ -474,6 +493,13 @@ export const useMultiplayer = () => {
   const ringHost = () => {
     if (socket && socket.connected) {
       socket.emit('room:ring-host')
+    }
+  }
+
+  // Send a quick emoji reaction to the room
+  const sendReaction = (emoji: string) => {
+    if (socket && socket.connected) {
+      socket.emit('room:reaction', { emoji })
     }
   }
 
@@ -535,6 +561,7 @@ export const useMultiplayer = () => {
     endGame,
     leaveRoom,
     ringHost,
+    sendReaction,
     clearError,
     clearPaymentRequired,
     attemptAutoReconnect,

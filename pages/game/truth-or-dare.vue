@@ -199,7 +199,9 @@
           </button>
           <button
             @click="handleResetCard($event)"
-          class="w-full bg-card hover:bg-white/5 border border-white/10 py-3 rounded-lg font-medium transition-colors flex items-center justify-center gap-2"
+            :disabled="skipsThisPrompt >= MAX_SKIPS_PER_PROMPT"
+            :title="skipsThisPrompt >= MAX_SKIPS_PER_PROMPT ? 'No more re-rolls for this turn' : `${MAX_SKIPS_PER_PROMPT - skipsThisPrompt} re-roll${MAX_SKIPS_PER_PROMPT - skipsThisPrompt === 1 ? '' : 's'} left`"
+          class="w-full bg-card hover:bg-white/5 border border-white/10 py-3 rounded-lg font-medium transition-colors flex items-center justify-center gap-2 disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-card"
           >
           <Icon icon="mdi:refresh" class="w-5 h-5" />
             Choose Different Card
@@ -280,6 +282,7 @@ import { navigateTo } from "#app";
 
 // Game Configuration
 const MAX_HESITATION_TIME = 15;
+const MAX_SKIPS_PER_PROMPT = 2;
 
 // Game Store Integration
 const gameStore = useGameStore();
@@ -297,6 +300,7 @@ const hesitationPercent = reactive({ value: 100 });
 const isDrawing = ref(false);
 const isSpicyMode = ref(false);
 const selectedCardType = ref('');
+const skipsThisPrompt = ref(0);
 const questionsLoading = ref(false);
 const questionsError = ref(null);
 const logExpanded = ref(false);
@@ -451,6 +455,8 @@ const handleResetCard = (evt) => {
 };
 
 const resetCard = () => {
+  if (skipsThisPrompt.value >= MAX_SKIPS_PER_PROMPT) return;
+  skipsThisPrompt.value++;
   flipTransition(flipInnerRef.value, () => {
     currentCard.value = null;
     cardFlipped.value = false;
@@ -493,6 +499,7 @@ const completeChallenge = () => {
 };
 
 const nextTurn = () => {
+  skipsThisPrompt.value = 0;
   flipTransition(flipInnerRef.value, () => {
     currentCard.value = null;
     cardFlipped.value = false;

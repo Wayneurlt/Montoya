@@ -15,7 +15,7 @@
         <UButton icon="i-mdi:download" color="neutral" variant="soft" :loading="exporting" @click="exportQuestions" class="w-full sm:w-auto">
           Export (.md)
         </UButton>
-        <UButton icon="i-mdi:plus" color="primary" @click="showAddForm = true" class="w-full sm:w-auto">
+        <UButton icon="i-mdi:plus" color="primary" @click="() => { showAddForm = true }" class="w-full sm:w-auto">
           Add Question
         </UButton>
       </div>
@@ -123,7 +123,7 @@
             <UButton
               :color="newQuestion.type === 'TRUTH' ? 'primary' : 'neutral'"
               :variant="newQuestion.type === 'TRUTH' ? 'solid' : 'outline'"
-              @click="newQuestion.type = 'TRUTH'"
+              @click="() => { newQuestion.type = 'TRUTH' }"
               class="h-12 cursor-pointer"
               type="button"
             >
@@ -135,7 +135,7 @@
             <UButton
               :color="newQuestion.type === 'DARE' ? 'secondary' : 'neutral'"
               :variant="newQuestion.type === 'DARE' ? 'solid' : 'outline'"
-              @click="newQuestion.type = 'DARE'"
+              @click="() => { newQuestion.type = 'DARE' }"
               class="h-12 cursor-pointer"
               type="button"
             >
@@ -159,7 +159,7 @@
               :key="level"
               :color="getIntensityButtonColor(level)"
               :variant="newQuestion.intensity === level ? 'solid' : 'outline'"
-              @click="newQuestion.intensity = level"
+              @click="() => { newQuestion.intensity = level }"
               class="h-16 flex flex-col items-center justify-center gap-1 cursor-pointer"
               type="button"
             >
@@ -323,7 +323,7 @@
               color="neutral"
               variant="soft"
               :disabled="currentPage === 1"
-              @click="currentPage--"
+              @click="() => { currentPage-- }"
             >
               Previous
             </UButton>
@@ -335,7 +335,7 @@
               color="neutral"
               variant="soft"
               :disabled="currentPage === totalPages"
-              @click="currentPage++"
+              @click="() => { currentPage++ }"
             >
               Next
             </UButton>
@@ -353,17 +353,30 @@
 </template>
 
 <script setup lang="ts">
-definePageMeta({ 
+definePageMeta({
   layout: 'admin',
   middleware: 'admin'
 })
+
+interface Question {
+  id: number
+  type?: string | null
+  gameType: string
+  text: string
+  intensity: number
+  drinkAmount?: string | null
+  isActive: boolean
+  source?: string
+}
+
+type UColor = 'primary' | 'neutral' | 'info' | 'error' | 'success' | 'warning' | 'secondary'
 
 // State
 const loading = ref(true)
 const saving = ref(false)
 const exporting = ref(false)
 const showAddForm = ref(false)
-const editingQuestion = ref(null)
+const editingQuestion = ref<Question | null>(null)
 
 // Search and filters
 const searchQuery = ref('')
@@ -376,7 +389,7 @@ const currentPage = ref(1)
 const pageSize = ref(20)
 
 // Questions data
-const questions = ref([])
+const questions = ref<Question[]>([])
 
 // Form data
 const newQuestion = reactive({
@@ -487,7 +500,7 @@ const successMessage = ref('')
 
 // Helper functions
 function getGameTypeLabel(gameType: string) {
-  const labels = {
+  const labels: Record<string, string> = {
     'TRUTH_OR_DARE': 'Truth or Dare',
     'DO_OR_DRINK': 'Do or Drink',
     'NEVER_HAVE_I_EVER': 'Never Have I Ever',
@@ -498,7 +511,7 @@ function getGameTypeLabel(gameType: string) {
 }
 
 function getGameTypeDescription(gameType: string) {
-  const descriptions = {
+  const descriptions: Record<string, string> = {
     'TRUTH_OR_DARE': 'Ask truths or give dares to players',
     'DO_OR_DRINK': 'Players must do a challenge or drink',
     'NEVER_HAVE_I_EVER': 'Group elimination game with "Never have I ever" questions',
@@ -509,7 +522,7 @@ function getGameTypeDescription(gameType: string) {
 }
 
 function getGameIcon(gameType: string) {
-  const icons = {
+  const icons: Record<string, string> = {
     'TRUTH_OR_DARE': '🎯',
     'DO_OR_DRINK': '🍺',
     'NEVER_HAVE_I_EVER': '🙋',
@@ -519,13 +532,13 @@ function getGameIcon(gameType: string) {
   return icons[gameType] || '❓'
 }
 
-function getIntensityColor(level: number) {
-  const colors = ['success', 'info', 'warning', 'error', 'error']
+function getIntensityColor(level: number): UColor {
+  const colors: UColor[] = ['success', 'info', 'warning', 'error', 'error']
   return colors[level - 1] || 'neutral'
 }
 
-function getIntensityButtonColor(level: number) {
-  const colors = ['success', 'info', 'warning', 'error', 'error']
+function getIntensityButtonColor(level: number): UColor {
+  const colors: UColor[] = ['success', 'info', 'warning', 'error', 'error']
   return colors[level - 1] || 'neutral'
 }
 
@@ -553,9 +566,9 @@ function getIntensityDescription(level: number) {
 function getQuestionPlaceholder() {
   if (!newQuestion.gameType) return 'Enter your question here...'
   
-  const placeholders = {
-    'TRUTH_OR_DARE': newQuestion.type === 'TRUTH' 
-      ? 'What is your biggest secret?' 
+  const placeholders: Record<string, string> = {
+    'TRUTH_OR_DARE': newQuestion.type === 'TRUTH'
+      ? 'What is your biggest secret?'
       : 'Give someone a compliment',
     'DO_OR_DRINK': 'Do a silly dance for 30 seconds',
     'NEVER_HAVE_I_EVER': 'Never have I ever been skydiving',
@@ -645,9 +658,9 @@ async function saveQuestion() {
   try {
     if (editingQuestion.value) {
       // Update existing question
-      const endpoint = (editingQuestion.value as any).source === 'group' 
-        ? `/api/admin/questions/${(editingQuestion.value as any).id}`
-        : `/api/admin/cards/${(editingQuestion.value as any).id}`
+      const endpoint = editingQuestion.value.source === 'group'
+        ? `/api/admin/questions/${editingQuestion.value.id}`
+        : `/api/admin/cards/${editingQuestion.value.id}`
       
       await $fetch(endpoint, {
         method: 'PUT',
@@ -700,7 +713,7 @@ async function saveQuestion() {
 }
 
 // Edit question
-function editQuestion(question) {
+function editQuestion(question: Question) {
   editingQuestion.value = question
   newQuestion.gameType = question.gameType
   newQuestion.type = question.type || ''
@@ -711,7 +724,7 @@ function editQuestion(question) {
 }
 
 // Delete question
-async function deleteQuestion(question) {
+async function deleteQuestion(question: Question) {
   if (!confirm('Are you sure you want to delete this question?')) return
   
   try {

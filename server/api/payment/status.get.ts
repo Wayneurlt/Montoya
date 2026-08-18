@@ -42,11 +42,14 @@ export default defineEventHandler(async (event) => {
     }
   }
 
+  let token: string | undefined
+
   if (current.status === 'ACTIVE' && current.expiresAt) {
-    setCookie(event, MULTIPLAYER_PASS_COOKIE, signMultiplayerPass({
+    token = signMultiplayerPass({
       phoneNumber: current.phoneNumber,
       expiresAt: current.expiresAt.getTime(),
-    }), {
+    })
+    setCookie(event, MULTIPLAYER_PASS_COOKIE, token, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
       sameSite: 'lax',
@@ -57,5 +60,10 @@ export default defineEventHandler(async (event) => {
   return {
     status: current.status,
     expiresAt: current.expiresAt,
+    // See entitlement.get.ts for why this is also handed back directly: a socket
+    // that connected before payment finished would never pick up the new cookie
+    // on its own, so the client threads this token through room:create/game:start
+    // instead of relying only on the (stale) handshake cookie.
+    token,
   }
 })

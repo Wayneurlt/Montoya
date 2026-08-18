@@ -111,6 +111,18 @@
           </button>
         </div>
       </div>
+
+      <!-- Quick emoji reactions -->
+      <div class="fixed bottom-4 right-3 z-40 flex gap-1.5 bg-card/90 backdrop-blur border border-white/10 rounded-full px-2 py-1.5 shadow-hard-sm">
+        <button
+          v-for="emoji in REACTION_EMOJIS"
+          :key="emoji"
+          @click="handleSendReaction(emoji)"
+          class="text-lg leading-none w-8 h-8 flex items-center justify-center rounded-full hover:bg-white/10 transition-colors"
+        >
+          {{ emoji }}
+        </button>
+      </div>
     </div>
   </div>
 </template>
@@ -118,10 +130,14 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, onBeforeUnmount, watch, nextTick } from 'vue'
 import { Icon } from '@iconify/vue'
+import { push } from 'notivue'
+import gsap from 'gsap'
 import { useMultiplayer } from '~/composables/useMultiplayer'
 import { playRingSound, vibrateRing } from '~/composables/useRingSound'
 import { useRoute, useRouter } from 'vue-router'
 import { navigateTo } from '#app'
+
+const REACTION_EMOJIS = ['😂', '😮', '🔥', '😳', '❤️', '👏']
 
 // Multiplayer room state lives in a process-wide singleton (see useMultiplayer.ts),
 // not per-request — rendering it during SSR could leak one user's live room into
@@ -143,6 +159,7 @@ const {
   retryConnection,
   leaveRoom,
   attemptAutoReconnect,
+  sendReaction,
 } = multiplayer
 
 const gameType = computed(() => route.params.game as string)
@@ -198,6 +215,38 @@ const safeRoomState = computed(() => {
 const handleLeaveRoom = () => {
   leaveRoom()
   router.push('/lobby')
+}
+
+const handleSendReaction = (emoji: string) => {
+  sendReaction(emoji)
+}
+
+// A single emoji that floats up from the bottom of the screen and fades —
+// deliberately lighter weight than celebrateBurst's confetti particles, since
+// this fires on every reaction rather than a one-off win moment.
+function floatEmoji(emoji: string) {
+  if (typeof document === 'undefined') return
+  const el = document.createElement('div')
+  el.textContent = emoji
+  el.style.position = 'fixed'
+  el.style.left = `${45 + Math.random() * 10}%`
+  el.style.bottom = '15%'
+  el.style.fontSize = '2.5rem'
+  el.style.pointerEvents = 'none'
+  el.style.zIndex = '9999'
+  document.body.appendChild(el)
+  gsap.fromTo(
+    el,
+    { y: 0, opacity: 1, scale: 0.8 },
+    {
+      y: -160,
+      opacity: 0,
+      scale: 1.2,
+      duration: 1.4,
+      ease: 'power1.out',
+      onComplete: () => el.remove(),
+    }
+  )
 }
 
 // Watch for game phase changes - if we're not in the right game, redirect
@@ -297,6 +346,21 @@ onMounted(() => {
     window.addEventListener('host-ring', handleHostRing as EventListener)
     onBeforeUnmount(() => {
       window.removeEventListener('host-ring', handleHostRing as EventListener)
+    })
+
+    // Listen for reaction broadcasts (visual pop + toast for everyone in the room)
+    const handleRoomReaction = (event: CustomEvent) => {
+      const data = event.detail as { emoji: string; fromNickname: string }
+      floatEmoji(data.emoji)
+      push.info({
+        title: data.fromNickname,
+        message: data.emoji,
+        duration: 2000,
+      })
+    }
+    window.addEventListener('room-reaction', handleRoomReaction as EventListener)
+    onBeforeUnmount(() => {
+      window.removeEventListener('room-reaction', handleRoomReaction as EventListener)
     })
   }
 })

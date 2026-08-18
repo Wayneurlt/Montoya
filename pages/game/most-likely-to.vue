@@ -256,7 +256,7 @@ const titleBlockRef = ref(null);
 const questionCardRef = ref(null);
 const questionTextRef = ref(null);
 const penaltyBlockRef = ref(null);
-const statsBodyRef = ref(null);
+const statsBodyRef = ref<HTMLElement | null>(null);
 
 // Collapsed by default so the stats grid doesn't permanently eat gameplay
 // space — animate the height open/closed rather than a plain v-if (same
@@ -271,7 +271,7 @@ const toggleStats = () => {
       gsap.fromTo(
         statsBodyRef.value,
         { height: 0 },
-        { height: targetHeight, duration: 0.35, ease: 'power2.out', onComplete: () => gsap.set(statsBodyRef.value, { height: 'auto' }) }
+        { height: targetHeight, duration: 0.35, ease: 'power2.out', onComplete: () => { gsap.set(statsBodyRef.value, { height: 'auto' }); } }
       );
     } else {
       gsap.fromTo(
@@ -517,7 +517,7 @@ async function loadQuestions() {
     questionTracker.initializeTracker();
 
     console.log(`✅ Loaded ${questions.length} Most Likely To questions`)
-  } catch (error) {
+  } catch (error: any) {
     console.error('❌ Error loading Most Likely To questions:', error)
     console.error('Error details:', error.message, error.stack)
     // Don't use fallback - throw error so user knows

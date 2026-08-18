@@ -212,7 +212,7 @@ import MultiplayerGameHeader from './MultiplayerGameHeader.vue'
 import MultiplayerPlayerList from './MultiplayerPlayerList.vue'
 import { useMultiplayer, type RoomState } from '~/composables/useMultiplayer'
 import { useMultiplayerVoting } from '~/composables/useMultiplayerVoting'
-import { useMultiplayerQuestions } from '~/composables/useMultiplayerQuestions'
+import { useMultiplayerQuestions, excludedIndicesForScope, makeScopedPromptKey } from '~/composables/useMultiplayerQuestions'
 import { staggerReveal, punchScale, celebrateBurst } from '~/composables/useGameAnimations'
 
 interface Props {
@@ -348,10 +348,12 @@ const getNextQuestion = () => withHostLoading(async () => {
   }
 
   if (questionTracker) {
-    const result = questionTracker.getNextQuestion()
+    const excluded = excludedIndicesForScope(roomState.value.usedPromptKeys, 'question')
+    const result = questionTracker.getNextQuestion(excluded)
     multiplayer.nextRound({
       text: result.question,
       intensity: 2,
+      promptKey: makeScopedPromptKey('question', result.index),
     })
     return result
   }
@@ -363,10 +365,12 @@ const handleSkipQuestion = () => withHostLoading(async () => {
   }
 
   if (questionTracker) {
-    const result = questionTracker.getNextQuestion()
+    const excluded = excludedIndicesForScope(roomState.value.usedPromptKeys, 'question')
+    const result = questionTracker.getNextQuestion(excluded)
     multiplayer.skipQuestion({
       text: result.question,
       intensity: 2,
+      promptKey: makeScopedPromptKey('question', result.index),
     })
     return result
   }

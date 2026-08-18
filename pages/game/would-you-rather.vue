@@ -247,13 +247,13 @@ const isMultiplayer = computed(() => route.query.multiplayer === 'true');
 const multiplayer = useMultiplayer();
 const { roomState, votes, isHost, submitVote, showResults, nextRound, connect } = multiplayer;
 
-const question = ref(null);
+const question = ref<{ text: string } | null>(null);
 
 // Initialize question tracker
-let questionTracker = null;
+let questionTracker: any = null;
 const showPenalty = ref(false);
 const penaltyMessage = ref('');
-const selectedOption = ref(null);
+const selectedOption = ref<'A' | 'B' | null>(null);
 const hasVoted = ref(false);
 const statsExpanded = ref(false);
 
@@ -272,7 +272,7 @@ const titleBlockRef = ref(null);
 const questionCardRef = ref(null);
 const questionStageRef = ref(null);
 const penaltyBlockRef = ref(null);
-const statsBodyRef = ref(null);
+const statsBodyRef = ref<HTMLElement | null>(null);
 
 // Collapsed by default so the stats grid doesn't permanently eat gameplay
 // space — animate the height open/closed rather than a plain v-if (same
@@ -287,7 +287,7 @@ const toggleStats = () => {
       gsap.fromTo(
         statsBodyRef.value,
         { height: 0 },
-        { height: targetHeight, duration: 0.35, ease: 'power2.out', onComplete: () => gsap.set(statsBodyRef.value, { height: 'auto' }) }
+        { height: targetHeight, duration: 0.35, ease: 'power2.out', onComplete: () => { gsap.set(statsBodyRef.value, { height: 'auto' }); } }
       );
     } else {
       gsap.fromTo(
@@ -379,7 +379,7 @@ const parsedQuestion = computed(() => {
   };
 });
 
-const selectOption = (option) => {
+const selectOption = (option: 'A' | 'B') => {
   selectedOption.value = option;
   choicesMade.value++;
 

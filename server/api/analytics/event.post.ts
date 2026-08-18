@@ -1,3 +1,4 @@
+import { Prisma } from '@prisma/client'
 import prisma from '~/lib/prisma'
 import { realtimeAnalytics } from '~/server/utils/realtimeAnalytics'
 import { recordEvent as recordEventFile } from '~/server/utils/analyticsStore'
@@ -32,7 +33,7 @@ export default defineEventHandler(async (event) => {
         sessionId: body.sessionId ?? null,
         page: body.page ?? null,
         game: body.game ?? null,
-        data: body.data ? JSON.stringify(body.data) : null
+        data: body.data ? JSON.stringify(body.data) : Prisma.JsonNull
       }
     })
     // Keep file store in sync as backup so all-time stats work when DB is down

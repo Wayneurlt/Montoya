@@ -158,9 +158,11 @@
                 {{ currentRoll.body || "?" }}
               </p>
             </div>
-            <div v-else class="text-center">
-              <p class="text-[10px] sm:text-xs font-display uppercase tracking-wide opacity-80">Rolling...</p>
-              <Icon icon="mdi:dice-multiple" class="w-7 h-7 sm:w-8 sm:h-8 mt-1" />
+            <div v-else class="text-center px-1 sm:px-2">
+              <p class="text-[10px] sm:text-xs md:text-sm font-display uppercase tracking-wide mb-0.5 sm:mb-1 opacity-80">Body Part</p>
+              <p class="text-xs sm:text-sm md:text-base lg:text-lg font-display font-bold leading-tight blur-[0.5px] opacity-80">
+                {{ rollingBody }}
+              </p>
             </div>
           </div>
 
@@ -179,9 +181,11 @@
                 {{ currentRoll.action || "?" }}
               </p>
             </div>
-            <div v-else class="text-center">
-              <p class="text-[10px] sm:text-xs font-display uppercase tracking-wide opacity-80">Rolling...</p>
-              <Icon icon="mdi:dice-multiple" class="w-7 h-7 sm:w-8 sm:h-8 mt-1" />
+            <div v-else class="text-center px-1 sm:px-2">
+              <p class="text-[10px] sm:text-xs md:text-sm font-display uppercase tracking-wide mb-0.5 sm:mb-1 opacity-80">Action</p>
+              <p class="text-xs sm:text-sm md:text-base lg:text-lg font-display font-bold leading-tight blur-[0.5px] opacity-80">
+                {{ rollingAction }}
+              </p>
             </div>
           </div>
         </div>
@@ -409,6 +413,9 @@ const specialEffectIcon = ref("mdi:star");
 const gameMode = ref("free-for-all"); // 'free-for-all' or 'relationship'
 const gameLevel = ref(1);
 const currentRoll = ref({ body: "", action: "" });
+const rollingBody = ref("");
+const rollingAction = ref("");
+let rollCycleInterval = null;
 const currentResult = ref("");
 const history = ref([]);
 const logExpanded = ref(false);
@@ -483,6 +490,7 @@ onMounted(() => {
 
 onBeforeUnmount(() => {
   clearInterval(timer.value);
+  stopRollCycle();
 });
 
 // Helper Functions
@@ -538,6 +546,26 @@ const tumbleDice = () => {
     .to(targets, { rotation: 0, scale: 1, duration: 0.3, ease: 'back.out(1.7)' });
 };
 
+// Slot-machine-style flicker: while rolling, rapidly swap each die's face
+// through random words so it reads as spinning rather than just waiting,
+// slowing down near the end so it feels like it's settling on a result.
+const startRollCycle = () => {
+  let tick = 0;
+  const roll = () => {
+    rollingBody.value = BODY_PARTS[Math.floor(Math.random() * BODY_PARTS.length)];
+    rollingAction.value = ACTIONS[Math.floor(Math.random() * ACTIONS.length)];
+    tick++;
+    const delay = tick < 8 ? 70 : tick < 12 ? 130 : 200;
+    rollCycleInterval = setTimeout(roll, delay);
+  };
+  roll();
+};
+
+const stopRollCycle = () => {
+  clearTimeout(rollCycleInterval);
+  rollCycleInterval = null;
+};
+
 const rollDice = async () => {
   if (isRolling.value || isTimerRunning.value) return;
 
@@ -546,9 +574,11 @@ const rollDice = async () => {
   specialEffect.value = "";
   isRolling.value = true;
   tumbleDice();
+  startRollCycle();
 
   // Show rolling animation for at least 1 second
   await new Promise((resolve) => setTimeout(resolve, 1000));
+  stopRollCycle();
 
   let validCombination = false;
   let attempts = 0;

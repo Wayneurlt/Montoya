@@ -72,17 +72,23 @@ export const useQuestionTracker = (questionPool: any[], storageKey: string) => {
     usedQuestions.value = loadUsedQuestions(storageKey)
   }
   
-  // Get next unique question
-  const getNextQuestion = () => {
+  // Get next unique question. `excludeIndices` is an optional extra set of
+  // indices to treat as used on top of this device's own history — used by
+  // multiplayer to also exclude whatever the room has already shown (so a
+  // host handoff mid-game doesn't repeat something a previous host already
+  // picked, since this device's own localStorage wouldn't know about that).
+  const getNextQuestion = (excludeIndices?: Set<number> | number[]) => {
     if (questionPool.length === 0) {
       throw new Error('Question pool is empty')
     }
-    
+
+    const excluded = excludeIndices instanceof Set ? excludeIndices : new Set(excludeIndices ?? [])
+
     // Get unused questions
     const unusedIndices = questionPool
       .map((_, index) => index)
-      .filter(index => !usedQuestions.value.has(index))
-    
+      .filter(index => !usedQuestions.value.has(index) && !excluded.has(index))
+
     // If all questions have been used, start over but track usage
     if (unusedIndices.length === 0) {
       console.warn(`All questions in pool exhausted. Pool size: ${questionPool.length}`)

@@ -247,7 +247,7 @@ import WaitingForHost from './WaitingForHost.vue'
 import MultiplayerGameHeader from './MultiplayerGameHeader.vue'
 import MultiplayerPlayerList from './MultiplayerPlayerList.vue'
 import { useMultiplayer, type RoomState } from '~/composables/useMultiplayer'
-import { useMultiplayerQuestions } from '~/composables/useMultiplayerQuestions'
+import { useMultiplayerQuestions, excludedIndicesForScope, makeScopedPromptKey } from '~/composables/useMultiplayerQuestions'
 import { staggerReveal, flipTransition, punchScale, tickPulse, shake, celebrateBurst } from '~/composables/useGameAnimations'
 
 interface Props {
@@ -363,10 +363,12 @@ async function loadQuestions() {
   })
 }
 
-// Get random question (same logic as single-player)
+// Get random question (same logic as single-player), plus a room-scoped
+// promptKey so the server can track it across a host handoff.
 const getRandomQuestion = (type: 'TRUTH' | 'DARE') => {
   let tracker
 
+  const scope = `${type}_${isSpicyMode.value ? 'spicy' : 'normal'}`
   if (type === 'TRUTH') {
     tracker = isSpicyMode.value ? spicyTruthTracker : normalTruthTracker
   } else {
@@ -374,12 +376,13 @@ const getRandomQuestion = (type: 'TRUTH' | 'DARE') => {
   }
 
   if (!tracker) {
-    return 'Questions are loading... Please try again in a moment.'
+    return { text: 'Questions are loading... Please try again in a moment.', promptKey: undefined as string | undefined }
   }
 
-  const result = tracker.getNextQuestion()
+  const excluded = excludedIndicesForScope(props.roomState.usedPromptKeys, scope)
+  const result = tracker.getNextQuestion(excluded)
   notifyIfRepeat(result)
-  return result.question
+  return { text: result.question, promptKey: makeScopedPromptKey(scope, result.index) }
 }
 
 // Who is up now: from current card, or from server's nextUpPlayer (before host draws)
@@ -441,7 +444,7 @@ const drawCard = async (type: 'TRUTH' | 'DARE') => {
   isDrawing.value = true
   selectedCardType.value = type
 
-  const content = getRandomQuestion(type)
+  const { text: content, promptKey } = getRandomQuestion(type)
   const player = currentPlayer.value
     ? { socketId: currentPlayer.value.socketId, nickname: currentPlayer.value.nickname, gender: (props.roomState.players.find((p: any) => p.socketId === currentPlayer.value?.socketId) as any)?.gender }
     : getPlayerForTurn()
@@ -456,6 +459,7 @@ const drawCard = async (type: 'TRUTH' | 'DARE') => {
   props.multiplayer.nextRound({
     type: type,
     text: content,
+    promptKey,
     player: player ? {
       socketId: player.socketId,
       nickname: player.nickname,

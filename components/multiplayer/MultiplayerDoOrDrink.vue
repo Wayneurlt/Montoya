@@ -192,7 +192,7 @@ import WaitingForHost from './WaitingForHost.vue'
 import MultiplayerGameHeader from './MultiplayerGameHeader.vue'
 import MultiplayerPlayerList from './MultiplayerPlayerList.vue'
 import { useMultiplayer, type RoomState } from '~/composables/useMultiplayer'
-import { useMultiplayerQuestions } from '~/composables/useMultiplayerQuestions'
+import { useMultiplayerQuestions, excludedIndicesForScope, makeScopedPromptKey } from '~/composables/useMultiplayerQuestions'
 import { staggerReveal, flipTransition, punchScale, tickPulse, shake, celebrateBurst } from '~/composables/useGameAnimations'
 
 interface Props {
@@ -314,14 +314,16 @@ async function loadQuestions() {
   challengeTracker.initializeTracker()
 }
 
-// Get random challenge
+// Get random challenge, plus a room-scoped promptKey so the server can
+// track it across a host handoff.
 const getRandomChallenge = () => {
   if (!challengeTracker) {
-    return 'Questions are loading... Please wait.'
+    return { text: 'Questions are loading... Please wait.', promptKey: undefined as string | undefined }
   }
-  const result = challengeTracker.getNextQuestion()
+  const excluded = excludedIndicesForScope(props.roomState.usedPromptKeys, 'challenge')
+  const result = challengeTracker.getNextQuestion(excluded)
   notifyIfRepeat(result)
-  return result.question
+  return { text: result.question, promptKey: makeScopedPromptKey('challenge', result.index) }
 }
 
 // Generate challenge (optionally exclude the player who will do the challenge)
@@ -354,10 +356,11 @@ function generateChallenge(excludePlayer?: { socketId: string } | null) {
   const hasTarget = targets.length > 0 && Math.random() > 0.3
   const target = hasTarget ? targets[Math.floor(Math.random() * targets.length)] : null
 
-  const challengeText = getRandomChallenge()
+  const { text: challengeText, promptKey } = getRandomChallenge()
 
   return {
     text: challengeText,
+    promptKey,
     intensity,
     drinkAmount,
     target: target ? {
@@ -383,6 +386,7 @@ const drawCard = () => {
     // Update game state (always send who must do the challenge so all devices show same turn)
     props.multiplayer.nextRound({
       text: challenge.text,
+      promptKey: challenge.promptKey,
       intensity: challenge.intensity,
       drinkAmount: challenge.drinkAmount,
       target: challenge.target,

@@ -64,3 +64,26 @@ export function useMultiplayerQuestions(multiplayer: ReturnType<typeof useMultip
     notifyIfRepeat,
   }
 }
+
+/**
+ * Room-scoped repeat-avoidance so a host handoff mid-game doesn't repeat a
+ * question a previous host already picked (each device's own tracker only
+ * knows its own localStorage history, not what other hosts have shown).
+ *
+ * `usedPromptKeys` on the room is a flat set of strings shared by every
+ * sub-pool a game might have (e.g. truth vs dare, normal vs spicy), so each
+ * key is namespaced by a `scope` string identifying which pool an index came
+ * from. Only meaningful within one `currentGame` session — the server resets
+ * the room's set whenever the game changes.
+ */
+export function excludedIndicesForScope(usedPromptKeys: readonly string[] | undefined | null, scope: string): number[] {
+  const prefix = `${scope}:`
+  return (usedPromptKeys || [])
+    .filter((k) => k.startsWith(prefix))
+    .map((k) => Number(k.slice(prefix.length)))
+    .filter((n) => !Number.isNaN(n))
+}
+
+export function makeScopedPromptKey(scope: string, index: number): string {
+  return `${scope}:${index}`
+}

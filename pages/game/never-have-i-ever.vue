@@ -226,7 +226,7 @@ import { staggerReveal, punchScale, shake } from '~/composables/useGameAnimation
 // another user's server-rendered HTML, so this page is client-only.
 definePageMeta({ ssr: false });
 
-const question = ref(null);
+const question = ref<{ text: string } | null>(null);
 
 // Game Store Integration
 const gameStore = useGameStore();
@@ -239,7 +239,7 @@ const multiplayer = useMultiplayer();
 const { roomState, votes, isHost, submitVote, showResults, nextRound, connect } = multiplayer;
 
 // Initialize question tracker (will be populated from database)
-let questionTracker = null;
+let questionTracker: any = null;
 const showPenalty = ref(false);
 const penaltyMessage = ref('');
 const statsExpanded = ref(false);
@@ -289,7 +289,7 @@ const titleBlockRef = ref(null);
 const questionCardRef = ref(null);
 const questionTextRef = ref(null);
 const penaltyBlockRef = ref(null);
-const statsBodyRef = ref(null);
+const statsBodyRef = ref<HTMLElement | null>(null);
 
 // Collapsed by default so the stats grid doesn't permanently eat gameplay
 // space — animate the height open/closed rather than a plain v-if (same
@@ -304,7 +304,7 @@ const toggleStats = () => {
       gsap.fromTo(
         statsBodyRef.value,
         { height: 0 },
-        { height: targetHeight, duration: 0.35, ease: 'power2.out', onComplete: () => gsap.set(statsBodyRef.value, { height: 'auto' }) }
+        { height: targetHeight, duration: 0.35, ease: 'power2.out', onComplete: () => { gsap.set(statsBodyRef.value, { height: 'auto' }); } }
       );
     } else {
       gsap.fromTo(
@@ -369,7 +369,7 @@ const fetchAnother = () => {
   groupGame.completeRound();
 };
 
-const markAsDone = (response) => {
+const markAsDone = (response: any) => {
   // Track activity
   updateActivity();
 
@@ -553,7 +553,7 @@ async function loadQuestions() {
 
     console.log(`✅ Loaded ${questionTexts.length} Never Have I Ever questions`)
     console.log(`📈 Tracker stats: ${questionTracker.getUsageStats.value.totalQuestions} total questions`)
-  } catch (error) {
+  } catch (error: any) {
     console.error('❌ Error loading Never Have I Ever questions:', error)
     console.error('Error details:', error.message, error.stack)
     // Don't use fallback - rethrow error so it can be handled in onMounted
